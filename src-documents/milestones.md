@@ -26,6 +26,9 @@ Three registers and a log:
 
 Statuses: `open` · `in progress` · `answered` · `moot`
 
+Tracked items carry their GitHub issue next to the status. The issue is a
+worklist; **the answer belongs here** (see §6 *Issue tracking*).
+
 ---
 
 ## 1. Week one — before building anything
@@ -33,7 +36,7 @@ Statuses: `open` · `in progress` · `answered` · `moot`
 Two experiments. Neither produces code you keep. Both can invalidate weeks of
 work, which is the point.
 
-### W1 — The one-day spike *(status: **answered 2026-09-09, revised same day** — see §5)*
+### W1 — The one-day spike *(status: **answered 2026-09-09, revised same day** · [#3](https://github.com/francisbrero/Model-Use-Index/issues/3) — see §5)*
 
 A throwaway script over your **existing** transcript history. Not a prototype —
 delete it afterwards.
@@ -114,8 +117,8 @@ exists, but it is not "trivial sessions" — it is
 that bucket is real rather than an artefact. That is A1, but A1 aimed at a
 target the PRD does not currently name.
 
-**A4 remains a strong second, on separate evidence.** 93.2% of Opus spend is
-cache traffic (54.7% read, 38.5% write) against 6.8% output, so context
+**A4 remains a strong second, on separate evidence.** 92.7% of Opus spend is
+cache traffic (57.9% read, 34.8% write) against 7.2% output, so context
 efficiency is a large independent lever regardless of how tiering lands.
 
 **The methodological finding, which outranks both.** Two defensible heuristics
@@ -172,7 +175,7 @@ holds $3,844 across 573 sessions, separate from any repo directory.
 
 The spike script was deleted, per the issue.
 
-### W2 — Test the central hypothesis by hand *(status: open)*
+### W2 — Test the central hypothesis by hand *(status: open · [#4](https://github.com/francisbrero/Model-Use-Index/issues/4))*
 
 **The tier matrix came from a screenshot of somebody else's report.** It
 reproduces that report 28/28 — which proves fidelity to the source, not that the
@@ -195,31 +198,31 @@ least evidence behind it.** Correct that now rather than in Phase 3.
 
 These change the plan, not just the implementation.
 
-#### U1 · Do Codex session logs carry token counts? `open`
+#### U1 · Do Codex session logs carry token counts? `open` · [#6](https://github.com/francisbrero/Model-Use-Index/issues/6)
 - **Cost to resolve:** ~1 hour. Run a Codex subagent; locate and inspect its records.
 - **Blocks:** PRD §5.1 Source E · G6 · TD §12 build order step 7
 - **If the answer is bad:** G6 collapses. An OpenAI-side gateway moves from Phase 4a to Phase 1 — a schedule change, not a design tweak.
 - **Answer:**
 
-#### U2 · How do subagent runs appear on disk? `open`
+#### U2 · How do subagent runs appear on disk? `open` · [#7](https://github.com/francisbrero/Model-Use-Index/issues/7)
 - **Cost:** ~30 min. Spawn a known subagent; diff `~/.claude/projects/` before and after.
 - **Blocks:** PRD §5.4 · G3 · Phase 3 sentiment work
 - **If the answer is bad:** Silently misattributes a large share of consumption to the main thread. **This one doesn't fail loudly** — the numbers just quietly mean something other than what they say, and you find out months later.
 - **Note:** Research returned contradictory accounts (inlined with `isSidechain` vs. separate files). Likely version-dependent. Hooks are the belt-and-braces answer either way.
 - **Answer:**
 
-#### U3 · Is allowance consumption machine-readable? `open`
+#### U3 · Is allowance consumption machine-readable? `open` · [#8](https://github.com/francisbrero/Model-Use-Index/issues/8)
 - **Cost:** ~1 hour. Inspect OTel output, `/usage` internals, and the error payload on a limit hit.
 - **Blocks:** PRD §6.2 · the headline number on every screen
 - **If the answer is bad:** Capacity must be *fitted* from limit-hit events, which runs on a calendar clock you cannot compress. Dashboard falls back to share-of-period until the fit converges.
 - **Answer:**
 
-#### U3a · Do past rate-limit hits already appear in existing transcripts? `open`
+#### U3a · Do past rate-limit hits already appear in existing transcripts? `open` · [#5](https://github.com/francisbrero/Model-Use-Index/issues/5)
 - **Cost:** ~20 min. Grep backfilled `raw_event` for rate-limit `api_error` records.
 - **Why it's called out separately:** **This is the highest-leverage check on the list.** If historical limit hits are already on disk, backfill hands you calibration data on day one instead of in six weeks. Nothing else on this register compresses the schedule as much.
 - **Answer:**
 
-#### U4 · Does `message.usage` appear on every assistant message? `open`
+#### U4 · Does `message.usage` appear on every assistant message? `open` · [#9](https://github.com/francisbrero/Model-Use-Index/issues/9)
 - **Cost:** ~20 min (W1 answers this incidentally).
 - **Blocks:** Every number in the system.
 - **If the answer is bad:** Coverage target of 95% is unreachable from the transcript alone; OTel becomes load-bearing rather than a cross-check.
@@ -261,7 +264,7 @@ These change the plan, not just the implementation.
 Framed as de-risking moments rather than as phases. Each definition of done is a
 measurement.
 
-### M0 · Phase 0 memo — *target: end of week 1*
+### M0 · Phase 0 memo — *target: end of week 1* · [#10](https://github.com/francisbrero/Model-Use-Index/issues/10)
 **Done when:** U1–U7 each have a recorded answer in §5, with sample records
 attached, and a go/no-go on the allowance model vs. direct read.
 **Also produced:** the golden-file fixtures TD §11 needs. Collect them now; they
@@ -308,7 +311,7 @@ skippable every single time you look at it. It is the difference between a repor
 you act on and a report you quietly second-guess.
 **W1 escalated this from a discipline risk to the project's central risk.** Two
 defensible heuristics over the same Phoenix data disagreed by three orders of
-magnitude — 0.03% by session shape, 36.1% by work-unit complexity. Both looked
+magnitude — 0.03% by session shape, 43.4% by work-unit complexity. Both looked
 reasonable while being written. The classifier is therefore not a component that
 supports the report; **it is the report**, and there is no way to tell a good one
 from a bad one without hand-labelled ground truth.
@@ -358,7 +361,7 @@ Append-only. Date · question · answer · what it changed.
 | 2026-09-09 | **W1 accounting** | Publicly known: ccusage #888, claude-code #5034, claude-devtools #74 all describe this; one report measures 51–55% of entries as duplicates. | Not a local quirk. Cite these in the TD so the dedup rule is never "simplified" away. |
 | 2026-09-09 | W1 | **Corrected:** all Opus **$23,059**; Phoenix **$16,950 (73.4%)**; score-0 work **$7,361 = 43.4%** of Phoenix Opus (was 36.1%); `/release-prod` **$1,511 → $302 at Sonnet, $1,209 saving**, $151→$30 per run. | **Every ratio survived; only the levels halved.** Duplication was not biased toward complex work, so the go-with-reframed-headline verdict is unchanged and slightly stronger. |
 | 2026-09-09 | W1 | The dashboard's role: surface **categories** (testing on Opus, agentic ops on Opus), not individual fixes. `/release-prod` is one instance of *agentic ops on Opus*. | **Taxonomy's top level should be kind-of-work**, since that is the level a harness change is made at. |
-| 2026-09-09 | W1 | **93.2% of Opus notional value is cache traffic** (54.7% read, 38.5% write); output is 6.8%. | **A4 is a strong second headline** on independent evidence. |
+| 2026-09-09 | W1 | *(pre-dedup figures; corrected below)* **93.2% of Opus notional value is cache traffic** (54.7% read, 38.5% write); output is 6.8%. **Deduplicated: 92.7% cache traffic** (57.9% read, 34.8% write), output 7.2%. | **A4 is a strong second headline** on independent evidence — the ratio barely moved under correction. |
 | 2026-09-09 | W1 | The naive `no Edit` cut reads 11.6% but is a false positive — `Bash`-driven edits. | Any triviality rule must classify `Bash` command verbs, not just tool names. Feeds the taxonomy. |
 | 2026-09-09 | U4REF | `message.usage` present on **80,037/80,037** assistant messages; 0 bad lines in 970 files. | Source A token capture is sound. `version`/`cwd`/`gitBranch`/`isSidechain` also present — invariant 7 drift-bisect is viable. |
 | 2026-09-09 | U8 (rehearsal) | `sessionId` grouping works, but sidechain turns bill into the parent session (one session: 2,102 sidechain turns). | Subagent attribution is a genuine open unknown; don't assume per-agent split comes free. |
@@ -367,17 +370,20 @@ Append-only. Date · question · answer · what it changed.
 
 ## 6. Next three actions
 
-1. ~~**W1** — the one-day spike.~~ **Done 2026-09-09: go, reframed. 36.1% of
-   Phoenix Opus value shows no complexity signal — release orchestration and CI
-   shepherding on Opus. A4 is a strong second at 93.2% cache traffic.** See §1.
-2. **W2** — hand-test the `Agentic / Medium` hypothesis on Haiku. W1 lowered the
-   stakes here — the 25% misallocation figure it defends is now a secondary
-   analysis, not the headline — but it is still the cheapest way to find out
-   whether the tier matrix is trustworthy at all, so it still runs before Phase 0.
-3. **U3a** — grep existing history for past rate-limit errors. Twenty minutes,
-   and it may save six weeks of waiting for calibration data. **W1 promoted
-   this**: with A1 demoted, A2 (under-provisioning) is a leading candidate for
-   the second headline, and U3a is its gating evidence.
+1. ~~**W1**~~ ([#3](https://github.com/francisbrero/Model-Use-Index/issues/3))
+   — the one-day spike. **Done 2026-09-09: go, reframed. 43.4% of Phoenix Opus
+   value shows no complexity signal — release orchestration and CI shepherding
+   on Opus. A4 is a strong second at 93% cache traffic.** See §1.
+2. **W2** ([#4](https://github.com/francisbrero/Model-Use-Index/issues/4)) —
+   hand-test the `Agentic / Medium` hypothesis on Haiku. W1 lowered the stakes
+   here — the 25% misallocation figure it defends is now a secondary analysis,
+   not the headline — but it is still the cheapest way to find out whether the
+   tier matrix is trustworthy at all, so it still runs before Phase 0.
+3. **U3a** ([#5](https://github.com/francisbrero/Model-Use-Index/issues/5)) —
+   grep existing history for past rate-limit errors. Twenty minutes, and it may
+   save six weeks of waiting for calibration data. **W1 promoted this**: with A1
+   re-aimed, A2 (under-provisioning) is a leading candidate for the second
+   headline, and U3a is its gating evidence.
 
 Everything else waits on these three. **A PRD emphasis pass is now queued behind
 W2** — A1 must be re-aimed at high-ceremony low-reasoning orchestration (not
@@ -393,4 +399,28 @@ estimate, before the tool exists to make the same claim at scale.
 
 **W1 also promoted R1.** The gold set is no longer a tedious day that risks being
 skipped — it is the deliverable the whole report's credibility rests on, because
-W1 demonstrated two defensible heuristics disagreeing by 1000× on the same data.
+W1 demonstrated two defensible heuristics disagreeing by three orders of
+magnitude on the same data.
+
+### Issue tracking
+
+The week-one gates and the Tier 1 unknowns are tracked as GitHub issues; **this
+document stays the source of truth for the answers.** Record each answer here
+(inline, then §5) and close the issue against it — don't let the issue thread
+become the register.
+
+| Register ID | Issue | Tier | Status |
+|---|---|---|---|
+| `W1` | [#3](https://github.com/francisbrero/Model-Use-Index/issues/3) | Week one — gate | **answered 2026-09-09** |
+| `W2` | [#4](https://github.com/francisbrero/Model-Use-Index/issues/4) | Week one — gate | open |
+| `U3a` | [#5](https://github.com/francisbrero/Model-Use-Index/issues/5) | Tier 1 | open |
+| `U1` | [#6](https://github.com/francisbrero/Model-Use-Index/issues/6) | Tier 1 | open |
+| `U2` | [#7](https://github.com/francisbrero/Model-Use-Index/issues/7) | Tier 1 | open |
+| `U3` | [#8](https://github.com/francisbrero/Model-Use-Index/issues/8) | Tier 1 | open |
+| `U4` | [#9](https://github.com/francisbrero/Model-Use-Index/issues/9) | Tier 1 | **answered incidentally by W1** (U4REF) |
+| `M0` | [#10](https://github.com/francisbrero/Model-Use-Index/issues/10) | Milestone | open |
+
+Tier 2 (`U5`–`U7`) is tracked on the M0 checklist rather than as separate issues;
+Tier 3 (`U8`, `U9`) gets an issue when its phase opens. **W1 rehearsed `U8`** —
+sidechain turns bill to the parent session — so that issue should carry the
+rehearsal note when it opens.
