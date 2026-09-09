@@ -28,6 +28,16 @@ fails a test rather than passing quietly.
 | `SYNTH-two-same` | same skill invoked twice | re-invocation is a boundary, not a merge |
 | `SYNTH-pre-anchor` | untagged work before the first anchor | must land in the unattributable remainder |
 | `SYNTH-idle-gap` | a 6-day gap *inside* one arc | the case that kills an idle-time threshold |
+| `SYNTH-tag-hole` | one skill, tagged either side of an untagged turn | a hole fragments the arc — accepted, but pinned so it can't change silently |
+| `SYNTH-long-run-then-anchor` | a **3-turn** anchor run, then a second anchor | the only session where the next run's `start` and `tag_end` differ |
+| `SYNTH-out-of-order` | records written non-chronologically | order is part of the rule, not of the file layout |
+
+`SYNTH-long-run-then-anchor` is the one that matters most. Everywhere else a
+non-final anchor run is one turn long, so `start == tag_end` and a boundary
+computed from the wrong one of the two is invisible. Real anchor runs are median
+15 turns (p90 36, max 272), so a multi-turn run followed by another anchor is the
+*normal* shape — and it is the shape that distinguishes a correct boundary from
+one that claims turns twice.
 
 The last row is the load-bearing one: a release routine waiting on CI produces
 gaps of hours to days, so a gap is not evidence the arc ended. It also carries a

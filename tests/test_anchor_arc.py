@@ -32,6 +32,9 @@ SESSION_IDS = [
     "SYNTH-two-same",
     "SYNTH-pre-anchor",
     "SYNTH-idle-gap",
+    "SYNTH-tag-hole",
+    "SYNTH-long-run-then-anchor",
+    "SYNTH-out-of-order",
 ]
 
 
@@ -136,7 +139,13 @@ def anchor_runs(turns):
     runs, i, n = [], 0, len(turns)
     while i < n:
         skill = turns[i]["skill"]
-        if not skill:  # None or "" — an empty tag is not an anchor
+        # `not skill` rather than `is None`: an empty tag is not an anchor.
+        # Defensive only — over 81,982 assistant records the field is either
+        # absent or a real value; "" and null never occur (checked 2026-09-09).
+        # Deliberately untested: a fixture for it would assert a shape the
+        # transcript writer does not produce (invariant 7 — parse defensively,
+        # but don't pretend to have evidence you lack).
+        if not skill:
             i += 1
             continue
         j = i
@@ -336,6 +345,129 @@ def test_arc_survives_a_six_day_idle_gap(sessions):
     assert arc["end"] == len(turns) - 1
 
 
+def test_boundary_is_the_next_runs_start_not_its_tag_end(sessions):
+    """The one assertion that pins the rule's central expression.
+
+    `SYNTH-long-run-then-anchor` is the only session here whose *non-final*
+    anchor run spans more than one turn, so it is the only one where
+    `runs[k+1].start` and `runs[k+1].tag_end` differ. Everywhere else the two
+    are numerically identical and a mutation between them is invisible — real
+    anchor runs are median 15 turns, so this shape is the normal case rather
+    than an edge case.
+    """
+    turns = sessions["SYNTH-long-run-then-anchor"]
+    runs = anchor_runs(turns)
+    assert [(start, tag_end) for start, tag_end, _ in runs] == [(0, 2), (4, 5)], (
+        "the fixture must contain a multi-turn run followed by another anchor"
+    )
+    first, second = arcs(turns)
+    # boundary = next run's START - 1 (3), not its tag_end (5)
+    assert first["end"] == 3
+    assert second["start"] == 4
+    assert max(claimed_counts(turns, arcs).values()) == 1
+
+
+def test_turns_are_ordered_by_timestamp_not_file_order(sessions):
+    """`SYNTH-out-of-order` is written to the file as O2, O0, O1. Read in file
+    order the anchor lands at index 1 and turn 0 falls wrongly into the
+    remainder; in timestamp order the arc covers the whole session."""
+    turns = sessions["SYNTH-out-of-order"]
+    assert [t["timestamp"] for t in turns] == sorted(t["timestamp"] for t in turns), (
+        "turns must be sorted into chronological order"
+    )
+    assert [t["position"] for t in turns] != sorted(t["position"] for t in turns), (
+        "the fixture must actually be out of file order, or this proves nothing"
+    )
+    (arc,) = arcs(turns)
+    assert (arc["start"], arc["end"]) == (0, len(turns) - 1)
+    assert unattributable(turns) == []
+
+
+def test_dedup_key_includes_request_id(sessions):
+    """Invariant 10 names the key as (message.id, requestId) specifically — not
+    `uuid`, not the record. A retry reuses the message.id under a new
+    requestId, so dropping requestId would silently merge two real API
+    responses into one and undercount."""
+    base = {
+        "type": "assistant",
+        "sessionId": "SYNTH-retry",
+        "timestamp": "2026-01-10T10:00:00Z",
+        "message": {
+            "id": "msg_synth_retry",
+            "model": "claude-opus-4-synthetic",
+            "usage": {
+                "input_tokens": 100,
+                "output_tokens": 1000,
+                "cache_creation_input_tokens": 0,
+                "cache_read_input_tokens": 0,
+            },
+        },
+    }
+    records = [{**base, "requestId": rid} for rid in ("req_a", "req_b")]
+    assert len(dedup(records)) == 2, (
+        "same message.id, different requestId — two responses"
+    )
+    same = [{**base, "requestId": "req_a"}, {**base, "requestId": "req_a"}]
+    assert len(dedup(same)) == 1
+
+
+@pytest.mark.parametrize("field", ["attributionSkill", "isSidechain"])
+@pytest.mark.parametrize("order", [("first", "second"), ("second", "first")])
+def test_non_usage_fields_are_reconciled_across_a_duplicate_group(field, order):
+    """A group is tagged, or is a sidechain turn, if *any* of its content blocks
+    says so. First-seen would make the result depend on file order — the same
+    trap as `output_tokens`, on a field that moves an arc boundary rather than
+    just a label."""
+    value = "synth-release" if field == "attributionSkill" else True
+    base = {
+        "type": "assistant",
+        "sessionId": "SYNTH-recon",
+        "requestId": "req_recon",
+        "timestamp": "2026-01-06T10:00:00Z",
+        "message": {
+            "id": "msg_synth_recon",
+            "model": "claude-opus-4-synthetic",
+            "usage": {
+                "input_tokens": 10,
+                "output_tokens": 10,
+                "cache_creation_input_tokens": 0,
+                "cache_read_input_tokens": 0,
+            },
+        },
+    }
+    carrying = {**base, field: value}
+    bare = dict(base)
+    records = [carrying if slot == "first" else bare for slot in order]
+    (turn,) = dedup(records)
+    key = "skill" if field == "attributionSkill" else "sidechain"
+    assert turn[key] == value, f"{field} lost when carried by the {order} block"
+
+
+def test_a_hole_in_a_tag_run_fragments_the_arc(sessions):
+    """`a, None, a` within one skill splits into two arcs — the same result as a
+    genuine re-invocation, so the two are indistinguishable here.
+
+    Accepted, because the register treats re-invocation as a boundary anyway and
+    both readings agree on where the boundary falls. Pinned by a test rather
+    than left in a docstring because the failure is silent and expensive: if
+    Claude Code ever drops the tag mid-run, arcs fragment and per-routine cost
+    shatters into pieces that each look like a cheap separate invocation.
+    """
+    turns = sessions["SYNTH-tag-hole"]
+    assert [t["skill"] for t in turns] == [
+        "synth-release",
+        None,
+        "synth-release",
+        None,
+    ], "the fixture must actually contain a hole in the tag run"
+    result = arcs(turns)
+    assert len(result) == 2, "a hole splits the run — documented and accepted"
+    assert {a["skill"] for a in result} == {"synth-release"}
+    # value is still conserved across the fragments, which is what stops a hole
+    # from silently losing money even though it does mis-shape the arcs
+    assert max(claimed_counts(turns, arcs).values()) == 1
+
+
 def test_same_skill_reinvocation_is_a_boundary(sessions):
     """Two invocations of one routine are two arcs, not one merged arc."""
     result = arcs(sessions["SYNTH-two-same"])
@@ -399,10 +531,24 @@ def test_dedup_takes_max_output_across_a_streaming_group(sessions):
     assert turns[1]["usage"]["cache_read"] == 20000
 
 
-def test_cache_read_is_not_priced_as_input(rates):
-    """Pricing cache_read at the input rate is a 10x error on the largest line
-    item. SYNTH-idle-gap turn 1 carries 20,000 cache_read against 2,000 output
-    precisely so this mistake fails a test."""
+def test_fixture_rate_table_has_the_documented_structure(rates):
+    """Fixture integrity: the relative structure is the part that must hold."""
     assert rates["cache_read"] == pytest.approx(rates["input"] * 0.1)
     assert rates["output"] == pytest.approx(rates["input"] * 5)
     assert rates["cache_write"] == pytest.approx(rates["input"] * 1.25)
+
+
+def test_pricing_function_charges_cache_read_at_a_tenth_of_input(rates):
+    """Pricing `cache_read` at the input rate is a 10x error on the largest
+    real line item (57.9% of Opus value). Asserted against
+    `notional_list_value` itself, not just against the rate table."""
+    cache_heavy = {"input": 0, "output": 0, "cache_write": 0, "cache_read": 20000}
+    as_input = {"input": 20000, "output": 0, "cache_write": 0, "cache_read": 0}
+    assert notional_list_value(cache_heavy, rates) == pytest.approx(
+        notional_list_value(as_input, rates) * 0.1
+    )
+    # and each field is charged, not silently dropped
+    for field in ("input", "output", "cache_write", "cache_read"):
+        usage = {"input": 0, "output": 0, "cache_write": 0, "cache_read": 0}
+        usage[field] = 1000
+        assert notional_list_value(usage, rates) > 0, f"{field} is not priced"

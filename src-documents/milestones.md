@@ -275,7 +275,8 @@ stdev $85 — so a per-run assertion would be far looser than the 10-run total.
 
 **Unattributable remainder — 7.4% of Opus notional list value ($1,731).** 6.0%
 ($1,416, 48 sessions) is sessions with no anchor at all; 1.3% ($315) is work
-before a session's first anchor. This must be a labelled row in the dashboard,
+before a session's first anchor. (Exactly 7.374% = 6.032% + 1.342%; the
+rounded components read as 7.3%, and the dollars reconcile precisely.) This must be a labelled row in the dashboard,
 not silently dropped. Sidechain turns hold $1,966 (8.4%), of which $1,737 falls
 inside an anchor arc — so per-routine figures include their subagent cost, which
 is correct, but must not also be counted alongside it (U8, invariant 10 §6).
@@ -293,10 +294,21 @@ the 383 runs above collapse from those 17,180 records. Turn order must be
 `(timestamp, file position)`: "the next anchor" is only meaningful in time.
 
 Fixture `tests/fixtures/anchor_shapes/` + reference implementation
-`tests/test_anchor_arc.py` (43 tests). It implements the **rejected** candidates
+`tests/test_anchor_arc.py` (73 tests). It implements the **rejected** candidates
 alongside the chosen rule, so the double-count comparison above is executable
 rather than merely asserted. It sits in `tests/` because nothing is built yet
 (MS §1); `normalize/work_unit.py` should import it and drop the local copy.
+
+**What is and isn't reproducible from the repo.** The tests verify the *rule* —
+boundary arithmetic, four-field pricing, conservation, dedup — at fixture scale.
+The population figures above ($13,118, 92.6%, 7.4%, the candidate table) came
+from a throwaway script over `~/.claude/projects/`, deleted like W1's. To redo
+them: load every `type: "assistant"` record, dedup by `(message.id, requestId)`
+taking max per usage field, group by session, order by `(timestamp, file
+position)`, derive contiguous `attributionSkill` runs, apply each candidate rule,
+and sum Opus notional list value per skill while counting turns claimed more than
+once. The 991-transcript corpus reproduces $23,473 total, which is the check that
+the loader is right before trusting anything else it says.
 
 #### U1 · Do Codex session logs carry token counts? `open` · [#6](https://github.com/francisbrero/Model-Use-Index/issues/6)
 - **Cost to resolve:** ~1 hour. Run a Codex subagent; locate and inspect its records.
@@ -465,7 +477,7 @@ Append-only. Date · question · answer · what it changed.
 | 2026-09-09 | W1 | The naive `no Edit` cut reads 11.6% but is a false positive — `Bash`-driven edits. | Any triviality rule must classify `Bash` command verbs, not just tool names. Feeds the taxonomy. |
 | 2026-09-09 | U4REF | `message.usage` present on **80,037/80,037** assistant messages; 0 bad lines in 970 files. | Source A token capture is sound. `version`/`cwd`/`gitBranch`/`isSidechain` also present — invariant 7 drift-bisect is viable. |
 | 2026-09-09 | U8 (rehearsal) | `sessionId` grouping works, but sidechain turns bill into the parent session (one session: 2,102 sidechain turns). | Subagent attribution is a genuine open unknown; don't assume per-agent split comes free. |
-| 2026-09-09 | **U10** | **Bounding rule: anchor → next anchor of any skill, else session end** (`u10-next-anchor-v1`). Reproduces `/release-prod` at **$1,447 notional list value over 10 runs** — W1's hand-read $1,511 within −4.3%. | **`work_unit` has a grain.** The first E2E slice is unblocked; the rule goes into `normalize/work_unit.py` asserting **$1,447 ± 5%** — the rule's own reproducible output (invariant 2b), with $1,511 kept as the separate hand-read reference. Centring on $1,511 ± 5% would exclude the $1,429 the accepted tail-cap variant produces. |
+| 2026-09-09 | **U10** | **Bounding rule: anchor → next anchor of any skill, else session end** (`u10-next-anchor-v1`). Reproduces `/release-prod` at **$1,447 notional list value over 10 runs** — W1's hand-read $1,511 within −4.2%. | **`work_unit` has a grain.** The first E2E slice is unblocked; the rule goes into `normalize/work_unit.py` asserting **$1,447 ± 5%** — the rule's own reproducible output (invariant 2b), with $1,511 kept as the separate hand-read reference. Centring on $1,511 ± 5% would exclude the $1,429 the accepted tail-cap variant produces. |
 | 2026-09-09 | **U10** | **W1's own baseline was wrong at scale.** *Anchor → session end* double-counts **$13,118 of Opus notional list value**, because **110 of 137 anchored sessions carry more than one anchor** (median 2, max 9). Re-scored, it gives `/release-prod` $314, not $1,511. | W1's figure was right only because the release sessions were read by hand. **Overlap is the metric that separates these rules**, and it must be asserted as zero in the normaliser's tests. |
 | 2026-09-09 | **U10** | **Idle-gap and `cwd`/`gitBranch` thresholds both fail.** Single `/release-prod` arcs legitimately contain gaps of 529, 699, 1,730 and **8,605 minutes** (waiting on CI, ArgoCD, review) and move across up to 47 turns of other branches. Idle-30 recovers 29% of target; context-change 69%. | **Do not add either as a boundary.** They cut the arc exactly where the routine is waiting or switching worktrees — both normal events *inside* an arc. Recorded so it isn't re-proposed. |
 | 2026-09-09 | **U10** | Known error mode: the rule is **generous at the tail** — the last anchor absorbs to session end. Capping that arc at +150 turns moves `/release-prod` 1.2%; at +50 turns, 21%. | Accepted as-is; **don't cap tightly.** The generosity is bounded and the alternative loses more than it fixes. |
