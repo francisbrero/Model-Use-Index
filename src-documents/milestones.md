@@ -274,8 +274,19 @@ still on the final turn, so a routine continuing into a later session is
 plausible; nothing joins them today. Left open deliberately — it is a Tier 2
 concern for `work_unit`, and the 7.4% remainder bounds its size.
 
+**Implementation note.** `attributionSkill` appears on **`assistant` records
+only** (17,180 of them; no `user`, `system`, `attachment` or `mode` record ever
+carries it), so a normaliser that reads assistant records for `usage` sees every
+anchor for free and needs no second pass. The tag also repeats across a turn's
+content blocks, so anchor runs must be computed *after* invariant-10 dedup — the
+383 runs above collapse from 17,180 tagged records.
+
 Fixture: `tests/fixtures/anchor_shapes/` — five synthetic sessions, one per
-observed shape, with the dedup and streaming-snapshot traps built in.
+observed shape, with the dedup and streaming-snapshot traps built in. The
+reference implementation and its tests are in `tests/test_anchor_arc.py`; it
+lives there rather than under `src/mui/` because nothing is built yet (MS §1),
+and `normalize/work_unit.py` should import it and drop the local copy when it
+lands.
 
 #### U1 · Do Codex session logs carry token counts? `open` · [#6](https://github.com/francisbrero/Model-Use-Index/issues/6)
 - **Cost to resolve:** ~1 hour. Run a Codex subagent; locate and inspect its records.
