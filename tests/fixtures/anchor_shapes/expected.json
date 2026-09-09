@@ -1,0 +1,78 @@
+{
+  "rule": "anchor -> next anchor of any skill, else session end",
+  "rule_id": "u10-next-anchor-v1",
+  "dedup_key": [
+    "message.id",
+    "requestId"
+  ],
+  "dedup_reduction": "max per usage field",
+  "dollar_label": "notional list value",
+  "sessions": {
+    "SYNTH-single": {
+      "arcs": [
+        {
+          "skill": "synth-release",
+          "start": 1,
+          "end": 4
+        }
+      ],
+      "pre_anchor": [
+        0
+      ]
+    },
+    "SYNTH-two-distinct": {
+      "arcs": [
+        {
+          "skill": "synth-release",
+          "start": 0,
+          "end": 1
+        },
+        {
+          "skill": "synth-pr",
+          "start": 2,
+          "end": 3
+        }
+      ],
+      "pre_anchor": []
+    },
+    "SYNTH-two-same": {
+      "arcs": [
+        {
+          "skill": "synth-release",
+          "start": 0,
+          "end": 1
+        },
+        {
+          "skill": "synth-release",
+          "start": 2,
+          "end": 3
+        }
+      ],
+      "pre_anchor": []
+    },
+    "SYNTH-pre-anchor": {
+      "arcs": [
+        {
+          "skill": "synth-pr",
+          "start": 2,
+          "end": 2
+        }
+      ],
+      "pre_anchor": [
+        0,
+        1
+      ]
+    },
+    "SYNTH-idle-gap": {
+      "arcs": [
+        {
+          "skill": "synth-release",
+          "start": 0,
+          "end": 3
+        }
+      ],
+      "pre_anchor": [],
+      "notes": "index space is over UNIQUE API responses, after dedup: g0,g1,g2,g3"
+    }
+  }
+}

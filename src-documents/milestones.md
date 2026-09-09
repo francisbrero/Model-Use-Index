@@ -198,6 +198,85 @@ least evidence behind it.** Correct that now rather than in Phase 3.
 
 These change the plan, not just the implementation.
 
+#### U10 · How do you bound a routine's cost arc from its `attributionSkill` anchor? `answered 2026-09-09` · [#13](https://github.com/francisbrero/Model-Use-Index/issues/13)
+
+Raised by W1, absent from the TD. **The only unknown that blocked the first E2E
+slice** — it defines the grain of `work_unit` (PRD §6.1), and the verdict engine
+scores a work unit, so wrong boundaries give wrong verdicts silently.
+
+**Answer: attribute from the anchor to the next anchor of any skill, else to
+session end.** Rule id `u10-next-anchor-v1`.
+
+Measured over 991 transcripts / 185 sessions / 383 anchor runs, deduplicated by
+`(message.id, requestId)` with max per usage field (invariant 10). All dollar
+figures are **notional list value**; Opus total $23,473, which reproduces W1's
+$23,059 within 2%.
+
+**Shape distribution.** Anchor tag length: median 15 turns, p90 36, max 272.
+Turns from tag end to session end: median 69, p90 405, max 2,480 — so the tag
+covers a small and highly variable fraction of the arc, confirming invariant 11.
+Of 137 anchored sessions, **110 carry more than one anchor run** and 40 carry
+more than one distinct skill; median 2 runs per anchored session, max 9.
+
+**That last number is why W1's own baseline had to be replaced.** W1 used
+*anchor → session end*. With two or more anchors per session the arcs overlap,
+and re-scored properly that rule double-counts **$13,118 of Opus value** and
+gives `/release-prod` only $314. It reproduced $1,511 in W1 only because W1 read
+the release sessions by hand, where the overlap does not bite.
+
+**Candidates scored against W1's $1,511 hand-read regression target:**
+
+Read *Attributed* and *Overlap* together: the two rules that reach 92.6% cover
+the same turns, but only one of them covers each turn once.
+
+| Rule | `/release-prod` | vs target | Attributed | Double-counted |
+|---|---|---|---|---|
+| tagged turns only (naive) | $170 | 0.11× | 9.0% | $0 |
+| anchor → session end (W1 baseline) | $314 | 0.21× | 92.6% | **$13,118** |
+| **anchor → next anchor, else session end** | **$1,447** | **0.96×** | **92.6%** | **$0** |
+| next anchor + `cwd`/`gitBranch` change | $1,036 | 0.69× | 21.4% | $0 |
+| next anchor + 30-min idle gap | $432 | 0.29× | 31.3% | $0 |
+| next anchor + 60-min idle gap | $803 | 0.53× | 42.1% | $0 |
+
+**Why the two intuitive refinements both lose.** They cut the arc exactly where
+the routine is doing its job:
+
+- **Idle-time thresholds.** Real release arcs contain legitimate long waits — on
+  CI, on ArgoCD sync, on review. Observed *within* single `/release-prod` arcs:
+  gaps of 529, 699, 1,730 and **8,605 minutes** (six days). A gap is not evidence
+  the arc ended; it is evidence the routine is waiting.
+- **`cwd`/`gitBranch` change.** Release and deploy work legitimately moves across
+  worktrees and branches — up to 47 turns of one arc sit on a different context
+  than its anchor. Context change is a normal event inside an arc.
+
+**Known error mode, stated as required.** The rule is *generous at the tail*: the
+last anchor in a session absorbs everything to session end, including genuinely
+unrelated work that follows. Sensitivity says this is not load-bearing — capping
+the final arc at +150 turns moves `/release-prod` by 1.2% ($1,429) and the
+attributed total by 5%. Capping at +50 turns costs 21%, so **do not cap tightly.**
+Merging same-skill re-invocations into one arc changes nothing (no `/release-prod`
+run is adjacent to another), so re-invocation is treated as a boundary.
+
+**Regression target for `normalize/work_unit.py`:** `/release-prod` = **$1,447
+notional list value over 10 runs, $145/run** — W1's $1,511 within **−4.3%**.
+Adopt **$1,511 ± 5%** as the tolerance. Per-run spread is wide and genuinely so:
+min $28, median $138, max $271, stdev $85.
+
+**Unattributable remainder — 7.4% of Opus notional list value ($1,731).** 6.0%
+($1,416, 48 sessions) is sessions with no anchor at all; 1.3% ($315) is work
+before a session's first anchor. This must be a labelled row in the dashboard,
+not silently dropped. Sidechain turns hold $1,966 (8.4%), of which $1,737 falls
+inside an anchor arc — so per-routine figures include their subagent cost, which
+is correct, but must not also be counted alongside it (U8, invariant 10 §6).
+
+**Cross-session arcs are not resolved.** 66 sessions end with the anchor tag
+still on the final turn, so a routine continuing into a later session is
+plausible; nothing joins them today. Left open deliberately — it is a Tier 2
+concern for `work_unit`, and the 7.4% remainder bounds its size.
+
+Fixture: `tests/fixtures/anchor_shapes/` — five synthetic sessions, one per
+observed shape, with the dedup and streaming-snapshot traps built in.
+
 #### U1 · Do Codex session logs carry token counts? `open` · [#6](https://github.com/francisbrero/Model-Use-Index/issues/6)
 - **Cost to resolve:** ~1 hour. Run a Codex subagent; locate and inspect its records.
 - **Blocks:** PRD §5.1 Source E · G6 · TD §12 build order step 7
@@ -365,6 +444,12 @@ Append-only. Date · question · answer · what it changed.
 | 2026-09-09 | W1 | The naive `no Edit` cut reads 11.6% but is a false positive — `Bash`-driven edits. | Any triviality rule must classify `Bash` command verbs, not just tool names. Feeds the taxonomy. |
 | 2026-09-09 | U4REF | `message.usage` present on **80,037/80,037** assistant messages; 0 bad lines in 970 files. | Source A token capture is sound. `version`/`cwd`/`gitBranch`/`isSidechain` also present — invariant 7 drift-bisect is viable. |
 | 2026-09-09 | U8 (rehearsal) | `sessionId` grouping works, but sidechain turns bill into the parent session (one session: 2,102 sidechain turns). | Subagent attribution is a genuine open unknown; don't assume per-agent split comes free. |
+| 2026-09-09 | **U10** | **Bounding rule: anchor → next anchor of any skill, else session end** (`u10-next-anchor-v1`). Reproduces `/release-prod` at **$1,447 notional list value over 10 runs** — W1's hand-read $1,511 within −4.3%. Tolerance **±5%**. | **`work_unit` has a grain.** The first E2E slice is unblocked; the rule goes into `normalize/work_unit.py` with $1,511 ± 5% as its regression test. |
+| 2026-09-09 | **U10** | **W1's own baseline was wrong at scale.** *Anchor → session end* double-counts **$13,118 of Opus notional value**, because **110 of 137 anchored sessions carry more than one anchor** (median 2, max 9). Re-scored, it gives `/release-prod` $314, not $1,511. | W1's figure was right only because the release sessions were read by hand. **Overlap is the metric that separates these rules**, and it must be asserted as zero in the normaliser's tests. |
+| 2026-09-09 | **U10** | **Idle-gap and `cwd`/`gitBranch` thresholds both fail.** Single `/release-prod` arcs legitimately contain gaps of 529, 699, 1,730 and **8,605 minutes** (waiting on CI, ArgoCD, review) and move across up to 47 turns of other branches. Idle-30 recovers 29% of target; context-change 69%. | **Do not add either as a boundary.** They cut the arc exactly where the routine is waiting or switching worktrees — both normal events *inside* an arc. Recorded so it isn't re-proposed. |
+| 2026-09-09 | **U10** | Known error mode: the rule is **generous at the tail** — the last anchor absorbs to session end. Capping that arc at +150 turns moves `/release-prod` 1.2%; at +50 turns, 21%. | Accepted as-is; **don't cap tightly.** The generosity is bounded and the alternative loses more than it fixes. |
+| 2026-09-09 | **U10** | **Unattributable remainder: 7.4% of Opus notional list value ($1,731)** — 6.0% sessions with no anchor, 1.3% pre-first-anchor work. Sidechain turns are $1,966 (8.4%), $1,737 of it inside an arc. | Must be a **labelled dashboard row**, not dropped. Per-routine figures include subagent cost by construction — never also count it alongside (U8). |
+| 2026-09-09 | **U10** | **Cross-session arcs unresolved.** 66 sessions end with the anchor tag still on the final turn. | Left open deliberately — Tier 2 for `work_unit`; the 7.4% remainder bounds how much it can matter. |
 
 ---
 
@@ -384,6 +469,13 @@ Append-only. Date · question · answer · what it changed.
    save six weeks of waiting for calibration data. **W1 promoted this**: with A1
    re-aimed, A2 (under-provisioning) is a leading candidate for the second
    headline, and U3a is its gating evidence.
+
+**`U10` is resolved out of band** ([#13](https://github.com/francisbrero/Model-Use-Index/issues/13),
+answered 2026-09-09) — it was the only unknown blocking the first E2E slice, and
+the slice's step-4 acceptance test now has a rule and a numeric target
+(`/release-prod` = $1,511 ± 5% notional list value). That unblocks the slice; it
+does not promote it ahead of W2 and U3a, which still gate committing to the
+build.
 
 Everything else waits on these three. **A PRD emphasis pass is now queued behind
 W2** — A1 must be re-aimed at high-ceremony low-reasoning orchestration (not
@@ -414,6 +506,7 @@ become the register.
 | `W1` | [#3](https://github.com/francisbrero/Model-Use-Index/issues/3) | Week one — gate | **answered 2026-09-09** |
 | `W2` | [#4](https://github.com/francisbrero/Model-Use-Index/issues/4) | Week one — gate | open |
 | `U3a` | [#5](https://github.com/francisbrero/Model-Use-Index/issues/5) | Tier 1 | open |
+| `U10` | [#13](https://github.com/francisbrero/Model-Use-Index/issues/13) | Tier 1 — **slice blocker** | **answered 2026-09-09** |
 | `U1` | [#6](https://github.com/francisbrero/Model-Use-Index/issues/6) | Tier 1 | open |
 | `U2` | [#7](https://github.com/francisbrero/Model-Use-Index/issues/7) | Tier 1 | open |
 | `U3` | [#8](https://github.com/francisbrero/Model-Use-Index/issues/8) | Tier 1 | open |
