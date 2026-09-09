@@ -290,12 +290,20 @@ concern for `work_unit`, and the 7.4% remainder bounds its size.
 only** (17,180; never on `user`/`system`/`attachment`/`mode`), so a normaliser
 reading assistant records for `usage` sees every anchor for free. The tag repeats
 per content block, so anchor runs must be derived *after* invariant-10 dedup —
-the 383 runs above collapse from those 17,180 records. Turn order must be
-`(timestamp, message.id)`: "the next anchor" is only meaningful in time, and the
-tie-break must come from the record — real transcripts emit several turns inside
-one second, and ordering ties by file position or SQL row order would make arc
-boundaries depend on how the rows were read rather than what they say
-(invariant 2b).
+the 383 runs above collapse from those 17,180 records.
+
+Turn order must be `(timestamp, message.id)` — "the next anchor" is only
+meaningful in time, and **the tie-break has to come from the record**, or arc
+boundaries depend on how the rows were read rather than on what they say
+(invariant 2b). Ordering ties by file position, or leaving them to SQL row
+order, is not reproducible.
+
+Measured, so the rule isn't defended by a story: **ties are almost absent — 1
+group, 2 turns of 42,528 (0.005%), in 1 session of 184.** Both turns in it are
+untagged sidechain turns, so today no tie can move an arc boundary. But
+`message.id` order disagrees with file order in that one case, so the two rules
+*do* diverge on real data, and the cost of getting determinism is one sort key.
+Cheap insurance against an irreproducible number, not a live bug.
 
 Fixture `tests/fixtures/anchor_shapes/` + reference implementation
 `tests/test_anchor_arc.py` (99 tests over 11 synthetic sessions). It implements the **rejected** candidates

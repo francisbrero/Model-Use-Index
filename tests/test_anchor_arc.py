@@ -100,13 +100,16 @@ def to_sessions(records):
     Order is part of the rule, not an accident of file layout: the arc boundary
     is "the next anchor", which is only meaningful in time.
 
-    The tie-break is `message.id` rather than file position deliberately. Real
-    transcripts emit several turns inside the same second, and file position is
-    a property of *how the records were read*, not of the records — so ordering
-    on it makes the arc boundary depend on read order, and a normaliser doing
-    `ORDER BY timestamp` in SQL would resolve ties differently again. Both keys
-    here come from the record, so every derived number is reproducible from
-    `raw_event` alone (invariant 2b).
+    The tie-break is `message.id` rather than file position deliberately: file
+    position is a property of *how the records were read*, not of the records,
+    so ordering on it makes the arc boundary depend on read order — and a
+    normaliser doing `ORDER BY timestamp` in SQL would resolve the same ties
+    differently again. Both keys here come from the record, so every derived
+    number is reproducible from `raw_event` alone (invariant 2b).
+
+    Ties are rare rather than routine: 1 group of 2 turns in 42,528 measured
+    (0.005%), both untagged sidechains, so none can move a boundary today. This
+    is insurance against an irreproducible number, not a fix for a live bug.
     """
     by_session = {}
     for turn in dedup(records):
