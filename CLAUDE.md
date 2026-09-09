@@ -50,11 +50,13 @@ real but it is *high-ceremony, low-reasoning orchestration on Opus*, not "trivia
 sessions" (43.4% of Phoenix Opus value carries no complexity signal). It also
 produced invariants 10 and 11. `U10` — the work-unit grain is
 `u10-next-anchor-v1`. `U4` — `message.usage` is on 80,037/80,037 messages.
+`U3a` — past rate-limit hits **are** on disk (29 records, but only **6 distinct
+episodes**), and client `2.1.245` carries a structured `quotaLimits` object.
+Qualified go: build the allowance fit against backfill, but **display
+share-of-period until live hits accumulate** — 6 points don't fit a ceiling.
 
 **Still open before the build commits:**
 
-- **U3a** — grep history for past rate-limit errors. Twenty minutes, and it may
-  save six weeks waiting for calibration data.
 - **W2 — hand-test the central hypothesis.** The tier matrix came from a
   screenshot of somebody else's report. Reproducing it 28/28 proves fidelity to
   the source, not that the source was right. W1 demoted the 25% figure to a
@@ -316,6 +318,30 @@ the **`/token-accounting`** skill
 ([`.claude/skills/token-accounting/SKILL.md`](.claude/skills/token-accounting/SKILL.md)).
 A `UserPromptSubmit` hook surfaces it whenever a prompt mentions cost, spend,
 tokens or usage; invoke it directly with `/token-accounting`.
+
+### 10b. Limit-hit records carry no tokens — and must not be filtered out
+
+U3a, answered 2026-09-09. A rate-limit hit lands in the transcript as an
+`assistant` record whose `message.model` is the literal string `<synthetic>`,
+whose `usage` is **all zeros**, and which carries `error: "rate_limit"` plus
+`apiErrorStatus: 429`. It is the only on-disk evidence of an allowance boundary.
+
+- **Never drop zero-`usage` or `<synthetic>` assistant records in `collect/`.**
+  A reasonable-looking "skip records with no tokens" filter deletes the entire
+  allowance-calibration signal. Invariant 2 already forbids this kind of
+  interpretation in the collect path; this is the concrete case.
+- **Dedupe limit hits by stated reset target, not by record.** One limit event
+  writes one record per *live* session — 29 records on disk are only **6
+  episodes**. This is a *different* key from invariant 10's `(message.id,
+  requestId)`; both rules apply, to different record classes.
+- **Prefer `quotaLimits` over the display text.** Client `2.1.245`+ carries
+  `{status, resetsAt (unix epoch), rateLimitType, …}`. Older clients carry the
+  reset only as a UI string — local wall-clock, tz-named, no date on the 5-hour
+  form. Parse text as fallback and record `version` on every row.
+- **`error` is an enum, not a boolean.** `server_error` (28) is at parity with
+  `rate_limit` (29); an error record is not a limit hit.
+- Limit accounting is **per-pool, not per-session** — 3 of 29 hits are
+  `isSidechain: true`, so subagents hit the ceiling too (invariant 4).
 
 ### 11. `attributionSkill` identifies routines; it cannot cost them
 
