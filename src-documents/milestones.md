@@ -55,10 +55,13 @@ answer how much Opus consumption went to sessions that look trivial
 
 Either answer is worth a day. This is also a free rehearsal for U4 and U8.
 
-**Result (2026-09-09).** Ran over 970 transcripts / 354 sessions; 180 sessions
-carry Opus consumption, 16.87 B Opus tokens, **$43,683 notional list value**.
-**Phoenix and its worktrees are 72.8% of that** ($31,825), so the result speaks
-to the operator's main workload, not a sample of side projects.
+**Result (2026-09-09).** Ran over 970 transcripts / 354 sessions. **37,781
+unique Opus API responses, $23,059 notional list value.** Phoenix and its
+worktrees are **73.4%** of that ($16,950), so the result speaks to the
+operator's main workload.
+
+> **Accounting note — the first two passes overstated cost by 91%.** See the
+> streaming-duplication finding below. Every figure here is deduplicated.
 
 **This answer was revised the same day. The first pass was wrong, and the way it
 was wrong is itself the most useful thing W1 produced.**
@@ -80,19 +83,20 @@ Neither defect touches *complexity*, which is the actual premise: the question
 is not "was the session short" but **"did this work need a frontier model."**
 Tool histograms cannot answer that.
 
-**Attempt 2 — work units scored on the work itself.** Re-cut Phoenix into 1,808
+**Attempt 2 — work units scored on the work itself.** Re-cut Phoenix into 1,823
 work units (a user turn plus the Opus work it triggered) and scored each on six
 signals read from the assistant's own output and tool use: ≥5 distinct files,
 ≥40 turns, debugging language, self-correction, subagent use, repeated test runs.
 
 | Complexity score | Units | Notional | Share of Phoenix Opus |
 |---|---|---|---|
-| 0 — no signal at all | 1,084 | $11,486 | **36.1%** |
-| 1 | 440 | $7,581 | 23.8% |
-| 2 | 170 | $6,115 | 19.2% |
-| 3+ | 114 | $6,643 | 20.9% |
+| 0 — no signal at all | 1,146 | $7,361 | **43.4%** |
+| 1 | 476 | $4,396 | 25.9% |
+| 2 | 133 | $2,542 | 15.0% |
+| 3+ | 68 | $2,651 | 15.6% |
 
-Median cost is **$5.99** at score 0 against **$40.14** at score 3+.
+Median cost is **$3.58** at score 0 against **$28.23** at score 3+. Score-0 work
+at Sonnet list rates is $1,472 — an upper-bound saving of **$5,889**.
 
 **Hand-read the twelve most expensive score-0 units** (the heuristic's worst
 case, where a false negative would show). They are consistently
@@ -100,14 +104,13 @@ case, where a false negative would show). They are consistently
 pushed to ECR, check three required checks went green, bump an image tag,
 transition a Jira ticket, wait on a nightly dispatch. Careful, stateful,
 consequential — and almost entirely `Bash` plus judgment about what to check
-next, not hard reasoning. Prompt text is no guide here either: `approved`
-triggered $247 of work, and bare acks/continues account for 11.9% of Phoenix
+next, not hard reasoning. Prompt text is no guide here either: bare acks and `continue`s account for ~12% of Phoenix
 value, so **complexity lives in the work, not the ask.**
 
 **Go/no-go:** **go, with a reframed headline.** The over-provisioning story
 exists, but it is not "trivial sessions" — it is
 **high-ceremony, low-reasoning orchestration work running on Opus.** Roughly
-36% of Phoenix Opus value carries no complexity signal, and the hand-read says
+43% of Phoenix Opus value carries no complexity signal, and the hand-read says
 that bucket is real rather than an artefact. That is A1, but A1 aimed at a
 target the PRD does not currently name.
 
@@ -129,27 +132,32 @@ subagent, unlike other routines in that repo. Attributing from the
 | | |
 |---|---|
 | Release runs observed | 10 |
-| Opus assistant turns | 2,133 |
-| Opus notional | **$2,814** — 8.8% of Phoenix Opus value |
-| Same tokens at Sonnet list | $563 |
-| Upper-bound saving | **$2,251 (80% of the routine, 7.1% of Phoenix Opus)** |
-| Per release run | $281 → $56 |
+| Unique Opus API responses | 1,156 |
+| Opus notional | **$1,511** — 8.9% of Phoenix Opus value |
+| Same tokens at Sonnet list | $302 |
+| Upper-bound saving | **$1,209 (80% of the routine, 7.1% of Phoenix Opus)** |
+| Per release run | $151 → $30 |
 
-Release-*shaped* work matched on content is wider still — 326 units, $6,768,
-21.2% of Phoenix Opus value — so `/release-prod` is the identifiable head of a
-larger orchestration tail.
+`/release-prod` is the identifiable head of a larger orchestration tail, and an
+instance of the dashboard category *agentic ops run on Opus*.
 
 **This is the whole product in one instance:** transcript analysis → identify a
 named offender → change the harness (delegate the routine to Sonnet, escalate to
-Opus when something is non-vanilla) → banked reduction. The tool's job is to find
-the next nine of these, not to produce a dashboard. **The deliverable is a ranked
-list of harness changes**, and M-numbering should reflect that.
+Opus when something is non-vanilla) → banked reduction.
+
+**The dashboard remains the deliverable — its job is to surface *categories*, not
+individual fixes.** `/release-prod` is one instance of a class ("agentic ops run
+on Opus"); the dashboard's output is that class and its siblings — testing run on
+Opus, agentic ops run on Opus — ranked by reclaimable headroom. The operator
+reads the category, then goes and finds the specific commands inside it. So the
+taxonomy's top level should be **the kind of work**, because that is the level at
+which a harness change gets made.
 
 **`attributionSkill` is the anchor, and it undercounts badly.** It tags a
 *contiguous run* of turns — the skill invocation itself (turns 642–652, 384–442,
 631–695 in three sessions) — then stops, while the work that follows carries most
-of the cost. Naive grouping by the field gives `/release-prod` **$339**; anchored
-attribution gives **$2,814**, a 20× undercount. So the field is reliable for
+of the cost. Naive grouping by the field gives `/release-prod` a small fraction of its
+anchored **$1,511** — an order-of-magnitude undercount. So the field is reliable for
 *identifying* which routine ran and useless for *costing* it. **Attributing spend
 from an anchor to the end of its arc is a real normalisation problem, and it is
 not in the TD.** That is a Phase 0 question the PRD does not currently ask.
@@ -340,11 +348,16 @@ Append-only. Date · question · answer · what it changed.
 | Date | ID | Answer | Consequence |
 |---|---|---|---|
 | 2026-09-09 | W1 | *(superseded same day — see the two rows below)* Session-shape triviality reads **0.03%**. | Withdrawn. The session was the wrong grain and tool histograms the wrong signal. |
-| 2026-09-09 | W1 | **36.1% of Phoenix Opus value ($11,486 of $31,825) is work units with no complexity signal.** Hand-read of the 12 most expensive: release orchestration and CI shepherding. | **Go — with a reframed headline.** A1 survives, but aimed at *high-ceremony low-reasoning orchestration*, not "trivial sessions". PRD must name this target. |
+| 2026-09-09 | W1 | *(figures superseded — see the accounting rows below; the finding stands)* **36.1% of Phoenix Opus value ($11,486 of $31,825) is work units with no complexity signal.** Hand-read of the 12 most expensive: release orchestration and CI shepherding. | **Go — with a reframed headline.** A1 survives, but aimed at *high-ceremony low-reasoning orchestration*, not "trivial sessions". PRD must name this target. |
 | 2026-09-09 | W1 | **Two defensible heuristics over the same data gave 0.03% and 36%.** Session shape and prompt text both mislead; `approved` triggered $247 of work. | **The taxonomy is the product.** R1 (gold set) is promoted to load-bearing — a wrong classifier yields a confidently wrong report. |
 | 2026-09-09 | W1 | Phoenix + worktrees are **72.8%** of all Opus notional value. | The result speaks to the main workload; no re-run against a different corpus needed. |
-| 2026-09-09 | W1 | **First offender found and fixable: Phoenix `/release-prod`.** 10 runs, $2,814 Opus, $563 at Sonnet — **$2,251 upper-bound saving, 7.1% of Phoenix Opus, from one unconfigured routine.** $281/run → $56/run. | **Proves the E2E loop end to end**: analysis → named offender → harness change → banked reduction. The deliverable is a ranked list of harness changes, not a dashboard. |
-| 2026-09-09 | W1 | `attributionSkill` tags only a contiguous run of turns, not the arc the routine drives. Naive grouping gives $339 vs $2,814 anchored — a **20× undercount**. | The field identifies routines but cannot cost them. **Anchor-to-arc attribution is a new Phase 0 question**, absent from the TD. |
+| 2026-09-09 | W1 | *(figures superseded — see below)* **First offender: Phoenix `/release-prod`.** 10 runs, $2,814 Opus, $563 at Sonnet — **$2,251 upper-bound saving, 7.1% of Phoenix Opus, from one unconfigured routine.** $281/run → $56/run. | **Proves the E2E loop end to end**: analysis → named offender → harness change → banked reduction. The deliverable is a ranked list of harness changes, not a dashboard. |
+| 2026-09-09 | W1 | `attributionSkill` tags only a contiguous run of turns, not the arc the routine drives. | The field identifies routines but cannot cost them. **Anchor-to-arc attribution is a new Phase 0 question**, absent from the TD. |
+| 2026-09-09 | **W1 accounting** | **Summing `usage` per JSONL record overstates cost by 91%** ($43,972 → $23,059). Claude Code writes **one assistant record per content block**, each repeating the *same* `usage` object; 34,314 of 72,083 Opus records were duplicates. | **New invariant.** Dedup by `(message.id, requestId)` before any arithmetic. This is the single easiest way for the tool to be confidently wrong. |
+| 2026-09-09 | **W1 accounting** | Within a duplicate group, **5,951 groups carry differing `output_tokens`** — a partial streaming snapshot first, the final count later. First-seen dedup *undercounts* output. | Take **max per field** across the group, not first and not last-by-file-order. |
+| 2026-09-09 | **W1 accounting** | Publicly known: ccusage #888, claude-code #5034, claude-devtools #74 all describe this; one report measures 51–55% of entries as duplicates. | Not a local quirk. Cite these in the TD so the dedup rule is never "simplified" away. |
+| 2026-09-09 | W1 | **Corrected:** all Opus **$23,059**; Phoenix **$16,950 (73.4%)**; score-0 work **$7,361 = 43.4%** of Phoenix Opus (was 36.1%); `/release-prod` **$1,511 → $302 at Sonnet, $1,209 saving**, $151→$30 per run. | **Every ratio survived; only the levels halved.** Duplication was not biased toward complex work, so the go-with-reframed-headline verdict is unchanged and slightly stronger. |
+| 2026-09-09 | W1 | The dashboard's role: surface **categories** (testing on Opus, agentic ops on Opus), not individual fixes. `/release-prod` is one instance of *agentic ops on Opus*. | **Taxonomy's top level should be kind-of-work**, since that is the level a harness change is made at. |
 | 2026-09-09 | W1 | **93.2% of Opus notional value is cache traffic** (54.7% read, 38.5% write); output is 6.8%. | **A4 is a strong second headline** on independent evidence. |
 | 2026-09-09 | W1 | The naive `no Edit` cut reads 11.6% but is a false positive — `Bash`-driven edits. | Any triviality rule must classify `Bash` command verbs, not just tool names. Feeds the taxonomy. |
 | 2026-09-09 | U4REF | `message.usage` present on **80,037/80,037** assistant messages; 0 bad lines in 970 files. | Source A token capture is sound. `version`/`cwd`/`gitBranch`/`isSidechain` also present — invariant 7 drift-bisect is viable. |
@@ -374,7 +387,7 @@ scope until it lands.
 **W1 produced a fourth action, and it may outrank the first three.** Configure
 Phoenix `/release-prod` to delegate to Sonnet with an Opus escalation path for
 non-vanilla runs. It is a harness edit in another repo, needs none of this tool,
-and banks an estimated $2,251 upper bound immediately. It is also the honest test
+and banks an estimated $1,209 upper bound immediately. It is also the honest test
 of R2: record the realised saving on the next release run and compare it to that
 estimate, before the tool exists to make the same claim at scale.
 
