@@ -480,11 +480,16 @@ a follow-on. Prior §5 rows referring to "M1" as reconciliation mean M1′.
 - The golden-file fixtures TD §11 needs are collected, scrubbed and obviously
   synthetic (invariant 6).
 
-**Deferred, still open, no longer gating:** `U1` (#6), `U3` (#8), `U3a` (#5),
-`U5`, `U6`, `U7`. Each is about live capture or a second provider, which a
-backfill-only slice doesn't need — `U7` is outright moot for it, there being no
-OTel in the loop. They return as M1′ and M2′. **The deferral is why M1 cannot
-claim headroom.**
+**Deferred, still open, no longer gating:** `U1` (#6), `U3` (#8), `U5`, `U6`,
+`U7`. Each is about live capture or a second provider, which a backfill-only
+slice doesn't need — `U7` is outright moot for it, there being no OTel in the
+loop. They return as M1′ and M2′. **The deferral is why M1 cannot claim
+headroom.**
+
+`U3a` (#5) was in this list; it is **answered 2026-09-09** and its answer does
+not change the deferral. Limit hits *are* on disk, but 29 records are only **6
+episodes** — enough to build the allowance model against, not enough to fit a
+ceiling. So `U3` still gates headroom, and **M1 still cannot claim it.**
 
 **Still a gate, for a narrower reason:** `W2` (#4) gates *committing to the
 build*, so it runs before M1 — see §6. W1 demoted W2's 25% figure to a secondary
