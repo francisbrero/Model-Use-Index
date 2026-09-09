@@ -33,7 +33,7 @@ Statuses: `open` · `in progress` · `answered` · `moot`
 Two experiments. Neither produces code you keep. Both can invalidate weeks of
 work, which is the point.
 
-### W1 — The one-day spike *(status: **answered 2026-09-09** — see §5)*
+### W1 — The one-day spike *(status: **answered 2026-09-09, revised same day** — see §5)*
 
 A throwaway script over your **existing** transcript history. Not a prototype —
 delete it afterwards.
@@ -57,53 +57,77 @@ Either answer is worth a day. This is also a free rehearsal for U4 and U8.
 
 **Result (2026-09-09).** Ran over 970 transcripts / 354 sessions; 180 sessions
 carry Opus consumption, 16.87 B Opus tokens, **$43,683 notional list value**.
+**Phoenix and its worktrees are 72.8% of that** ($31,825), so the result speaks
+to the operator's main workload, not a sample of side projects.
 
-| Definition of "trivial" | Sessions | Share of Opus notional value |
-|---|---|---|
-| No mutation of any kind (incl. `Bash` writes) | 8 | **0.03%** |
-| ≤ 25 assistant turns, any work | 27 | 0.2% |
-| ≤ 50 assistant turns, any work | 40 | 0.6% |
-| ≤ 5 mutations total | 28 | 0.2% |
-| `Edit`-tool-free only (naive — **wrong**, see below) | 51 | 11.6% |
+**This answer was revised the same day. The first pass was wrong, and the way it
+was wrong is itself the most useful thing W1 produced.**
 
-**The naive `no Edit` cut is a false positive and must not be quoted.** Under
-this repo's own bypass-mode instruction, agents edit files with `sed`/heredocs
-through `Bash`, so an `Edit`-free session is often a heavy mutating session. The
-11.6% bucket is dominated by sessions like *1,567 turns · 798 `Bash` · 412
-sidechain · $1,627* — the opposite of trivial. Counting `Bash` write verbs as
-mutations collapses that 11.6% to **0.03%**.
+**Attempt 1 — session shape (rejected).** Grouping by session and scoring
+triviality from turn counts and tool histograms gave **0.03%**. Two independent
+defects:
 
-**This is the ~3% branch, and then some.** 93.6% of Opus notional value sits in
-sessions over 250 assistant turns. There is no meaningful population of trivial
-Opus sessions to reclaim; the over-provisioning story does not exist at this
-operator's usage profile.
+1. *Wrong signal.* An `Edit`-free session looked trivial, but under bypass-mode
+   instructions agents edit via `sed`/heredocs through `Bash`. The naive cut read
+   11.6% and was dominated by heavy mutating sessions — one was 1,567 turns ·
+   798 `Bash` · $1,627. Counting `Bash` write verbs collapsed it to 0.03%.
+2. *Wrong grain.* **The session is not the unit of work.** A 400-turn Phoenix
+   session is a mix of hard debugging and mechanical release-shepherding.
+   Scoring the whole session as one thing averages the interesting variance
+   away, which is how attempt 1 reached "there is nothing here."
 
-**Where the value actually is — context, not model tier:**
+Neither defect touches *complexity*, which is the actual premise: the question
+is not "was the session short" but **"did this work need a frontier model."**
+Tool histograms cannot answer that.
 
-| Component | Opus tokens | Notional | Share |
+**Attempt 2 — work units scored on the work itself.** Re-cut Phoenix into 1,808
+work units (a user turn plus the Opus work it triggered) and scored each on six
+signals read from the assistant's own output and tool use: ≥5 distinct files,
+≥40 turns, debugging language, self-correction, subagent use, repeated test runs.
+
+| Complexity score | Units | Notional | Share of Phoenix Opus |
 |---|---|---|---|
-| cache read | 15.93 B | $23,895 | **54.7%** |
-| cache write | 897 M | $16,820 | 38.5% |
-| output | 39.5 M | $2,964 | 6.8% |
-| input | 297 K | $4 | 0.0% |
+| 0 — no signal at all | 1,084 | $11,486 | **36.1%** |
+| 1 | 440 | $7,581 | 23.8% |
+| 2 | 170 | $6,115 | 19.2% |
+| 3+ | 114 | $6,643 | 20.9% |
 
-**93.2% of Opus spend is cache traffic, not generation.** That is A4 (context
-efficiency), not A1 (over-provisioning).
+Median cost is **$5.99** at score 0 against **$40.14** at score 3+.
 
-**Go/no-go:** **No-go on "over-provisioning as the headline."** A1 stays as a
-secondary analysis; **A4 becomes the headline**, with A2 (under-provisioning) the
-second candidate pending U3a. The PRD's emphasis needs reshaping before Phase 0
-scope is fixed.
+**Hand-read the twelve most expensive score-0 units** (the heuristic's worst
+case, where a false negative would show). They are consistently
+**release orchestration and CI shepherding**: confirm a SHA, verify images
+pushed to ECR, check three required checks went green, bump an image tag,
+transition a Jira ticket, wait on a nightly dispatch. Careful, stateful,
+consequential — and almost entirely `Bash` plus judgment about what to check
+next, not hard reasoning. Prompt text is no guide here either: `approved`
+triggered $247 of work, and bare acks/continues account for 11.9% of Phoenix
+value, so **complexity lives in the work, not the ask.**
+
+**Go/no-go:** **go, with a reframed headline.** The over-provisioning story
+exists, but it is not "trivial sessions" — it is
+**high-ceremony, low-reasoning orchestration work running on Opus.** Roughly
+36% of Phoenix Opus value carries no complexity signal, and the hand-read says
+that bucket is real rather than an artefact. That is A1, but A1 aimed at a
+target the PRD does not currently name.
+
+**A4 remains a strong second, on separate evidence.** 93.2% of Opus spend is
+cache traffic (54.7% read, 38.5% write) against 6.8% output, so context
+efficiency is a large independent lever regardless of how tiering lands.
+
+**The methodological finding, which outranks both.** Two defensible heuristics
+over the same data gave 0.03% and 36%. **The taxonomy is the product; the
+plumbing is not.** A classifier that scores session shape or prompt text will
+confidently produce a wrong report. This raises the stakes on the gold set (R1)
+sharply — it is now the load-bearing deliverable, not a tedious calendar day.
 
 **Incidental answers.** U4REF: `message.usage` was present on **80,037 / 80,037**
-assistant messages — 0 missing, 0 unparseable lines across 970 files. The field
-carries `cache_creation_input_tokens`, `cache_read_input_tokens`,
-`service_tier`, and a nested `cache_creation` 1h/5m split. Records also carry
-`version`, `cwd`, `gitBranch`, `isSidechain` and `requestId`, so invariant 7's
-drift-bisect-by-version plan is viable. U8 rehearsal: session grouping by
-`sessionId` worked, but **`isSidechain` turns are billed into the parent session**
-— up to 2,102 sidechain turns in one session — so subagent attribution is a real
-unknown, not a formality.
+assistant messages — 0 missing, 0 unparseable lines across 970 files. Records
+also carry `version`, `cwd`, `gitBranch`, `isSidechain` and `requestId`, so
+invariant 7's drift-bisect plan is viable. U8 rehearsal: `sessionId` grouping
+works, but **sidechain turns bill into the parent session** — up to 2,102 in one
+session — so subagent attribution is a real unknown. A `subagents` pseudo-project
+holds $3,844 across 573 sessions, separate from any repo directory.
 
 The spike script was deleted, per the issue.
 
@@ -237,12 +261,20 @@ thing in the schedule, protect M3 → M4 → M5.
 
 Not unknowns — these don't get resolved, only managed.
 
-### R1 · The gold-set day gets skipped `active`
+### R1 · The gold-set day gets skipped `active` · **escalated 2026-09-09 (W1)**
 A full day of tedious hand-labelling with no visible output. It will feel
 skippable every single time you look at it. It is the difference between a report
 you act on and a report you quietly second-guess.
+**W1 escalated this from a discipline risk to the project's central risk.** Two
+defensible heuristics over the same Phoenix data disagreed by three orders of
+magnitude — 0.03% by session shape, 36.1% by work-unit complexity. Both looked
+reasonable while being written. The classifier is therefore not a component that
+supports the report; **it is the report**, and there is no way to tell a good one
+from a bad one without hand-labelled ground truth.
 **Mitigation:** schedule it as a named day in the calendar, not as a task inside
-Phase 2 where it can be absorbed.
+Phase 2 where it can be absorbed. Seed it from W1's hand-read of the twelve most
+expensive score-0 Phoenix units — orchestration/CI-shepherding work is the label
+boundary that matters most and the one most easily got wrong.
 
 ### R2 · Estimates over-promise and credibility rots `active`
 Headroom reclaimable is an upper bound by construction — it assumes the cheaper
@@ -274,9 +306,12 @@ Append-only. Date · question · answer · what it changed.
 
 | Date | ID | Answer | Consequence |
 |---|---|---|---|
-| 2026-09-09 | W1 | Trivial-Opus share is **0.03%** of $43,683 notional (8 of 180 sessions). 93.6% of value is in 250+ turn sessions. | **No-go on over-provisioning as the headline.** A1 demoted to secondary. |
-| 2026-09-09 | W1 | **93.2% of Opus notional value is cache traffic** (54.7% read, 38.5% write); output is 6.8%. | **A4 (context efficiency) becomes the headline analysis.** Reshape PRD emphasis before fixing Phase 0 scope. |
-| 2026-09-09 | W1 | The naive `no Edit` cut reads 11.6% but is a false positive — `Bash`-driven edits. | Any future triviality rule must classify `Bash` command verbs, not just tool names. Feeds the taxonomy. |
+| 2026-09-09 | W1 | *(superseded same day — see the two rows below)* Session-shape triviality reads **0.03%**. | Withdrawn. The session was the wrong grain and tool histograms the wrong signal. |
+| 2026-09-09 | W1 | **36.1% of Phoenix Opus value ($11,486 of $31,825) is work units with no complexity signal.** Hand-read of the 12 most expensive: release orchestration and CI shepherding. | **Go — with a reframed headline.** A1 survives, but aimed at *high-ceremony low-reasoning orchestration*, not "trivial sessions". PRD must name this target. |
+| 2026-09-09 | W1 | **Two defensible heuristics over the same data gave 0.03% and 36%.** Session shape and prompt text both mislead; `approved` triggered $247 of work. | **The taxonomy is the product.** R1 (gold set) is promoted to load-bearing — a wrong classifier yields a confidently wrong report. |
+| 2026-09-09 | W1 | Phoenix + worktrees are **72.8%** of all Opus notional value. | The result speaks to the main workload; no re-run against a different corpus needed. |
+| 2026-09-09 | W1 | **93.2% of Opus notional value is cache traffic** (54.7% read, 38.5% write); output is 6.8%. | **A4 is a strong second headline** on independent evidence. |
+| 2026-09-09 | W1 | The naive `no Edit` cut reads 11.6% but is a false positive — `Bash`-driven edits. | Any triviality rule must classify `Bash` command verbs, not just tool names. Feeds the taxonomy. |
 | 2026-09-09 | U4REF | `message.usage` present on **80,037/80,037** assistant messages; 0 bad lines in 970 files. | Source A token capture is sound. `version`/`cwd`/`gitBranch`/`isSidechain` also present — invariant 7 drift-bisect is viable. |
 | 2026-09-09 | U8 (rehearsal) | `sessionId` grouping works, but sidechain turns bill into the parent session (one session: 2,102 sidechain turns). | Subagent attribution is a genuine open unknown; don't assume per-agent split comes free. |
 
@@ -284,8 +319,9 @@ Append-only. Date · question · answer · what it changed.
 
 ## 6. Next three actions
 
-1. ~~**W1** — the one-day spike.~~ **Done 2026-09-09: 0.03%. No-go on the
-   over-provisioning headline; A4 (context efficiency) takes its place.** See §1.
+1. ~~**W1** — the one-day spike.~~ **Done 2026-09-09: go, reframed. 36.1% of
+   Phoenix Opus value shows no complexity signal — release orchestration and CI
+   shepherding on Opus. A4 is a strong second at 93.2% cache traffic.** See §1.
 2. **W2** — hand-test the `Agentic / Medium` hypothesis on Haiku. W1 lowered the
    stakes here — the 25% misallocation figure it defends is now a secondary
    analysis, not the headline — but it is still the cheapest way to find out
@@ -295,5 +331,11 @@ Append-only. Date · question · answer · what it changed.
    this**: with A1 demoted, A2 (under-provisioning) is a leading candidate for
    the second headline, and U3a is its gating evidence.
 
-Everything else waits on these three. **A PRD emphasis pass (A4 to the front)
-is now queued behind W2** — do not fix Phase 0 scope until it lands.
+Everything else waits on these three. **A PRD emphasis pass is now queued behind
+W2** — A1 must be re-aimed at high-ceremony low-reasoning orchestration (not
+"trivial sessions"), and A4 named as the second headline. Do not fix Phase 0
+scope until it lands.
+
+**W1 also promoted R1.** The gold set is no longer a tedious day that risks being
+skipped — it is the deliverable the whole report's credibility rests on, because
+W1 demonstrated two defensible heuristics disagreeing by 1000× on the same data.
