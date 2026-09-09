@@ -13,7 +13,7 @@ an aspiration. It's the reason classification is a nightly batch job.
 
 ## Rules for hook code
 
-**A hook must not be Python** (TRD §4). Interpreter startup is 50–100 ms — a
+**A hook must not be Python** (TD §4). Interpreter startup is 50–100 ms — a
 measurable tax on every tool call. The hook is one line of `sh` that spools its
 stdin payload and exits, at roughly 1 ms:
 

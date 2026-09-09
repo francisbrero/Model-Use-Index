@@ -41,13 +41,13 @@ can exit non-zero, block, retry, sleep, take a lock, or exceed 50 ms. Any
 classification on the interactive path. A file watcher that can hold a lock on a
 transcript Claude Code is writing.
 
-**2b. Erosion of the capture/interpret split** (invariant 2, TRD §2.1). Any
+**2b. Erosion of the capture/interpret split** (invariant 2, TD §2.1). Any
 parsing, Pydantic model, validation, or field extraction added under `collect/`
 — the collector must extract only `session_id` + content hash so a schema change
 cannot break it. Also flag anything in the collect path that imports or reaches
 for Ollama.
 
-**2c. Hook implementation** (invariant 1, TRD §4). A hook written in Python
+**2c. Hook implementation** (invariant 1, TD §4). A hook written in Python
 (50–100 ms interpreter startup). A hook appending to a *shared* file rather than
 writing one file per invocation into the spool dir — payloads can exceed
 `PIPE_BUF` and interleave, corrupting records invisibly.
@@ -60,6 +60,10 @@ writing one file per invocation into the spool dir — payloads can exceed
   classic double-count
 - Any `SUM` or addition across `allowance_pool` (invariant 4)
 - A dollar figure not labelled *notional list value* (invariant 5)
+- **A reclaimable-headroom figure presented as a point estimate** (invariant 8b,
+  R2). It is an upper bound by construction — it assumes the cheaper model
+  finishes in the same tokens, and it won't. Flag any UI string, docstring or
+  return value that drops the "upper bound" framing.
 - A derived number that can't be recomputed from raw + versioned config
 
 **4. Defensive parsing** (invariant 7). Pydantic models missing
@@ -67,13 +71,13 @@ writing one file per invocation into the spool dir — payloads can exceed
 `ValidationError`. Validation failures not counted toward the drift canary.
 Missing `cc_version` on a record.
 
-**4b. Classifier correctness** (invariant 7b, TRD §6). A classifier call passing
+**4b. Classifier correctness** (invariant 7b, TD §6). A classifier call passing
 `format=schema` **without restating the schema and enum values in the prompt
 text** — Ollama never shows the model the schema, so this yields structurally
 valid JSON containing semantic nonsense. Also: classifier concurrency > 1, a
 missing `temperature: 0`, or an LLM framework where `httpx` was specified.
 
-**4c. Rejected-alternative creep** (invariant 8, TRD §1). An ORM, Alembic,
+**4c. Rejected-alternative creep** (invariant 8, TD §1). An ORM, Alembic,
 Postgres, Streamlit, React/Next.js, a bundler or npm dependency, LangChain,
 `cron` instead of `launchd`, or DuckDB/`sqlite-vec` adopted before its stated
 trigger. Each is on the decision register as explicitly rejected — flag it and

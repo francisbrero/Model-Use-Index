@@ -6,7 +6,8 @@ before anything is built on them (PRD §14 Phase 0).
 **Exit criteria:** every question below answered with a sample record attached,
 plus a go/no-go on the allowance model vs. direct read.
 
-**Status:** not started.
+**Status:** not started — and **not the current step.** W1 and W2 (MS §1) come
+first; they can invalidate the build before Phase 0 is worth doing.
 
 > Do not commit real sample records here — `phase0/**` is gitignored except this
 > file and the README. Paste **scrubbed, obviously synthetic** excerpts only, and
@@ -125,7 +126,7 @@ Candidates: `SubagentStart` / `SubagentStop`, `PreModelSwitch` /
 
 ---
 
-## TRD open implementation questions (§15)
+## TD open implementation questions (§15)
 
 Distinct from Q1–Q6 above: those are about the product's unknowns, these about
 the build. Phase 0 can cheaply settle the first two while it has the machine
@@ -140,5 +141,5 @@ instrumented; the rest are decided when real data volumes are known.
 | I5 | Compression threshold and format for aged `raw_event` payloads | `zstd` is ~30% better than stdlib `zlib` but adds a dependency; probably not worth it. | Once real volumes are known |
 
 **Note:** Phase 0's sample records are also the seed of the golden-file parser
-fixtures (TRD §11) — the schema-drift regression suite. Scrub them, then keep
+fixtures (TD §11) — the schema-drift regression suite. Scrub them, then keep
 them under `tests/fixtures/` rather than discarding them with the scratch files.
