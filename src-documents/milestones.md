@@ -257,10 +257,20 @@ attributed total by 5%. Capping at +50 turns costs 21%, so **do not cap tightly.
 Merging same-skill re-invocations into one arc changes nothing (no `/release-prod`
 run is adjacent to another), so re-invocation is treated as a boundary.
 
-**Regression target for `normalize/work_unit.py`:** `/release-prod` = **$1,447
-notional list value over 10 runs, $145/run** — W1's $1,511 within **−4.3%**.
-Adopt **$1,511 ± 5%** as the tolerance. Per-run spread is wide and genuinely so:
-min $28, median $138, max $271, stdev $85.
+**Regression target for `normalize/work_unit.py`:** assert on **$1,447 ± 5%**
+(`[$1,375, $1,519]`) — the rule's *own* output over 10 runs, $145/run.
+W1's **$1,511** is the independent hand-read validation reference, not the test's
+centre. Two distinct numbers, deliberately:
+
+- The test must assert a figure the rule can recompute from `raw_event` alone
+  (invariant 2b). $1,447 is that figure; $1,511 came partly from human reading.
+- **Centring the test on $1,511 ± 5% would be self-contradictory.** That interval
+  is `[$1,435, $1,587]`, which *excludes* the $1,429 produced by the +150-turn
+  cap this same entry calls acceptable. Centring on $1,447 contains both $1,429
+  and $1,511, so the tolerance and the sensitivity analysis agree.
+
+Per-run spread is wide and genuinely so: min $28, median $138, max $271,
+stdev $85 — so a per-run assertion would be far looser than the 10-run total.
 
 **Unattributable remainder — 7.4% of Opus notional list value ($1,731).** 6.0%
 ($1,416, 48 sessions) is sessions with no anchor at all; 1.3% ($315) is work
@@ -274,19 +284,18 @@ still on the final turn, so a routine continuing into a later session is
 plausible; nothing joins them today. Left open deliberately — it is a Tier 2
 concern for `work_unit`, and the 7.4% remainder bounds its size.
 
-**Implementation note.** `attributionSkill` appears on **`assistant` records
-only** (17,180 of them; no `user`, `system`, `attachment` or `mode` record ever
-carries it), so a normaliser that reads assistant records for `usage` sees every
-anchor for free and needs no second pass. The tag also repeats across a turn's
-content blocks, so anchor runs must be computed *after* invariant-10 dedup — the
-383 runs above collapse from 17,180 tagged records.
+**Implementation notes.** `attributionSkill` appears on **`assistant` records
+only** (17,180; never on `user`/`system`/`attachment`/`mode`), so a normaliser
+reading assistant records for `usage` sees every anchor for free. The tag repeats
+per content block, so anchor runs must be derived *after* invariant-10 dedup —
+the 383 runs above collapse from those 17,180 records. Turn order must be
+`(timestamp, file position)`: "the next anchor" is only meaningful in time.
 
-Fixture: `tests/fixtures/anchor_shapes/` — five synthetic sessions, one per
-observed shape, with the dedup and streaming-snapshot traps built in. The
-reference implementation and its tests are in `tests/test_anchor_arc.py`; it
-lives there rather than under `src/mui/` because nothing is built yet (MS §1),
-and `normalize/work_unit.py` should import it and drop the local copy when it
-lands.
+Fixture `tests/fixtures/anchor_shapes/` + reference implementation
+`tests/test_anchor_arc.py` (43 tests). It implements the **rejected** candidates
+alongside the chosen rule, so the double-count comparison above is executable
+rather than merely asserted. It sits in `tests/` because nothing is built yet
+(MS §1); `normalize/work_unit.py` should import it and drop the local copy.
 
 #### U1 · Do Codex session logs carry token counts? `open` · [#6](https://github.com/francisbrero/Model-Use-Index/issues/6)
 - **Cost to resolve:** ~1 hour. Run a Codex subagent; locate and inspect its records.
@@ -455,7 +464,7 @@ Append-only. Date · question · answer · what it changed.
 | 2026-09-09 | W1 | The naive `no Edit` cut reads 11.6% but is a false positive — `Bash`-driven edits. | Any triviality rule must classify `Bash` command verbs, not just tool names. Feeds the taxonomy. |
 | 2026-09-09 | U4REF | `message.usage` present on **80,037/80,037** assistant messages; 0 bad lines in 970 files. | Source A token capture is sound. `version`/`cwd`/`gitBranch`/`isSidechain` also present — invariant 7 drift-bisect is viable. |
 | 2026-09-09 | U8 (rehearsal) | `sessionId` grouping works, but sidechain turns bill into the parent session (one session: 2,102 sidechain turns). | Subagent attribution is a genuine open unknown; don't assume per-agent split comes free. |
-| 2026-09-09 | **U10** | **Bounding rule: anchor → next anchor of any skill, else session end** (`u10-next-anchor-v1`). Reproduces `/release-prod` at **$1,447 notional list value over 10 runs** — W1's hand-read $1,511 within −4.3%. Tolerance **±5%**. | **`work_unit` has a grain.** The first E2E slice is unblocked; the rule goes into `normalize/work_unit.py` with $1,511 ± 5% as its regression test. |
+| 2026-09-09 | **U10** | **Bounding rule: anchor → next anchor of any skill, else session end** (`u10-next-anchor-v1`). Reproduces `/release-prod` at **$1,447 notional list value over 10 runs** — W1's hand-read $1,511 within −4.3%. | **`work_unit` has a grain.** The first E2E slice is unblocked; the rule goes into `normalize/work_unit.py` asserting **$1,447 ± 5%** — the rule's own reproducible output (invariant 2b), with $1,511 kept as the separate hand-read reference. Centring on $1,511 ± 5% would exclude the $1,429 the accepted tail-cap variant produces. |
 | 2026-09-09 | **U10** | **W1's own baseline was wrong at scale.** *Anchor → session end* double-counts **$13,118 of Opus notional value**, because **110 of 137 anchored sessions carry more than one anchor** (median 2, max 9). Re-scored, it gives `/release-prod` $314, not $1,511. | W1's figure was right only because the release sessions were read by hand. **Overlap is the metric that separates these rules**, and it must be asserted as zero in the normaliser's tests. |
 | 2026-09-09 | **U10** | **Idle-gap and `cwd`/`gitBranch` thresholds both fail.** Single `/release-prod` arcs legitimately contain gaps of 529, 699, 1,730 and **8,605 minutes** (waiting on CI, ArgoCD, review) and move across up to 47 turns of other branches. Idle-30 recovers 29% of target; context-change 69%. | **Do not add either as a boundary.** They cut the arc exactly where the routine is waiting or switching worktrees — both normal events *inside* an arc. Recorded so it isn't re-proposed. |
 | 2026-09-09 | **U10** | Known error mode: the rule is **generous at the tail** — the last anchor absorbs to session end. Capping that arc at +150 turns moves `/release-prod` 1.2%; at +50 turns, 21%. | Accepted as-is; **don't cap tightly.** The generosity is bounded and the alternative loses more than it fixes. |
@@ -484,7 +493,7 @@ Append-only. Date · question · answer · what it changed.
 **`U10` is resolved out of band** ([#13](https://github.com/francisbrero/Model-Use-Index/issues/13),
 answered 2026-09-09) — it was the only unknown blocking the first E2E slice, and
 the slice's step-4 acceptance test now has a rule and a numeric target
-(`/release-prod` = $1,511 ± 5% notional list value). That unblocks the slice; it
+(`/release-prod` = $1,447 ± 5% notional list value, against W1's $1,511 hand-read). That unblocks the slice; it
 does not promote it ahead of W2 and U3a, which still gate committing to the
 build.
 
