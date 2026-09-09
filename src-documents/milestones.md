@@ -121,6 +121,39 @@ plumbing is not.** A classifier that scores session shape or prompt text will
 confidently produce a wrong report. This raises the stakes on the gold set (R1)
 sharply — it is now the load-bearing deliverable, not a tedious calendar day.
 
+**W1 closed the loop by hand on the first offender.** Phoenix has a
+`/release-prod` slash command that was never configured to delegate to a cheaper
+subagent, unlike other routines in that repo. Attributing from the
+`attributionSkill` anchor to end of session:
+
+| | |
+|---|---|
+| Release runs observed | 10 |
+| Opus assistant turns | 2,133 |
+| Opus notional | **$2,814** — 8.8% of Phoenix Opus value |
+| Same tokens at Sonnet list | $563 |
+| Upper-bound saving | **$2,251 (80% of the routine, 7.1% of Phoenix Opus)** |
+| Per release run | $281 → $56 |
+
+Release-*shaped* work matched on content is wider still — 326 units, $6,768,
+21.2% of Phoenix Opus value — so `/release-prod` is the identifiable head of a
+larger orchestration tail.
+
+**This is the whole product in one instance:** transcript analysis → identify a
+named offender → change the harness (delegate the routine to Sonnet, escalate to
+Opus when something is non-vanilla) → banked reduction. The tool's job is to find
+the next nine of these, not to produce a dashboard. **The deliverable is a ranked
+list of harness changes**, and M-numbering should reflect that.
+
+**`attributionSkill` is the anchor, and it undercounts badly.** It tags a
+*contiguous run* of turns — the skill invocation itself (turns 642–652, 384–442,
+631–695 in three sessions) — then stops, while the work that follows carries most
+of the cost. Naive grouping by the field gives `/release-prod` **$339**; anchored
+attribution gives **$2,814**, a 20× undercount. So the field is reliable for
+*identifying* which routine ran and useless for *costing* it. **Attributing spend
+from an anchor to the end of its arc is a real normalisation problem, and it is
+not in the TD.** That is a Phase 0 question the PRD does not currently ask.
+
 **Incidental answers.** U4REF: `message.usage` was present on **80,037 / 80,037**
 assistant messages — 0 missing, 0 unparseable lines across 970 files. Records
 also carry `version`, `cwd`, `gitBranch`, `isSidechain` and `requestId`, so
@@ -310,6 +343,8 @@ Append-only. Date · question · answer · what it changed.
 | 2026-09-09 | W1 | **36.1% of Phoenix Opus value ($11,486 of $31,825) is work units with no complexity signal.** Hand-read of the 12 most expensive: release orchestration and CI shepherding. | **Go — with a reframed headline.** A1 survives, but aimed at *high-ceremony low-reasoning orchestration*, not "trivial sessions". PRD must name this target. |
 | 2026-09-09 | W1 | **Two defensible heuristics over the same data gave 0.03% and 36%.** Session shape and prompt text both mislead; `approved` triggered $247 of work. | **The taxonomy is the product.** R1 (gold set) is promoted to load-bearing — a wrong classifier yields a confidently wrong report. |
 | 2026-09-09 | W1 | Phoenix + worktrees are **72.8%** of all Opus notional value. | The result speaks to the main workload; no re-run against a different corpus needed. |
+| 2026-09-09 | W1 | **First offender found and fixable: Phoenix `/release-prod`.** 10 runs, $2,814 Opus, $563 at Sonnet — **$2,251 upper-bound saving, 7.1% of Phoenix Opus, from one unconfigured routine.** $281/run → $56/run. | **Proves the E2E loop end to end**: analysis → named offender → harness change → banked reduction. The deliverable is a ranked list of harness changes, not a dashboard. |
+| 2026-09-09 | W1 | `attributionSkill` tags only a contiguous run of turns, not the arc the routine drives. Naive grouping gives $339 vs $2,814 anchored — a **20× undercount**. | The field identifies routines but cannot cost them. **Anchor-to-arc attribution is a new Phase 0 question**, absent from the TD. |
 | 2026-09-09 | W1 | **93.2% of Opus notional value is cache traffic** (54.7% read, 38.5% write); output is 6.8%. | **A4 is a strong second headline** on independent evidence. |
 | 2026-09-09 | W1 | The naive `no Edit` cut reads 11.6% but is a false positive — `Bash`-driven edits. | Any triviality rule must classify `Bash` command verbs, not just tool names. Feeds the taxonomy. |
 | 2026-09-09 | U4REF | `message.usage` present on **80,037/80,037** assistant messages; 0 bad lines in 970 files. | Source A token capture is sound. `version`/`cwd`/`gitBranch`/`isSidechain` also present — invariant 7 drift-bisect is viable. |
@@ -335,6 +370,13 @@ Everything else waits on these three. **A PRD emphasis pass is now queued behind
 W2** — A1 must be re-aimed at high-ceremony low-reasoning orchestration (not
 "trivial sessions"), and A4 named as the second headline. Do not fix Phase 0
 scope until it lands.
+
+**W1 produced a fourth action, and it may outrank the first three.** Configure
+Phoenix `/release-prod` to delegate to Sonnet with an Opus escalation path for
+non-vanilla runs. It is a harness edit in another repo, needs none of this tool,
+and banks an estimated $2,251 upper bound immediately. It is also the honest test
+of R2: record the realised saving on the next release run and compare it to that
+estimate, before the tool exists to make the same claim at scale.
 
 **W1 also promoted R1.** The gold set is no longer a tedious day that risks being
 skipped — it is the deliverable the whole report's credibility rests on, because
