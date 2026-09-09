@@ -41,33 +41,51 @@ rejected and why. Read that table before proposing any stack change; most
 target.** Its §5 answer log is append-only. When an unknown gets resolved, fill
 the answer inline and append a dated row; don't restructure the document.
 
-**Status: week one — before committing to the build at all** (MS §1). Nothing is
-built yet, and Phase 0 is *not* the current step.
+**Status: week one — still before committing to the build** (MS §1). Nothing is
+built yet. **`milestones.md` §3/§6 is the live sequencing authority — read it
+before starting any work, and if an issue disagrees with it, the register wins.**
 
-Two experiments come first. **Neither produces code you keep**, and both can
-invalidate weeks of work, which is the point:
+**Answered so far.** W1 — go, with a **reframed headline**: over-provisioning is
+real but it is *high-ceremony, low-reasoning orchestration on Opus*, not "trivial
+sessions" (43.4% of Phoenix Opus value carries no complexity signal). It also
+produced invariants 10 and 11. `U10` — the work-unit grain is
+`u10-next-anchor-v1`. `U4` — `message.usage` is on 80,037/80,037 messages.
+`U3a` — past rate-limit hits **are** on disk (29 records, but only **6 distinct
+episodes**), and client `2.1.245` carries a structured `quotaLimits` object.
+Qualified go: build the allowance fit against backfill, but **display
+share-of-period until live hits accumulate** — 6 points don't fit a ceiling.
 
-- **W1 — the one-day spike.** A throwaway script over existing transcript
-  history: how much Opus consumption went to sessions that look trivial (few
-  turns, no `Edit`, mostly `Read`/`Grep`/`Glob`)? That single number is the whole
-  thesis in miniature. ~20%+ → real project, build it properly. ~3% → the
-  over-provisioning story isn't there, and the emphasis should shift to context
-  efficiency (A4) or under-provisioning (A2) *before* building.
+**Still open before the build commits:**
+
 - **W2 — hand-test the central hypothesis.** The tier matrix came from a
   screenshot of somebody else's report. Reproducing it 28/28 proves fidelity to
-  the source, not that the source was right. The headline 25% figure rests
-  entirely on one cell — `Agentic / Medium` expects `small`. Re-run five or six
-  such tasks on Haiku by hand. If that cell is really `mid`, the figure
-  evaporates.
+  the source, not that the source was right. W1 demoted the 25% figure to a
+  secondary analysis, but the matrix stays load-bearing for *verdicts*. Re-run
+  five or six `Agentic / Medium` tasks on Haiku by hand.
+- **The PRD emphasis pass** — re-aim A1, name A4 second, set the taxonomy's top
+  level to *kind of work*. Queued behind W2.
 
-**If asked to start building, say this first.** The next three actions are W1,
-W2, then U3a (grep history for past rate-limit errors — twenty minutes, and it
-may save six weeks waiting for calibration data). Everything else waits on those
-three. Writing Phase 1 code now is working ahead of the evidence.
+**The plan is now: get to a working end-to-end slice, then improve it** — not
+resolve every unknown first. M1 (#14) is backfill → dedup → work units → crude
+classifier → verdicts → Datasette, with **no hooks, OTel, `launchd`, web app,
+Codex or allowance model**. Six of eight unknowns were deferred to *after*
+something works; only `U10` ever blocked it.
 
-After W1/W2: Phase 0 is pure investigation to replace six assumptions with facts
-(PRD §14, `phase0/findings.md`). Do not build Phase 1–3 machinery on an
-assumption Phase 0 hasn't settled.
+**If asked to start building, state the gate first, then take the user's call.**
+The gate falls **between step 4 and step 5 of #14**: steps 1–4 (skeleton, schema,
+backfill, dedup, work units) carry no taxonomy or verdict logic, so W2 and the
+emphasis pass cannot invalidate them; steps 5–6 depend on both. Treating it as a
+blanket gate on all six steps is stricter than the evidence supports; treating it
+as no gate builds the analysis W1 showed was mis-aimed.
+
+**Two constraints on the slice that must not drift.** It emits **no headroom
+figure** — `U3`/`U3a` are deferred, so every figure reads *notional list value*
+(a documented temporary deviation from invariant 5, not a redefinition). And
+every classification ships **labelled provisional**; no slice number is acted on
+until the gold set clears (M2′, R1).
+
+Phase 0's deferred questions return as M1′ (live capture) and M2′ (gold set). Do
+not build Phase 1–3 machinery on an assumption they haven't settled.
 
 ## Project Invariants
 
@@ -300,6 +318,30 @@ the **`/token-accounting`** skill
 ([`.claude/skills/token-accounting/SKILL.md`](.claude/skills/token-accounting/SKILL.md)).
 A `UserPromptSubmit` hook surfaces it whenever a prompt mentions cost, spend,
 tokens or usage; invoke it directly with `/token-accounting`.
+
+### 10b. Limit-hit records carry no tokens — and must not be filtered out
+
+U3a, answered 2026-09-09. A rate-limit hit lands in the transcript as an
+`assistant` record whose `message.model` is the literal string `<synthetic>`,
+whose `usage` is **all zeros**, and which carries `error: "rate_limit"` plus
+`apiErrorStatus: 429`. It is the only on-disk evidence of an allowance boundary.
+
+- **Never drop zero-`usage` or `<synthetic>` assistant records in `collect/`.**
+  A reasonable-looking "skip records with no tokens" filter deletes the entire
+  allowance-calibration signal. Invariant 2 already forbids this kind of
+  interpretation in the collect path; this is the concrete case.
+- **Dedupe limit hits by stated reset target, not by record.** One limit event
+  writes one record per *live* session — 29 records on disk are only **6
+  episodes**. This is a *different* key from invariant 10's `(message.id,
+  requestId)`; both rules apply, to different record classes.
+- **Prefer `quotaLimits` over the display text.** Client `2.1.245`+ carries
+  `{status, resetsAt (unix epoch), rateLimitType, …}`. Older clients carry the
+  reset only as a UI string — local wall-clock, tz-named, no date on the 5-hour
+  form. Parse text as fallback and record `version` on every row.
+- **`error` is an enum, not a boolean.** `server_error` (28) is at parity with
+  `rate_limit` (29); an error record is not a limit hit.
+- Limit accounting is **per-pool, not per-session** — 3 of 29 hits are
+  `isSidechain: true`, so subagents hit the ceiling too (invariant 4).
 
 ### 11. `attributionSkill` identifies routines; it cannot cost them
 

@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | **Owner** | Francis Brero |
-| **Status** | Open — nothing resolved yet |
+| **Status** | Open — W1, U10 and U3a answered; **W2 is the last week-one gate**; slice scoped (#14) |
 | **Date opened** | 9 September 2026 |
 | **Companions** | *Model Use Index* (PRD — what and why) · *Three Processes and a Database* (TD — how) |
 
@@ -357,10 +357,63 @@ the loader is right before trusting anything else it says.
 - **If the answer is bad:** Capacity must be *fitted* from limit-hit events, which runs on a calendar clock you cannot compress. Dashboard falls back to share-of-period until the fit converges.
 - **Answer:**
 
-#### U3a · Do past rate-limit hits already appear in existing transcripts? `open` · [#5](https://github.com/francisbrero/Model-Use-Index/issues/5)
+#### U3a · Do past rate-limit hits already appear in existing transcripts? **`answered 2026-09-09`** · [#5](https://github.com/francisbrero/Model-Use-Index/issues/5)
 - **Cost:** ~20 min. Grep backfilled `raw_event` for rate-limit `api_error` records.
 - **Why it's called out separately:** **This is the highest-leverage check on the list.** If historical limit hits are already on disk, backfill hands you calibration data on day one instead of in six weeks. Nothing else on this register compresses the schedule as much.
-- **Answer:**
+- **Answer: yes — 29 records, but only 6 distinct limit episodes, and that is the number that matters.**
+
+  **The record.** `error: "rate_limit"` on a synthetic assistant message —
+  `message.model` is the literal string `<synthetic>`, `usage` is all zeros, and
+  `apiErrorStatus` is `429`. It is a normal transcript line otherwise, carrying
+  `timestamp`, `sessionId`, `requestId`, `version`, `cwd`, `gitBranch`,
+  `isSidechain`. **It is not a `usage`-bearing record**, so invariant 10's dedup
+  never sees it and no token arithmetic is affected. 29 records, 16 sessions, 9
+  projects, `2026-07-30` → `2026-08-27`.
+
+  **The 29 collapses to 6.** A single limit event fires one record per *live
+  session*, all naming the same reset time — one episode on 2026-08-21 hit 8
+  records across 7 sessions within four minutes. **Deduplicate by stated reset
+  target, not by record**, or the fit is trained on the operator's parallelism
+  rather than on the limit. Of the 6: **4 session (5-hour) limits, 1 weekly
+  (7-day), 1 org monthly spend.**
+
+  **Fields available.** Two shapes, split by client version:
+  - `2.1.220` (28 of 29) — reset time only as **display text** in
+    `message.content[].text`: *"You've hit your session limit · resets 11:40pm
+    (America/Los_Angeles)"*. Local wall-clock, no date on the 5-hour form,
+    tz-named. Parseable, but it is a UI string and invariant 7 applies to it
+    with force.
+  - `2.1.245` (1 of 29) — additionally carries a **structured `quotaLimits`
+    object**: `{status, resetsAt (unix epoch), rateLimitType ("seven_day"),
+    unifiedRateLimitFallbackAvailable, overageStatus, overageDisabledReason,
+    isUsingOverage}`. **This is the field to key the allowance model on.**
+    Prefer it; fall back to text parsing for older records.
+- **Go/no-go on "calibrate from backfill": qualified go — backfill for the
+  *shape*, live capture for the *fit*.** Backfill is worth doing now and hands
+  over free evidence: it fixes the record shape, proves the 5-hour and 7-day
+  windows are both observable, and gives 6 real boundary points with 75–2,097
+  deduped assistant records in the 5 hours preceding each. That is enough to
+  build and sanity-check `enrich/allowance.py` today rather than in six weeks.
+  It is **not** enough to fit a capacity ceiling with a usable confidence
+  interval — 6 points, 4 of them clustered in a 42-hour stretch of one week, one
+  a spend limit that is a different mechanism entirely. So: **build the fit
+  against backfill, ship share-of-period as the displayed number until live
+  hits accumulate**, exactly the fallback U3 names. The schedule compression is
+  real but it lands on *development*, not on *calibration convergence*.
+- **Consequences to carry forward:**
+  - `collect/transcript.py` must not drop synthetic/zero-usage assistant
+    records — they are the entire U3a signal.
+  - `apiErrorStatus` and `error` belong in the Pydantic model; a limit-hit
+    events table keyed off them is a Phase 1 deliverable, not Phase 3.
+  - The other `error` values on disk are worth capturing too: `server_error`
+    (28), `authentication_failed` (4), `oauth_org_not_allowed` (1),
+    `invalid_request` (1). `server_error` at parity with `rate_limit` means the
+    normaliser must not treat "an error record" as "a limit hit".
+  - **3 of 29 hits are `isSidechain: true`** — subagents hit the ceiling too.
+    Limit accounting is per-pool, not per-session (invariant 4, and U8).
+  - `quotaLimits` appearing only on `2.1.245` is invariant 7 in miniature: the
+    good field arrived in a point release. Record `version` on every limit-hit
+    row so the fit knows which shape it is reading.
 
 #### U4 · Does `message.usage` appear on every assistant message? `open` · [#9](https://github.com/francisbrero/Model-Use-Index/issues/9)
 - **Cost:** ~20 min (W1 answers this incidentally).
@@ -404,40 +457,144 @@ the loader is right before trusting anything else it says.
 Framed as de-risking moments rather than as phases. Each definition of done is a
 measurement.
 
-### M0 · Phase 0 memo — *target: end of week 1* · [#10](https://github.com/francisbrero/Model-Use-Index/issues/10)
-**Done when:** U1–U7 each have a recorded answer in §5, with sample records
-attached, and a go/no-go on the allowance model vs. direct read.
-**Also produced:** the golden-file fixtures TD §11 needs. Collect them now; they
-cost nothing extra while you're already looking at the records.
+**Restructured 2026-09-09** around a decision: **get to a working end-to-end
+solution, then improve it,** rather than resolving every unknown first. W1 made
+that viable — there is deduplicated history on disk and a validated method for
+reading it — and `U10` (#13) settled the one grain question that genuinely
+blocked a slice. So the near milestones below are detailed and the later ones
+deliberately loose; the further out they are, the more they depend on what the
+slice teaches. **Don't add detail to M3–M5 speculatively.**
 
-### M1 · First honest number — *target: end of week 2*
-Backfilled history, normalised, reconciled.
-**Done when:** Anthropic token totals reconcile with `/usage` within 2% over a
-7-day window, reported by `mui doctor`.
-**Why it matters:** this is when the project stops being speculative. Everything
-before it is scaffolding.
+Numbering note: the old M1 (*reconcile within 2%*) became **M1′** and the old M2
+(*Datasette*) folded into **M1**, because Datasette is the slice's UI rather than
+a follow-on. Prior §5 rows referring to "M1" as reconciliation mean M1′.
 
-### M2 · Datasette on real data — *days after M1*
-**Done when:** you can browse and query captured data in a browser.
-**Why it matters:** near-zero effort, and it's where capture bugs surface while
-they're still cheap. Do not defer this to "when the real dashboard exists."
+### M0 · Phase 0 memo — **re-scoped** · [#10](https://github.com/francisbrero/Model-Use-Index/issues/10)
+**Was:** U1–U7 each answered, plus a go/no-go on the allowance model.
+**Now:** only what blocks the slice.
 
-### M3 · First classified report — *target: week 3–4*
-**Done when:** the Model Use Index renders, gold-set agreement ≥80%, `other`
-label rate <10%, and it produces at least one over-provisioning finding you
-agree with on inspection.
+**Done when:**
+- `U10` (#13) has a bounding rule — **done 2026-09-09**.
+- `U2` is **accepted as a labelled bias, not resolved**: sidechain turns bill
+  into the parent session, stated in the UI. #7 stays open.
+- The golden-file fixtures TD §11 needs are collected, scrubbed and obviously
+  synthetic (invariant 6).
 
-### M4 · First action taken — *no useful date; protect the gap*
-**Done when:** a default model is actually changed because of what the tool said.
-**Why it matters:** **this is where tools like this die.** Not with a failure —
-they just get opened less each week until nobody opens them. Everything up to M3
-is output. M4 is the first behaviour change.
+**Deferred, still open, no longer gating:** `U1` (#6), `U3` (#8), `U5`, `U6`,
+`U7`. Each is about live capture or a second provider, which a backfill-only
+slice doesn't need — `U7` is outright moot for it, there being no OTel in the
+loop. They return as M1′ and M2′. **The deferral is why M1 cannot claim
+headroom.**
 
-### M5 · First verified action — *one week after M4*
+`U3a` (#5) was in this list; it is **answered 2026-09-09** and its answer does
+not change the deferral. Limit hits *are* on disk, but 29 records are only **6
+episodes** — enough to build the allowance model against, not enough to fit a
+ceiling. So `U3` still gates headroom, and **M1 still cannot claim it.**
+
+**Still a gate, for a narrower reason:** `W2` (#4) gates *committing to the
+build*, so it runs before M1 — see §6. W1 demoted W2's 25% figure to a secondary
+analysis, but the tier matrix stays load-bearing for *verdicts*, so W2 must land
+before M1's steps 5–6. (`U3a` was the other gate; **answered 2026-09-09** — it
+did not change the slice, since its go is qualified and M1 emits no headroom
+figure either way.)
+
+### M1 · First E2E slice — *the current centre of gravity* · [#14](https://github.com/francisbrero/Model-Use-Index/issues/14)
+Backfill → dedup → work units → crude classifier → verdicts → Datasette.
+**No hooks, no OTel, no `launchd`, no live tailer, no web app, no Codex, no
+allowance model.**
+
+**Why this cut.** W1 proved every step by hand, so this re-implements a validated
+pipeline rather than discovering one. It is read-only over data already on disk,
+so invariant 1 holds trivially — no hooks to wedge a turn. And it defers six of
+eight unknowns to *after* something works.
+
+**Build order** (each step verifiable on its own, TD §14):
+
+1. **Skeleton** — `pyproject.toml` (uv, ruff, pytest), `config.toml.example`,
+   `mui` typer stub.
+2. **Schema** — `migrations/001_init.sql` against `schema_version`. Raw SQL, no
+   ORM, no Alembic. SQLite at `~/.model-use-index/store.db`, WAL,
+   `synchronous=NORMAL`, `busy_timeout=5000`.
+3. **Backfill reader** — `collect/transcript.py`. Session id and content hash
+   only; **no parsing, no Pydantic, no field extraction** (invariant 2).
+4. **Dedup + work units** — `normalize/`. Dedup by `(message.id, requestId)`,
+   **max per field** (invariant 10). Work units at `u10-next-anchor-v1`.
+5. **Crude classifier** — `enrich/signals.py`. W1's six signals, deterministic,
+   no LLM. **Blocked on the PRD emphasis pass** (§6): W1 concluded the taxonomy's
+   top level should be kind-of-work, so coding this first builds the analysis W1
+   showed was mis-aimed.
+6. **Verdicts + Datasette** — `verdict.py` as pure functions (TD §11), then point
+   Datasette at the file (TD §8.1). Also blocked on the emphasis pass, and on W2.
+
+**Step 4 is the acceptance gate for the whole slice.** W1's and U10's figures are
+the regression test — all *notional list value*:
+
+| Target | Expected |
+|---|---|
+| Unique Opus API responses | 37,781 |
+| Total Opus notional | $23,059 |
+| Phoenix + worktrees share | 73.4% ($16,950) |
+| `/release-prod`, 10 runs | **$1,447 ± 5%** — the rule's own output and the assertion |
+| *(reference, not the assertion)* | $1,511 — W1's independent hand-read |
+| Duplicate ratio | ~48% (34,314 / 72,083) |
+| Arc overlap | **0** — asserted, not observed |
+| Unattributable remainder | 7.4% ($1,730), a labelled row |
+
+**Done when:** `mui backfill` is idempotent over real history; all step-4 figures
+reproduce; Datasette shows work units faceted by score, repo and routine; and the
+report surfaces at least one **category** (e.g. *agentic ops on Opus*) rather
+than only the single offender W1 already found by hand.
+
+**Two constraints that must not drift:**
+- **No headroom claims.** `U3`/`U3a` are deferred, so headroom — the primary
+  measure (invariant 5) — cannot be computed. Everything reads *notional list
+  value*. A documented temporary deviation, not a redefinition.
+- **Every number provisional.** The classifier is an unvalidated heuristic until
+  M2′. Label it (R2) and **do not act on a figure from this slice.**
+
+### M1′ · Live capture, then the first reconciled number
+Hooks, `launchd`, the transcript tailer, the OTLP receiver — then the old M1 test:
+Anthropic totals reconcile with `/usage` **within 2%** over a 7-day window,
+reported by `mui doctor`.
+
+**Done when:** that 2% holds, **and** `mui doctor` reports the duplicate ratio —
+W1 showed a 91% overstatement is the likelier failure than a reconciliation gap,
+and reconciliation alone would not catch it if both sides share a convention.
+
+Picks up `U5`, `U6`, `U7`, and the invariant-1 hook-safety work the slice skipped.
+This is where schema-drift and live-capture risk actually land.
+
+### M2′ · Gold set and the real classifier
+The named calendar day (R1), then `qwen3:4b` via Ollama replacing the crude
+heuristic. Schema restated in the prompt text, concurrency 1 (invariant 7b).
+
+**Done when:** ≥80% agreement with the gold set, `other` under 10%, and the
+provisional labels come off the UI. **This is the gate before any number is
+acted on.** Seed the labelling from W1's hand-read of the twelve most expensive
+score-0 units — orchestration/CI shepherding is the boundary most easily got
+wrong.
+
+### M3 · First classified report — *loose*
+**Done when:** the Model Use Index renders over validated classifications and
+ranks **categories** by reclaimable headroom, with at least one the operator
+agrees with on inspection.
+Note the bar moved: W1 already produced a single finding by hand, so "one
+finding" no longer tests anything. The category ranking does.
+
+### M4 · First action taken — *loose; no useful date, protect the gap*
+**Done when:** a default model or a routine's delegation is actually changed
+because of what the tool said.
+**Why it matters:** **this is where tools like this die** — not with a failure,
+they just get opened less each week. Everything up to M3 is output; M4 is the
+first behaviour change.
+The `/release-prod` fix (§6) is a **manual dry run of M4** available now, needing
+none of this tool.
+
+### M5 · First verified action — *loose; one week after M4*
 **Done when:** the predicted headroom either materialised or didn't, and the gap
 is written down.
-**Why it matters:** the only milestone that is an *outcome*. If you protect one
-thing in the schedule, protect M3 → M4 → M5.
+**Why it matters:** the only milestone that is an *outcome*, and the honest test
+of R2. If you protect one thing in the schedule, protect M3 → M4 → M5.
 
 ---
 
@@ -511,37 +668,62 @@ Append-only. Date · question · answer · what it changed.
 | 2026-09-09 | **U10** | Known error mode: the rule is **generous at the tail** — the last anchor absorbs to session end. Capping that arc at +150 turns moves `/release-prod` 1.2%; at +50 turns, 21%. | Accepted as-is; **don't cap tightly.** The generosity is bounded and the alternative loses more than it fixes. |
 | 2026-09-09 | **U10** | **Unattributable remainder: 7.4% of Opus notional list value ($1,730)** — 6.0% ($1,415, 47 sessions) with no anchor, 1.3% ($315) pre-first-anchor. Sidechain turns are $1,966 (8.4%), $1,737 of it inside an arc. | Must be a **labelled dashboard row**, not dropped. Per-routine figures include subagent cost by construction — never also count it alongside (U8). |
 | 2026-09-09 | **U10** | **Cross-session arcs unresolved.** 66 sessions end with the anchor tag still on the final turn. | Left open deliberately — Tier 2 for `work_unit`; the 7.4% remainder bounds how much it can matter. |
+| 2026-09-09 | **Sequencing** | Decided: **get to a working E2E solution, then improve it**, rather than resolving every unknown first. Only `U10` blocked a backfill-only slice; `U1`/`U3`/`U3a`/`U5`/`U6`/`U7` are live-capture or second-provider questions, and `U7` is moot with no OTel in the loop. | **§3 restructured.** Old M1 (reconcile 2%) → **M1′**; old M2 (Datasette) folded into **M1** as the slice's UI; **M2′** added for the gold set. M3–M5 deliberately left loose. Slice scoped as #14. |
+| 2026-09-09 | **Sequencing** | The first slice ships **no headroom figure** — deferring `U3`/`U3a` means the primary measure (invariant 5) can't be computed. | Accepted as a **documented temporary deviation**, not a redefinition: every slice figure reads *notional list value* and the UI must not imply share-of-allowance. |
+| 2026-09-09 | **Sequencing** | The slice's classifier is a crude deterministic heuristic (W1's six signals), not Ollama. | Ships **labelled provisional** (R2); **no number from the slice is acted on** until M2′ clears the gold set. Keeps one unvalidated layer instead of two. |
+| 2026-09-09 | **Process** | An agent asked to build #14 **correctly refused**, citing W2 and U3a as build gates — the issue had been created without updating §6, so the issue and the register disagreed. | **The register outranks an issue.** §6 now carries the full ordering *and* states that the gate falls between step 4 and step 5 of #14, since steps 1–4 carry no taxonomy or verdict logic. Both over- and under-reading of that gate have now happened once each. |
+| 2026-09-09 | **U3a** | **Yes — limit hits are already on disk.** 29 `error: "rate_limit"` records, `apiErrorStatus: 429`, on synthetic zero-`usage` assistant messages (`message.model` is the literal `<synthetic>`); 16 sessions, 9 projects, 2026-07-30 → 2026-08-27. | **Backfill is worth running for allowance work.** `collect/transcript.py` must not filter out `<synthetic>` / zero-`usage` assistant records — they are the entire signal. They carry no tokens, so invariant 10 is unaffected. |
+| 2026-09-09 | **U3a** | **29 records are only 6 episodes.** One limit event writes one record per *live* session — 8 records across 7 sessions inside four minutes on 2026-08-21. Breakdown: **4 session (5-hour), 1 weekly (7-day), 1 org monthly spend.** | **Dedupe limit hits by stated reset target, not by record**, or the allowance fit trains on the operator's parallelism instead of on the ceiling. A second dedup rule alongside invariant 10, on a different key. |
+| 2026-09-09 | **U3a** | **A structured `quotaLimits` object exists — but only on client `2.1.245` (1 of 29).** `{status, resetsAt (unix epoch), rateLimitType: "seven_day", unifiedRateLimitFallbackAvailable, overageStatus, overageDisabledReason, isUsingOverage}`. The other 28 (`2.1.220`) carry the reset only as UI display text — local wall-clock, tz-named, no date on the 5-hour form. | **Key the allowance model on `quotaLimits`; parse text only as fallback.** Invariant 7 in miniature — the good field arrived in a point release, so record `version` on every limit-hit row. |
+| 2026-09-09 | **U3a** | **Go/no-go: qualified go — backfill for the *shape*, live capture for the *fit*.** 6 boundary points, with 75–2,097 deduped assistant records in the 5h preceding each, is enough to build and sanity-check `enrich/allowance.py`; it is not enough to fit a ceiling with a usable interval (4 of 6 fall inside one 42-hour stretch, 1 is a spend limit — a different mechanism). | **Build the fit against backfill; display share-of-period until live hits accumulate** — `U3`'s stated fallback stands, and M1's no-headroom constraint is unchanged. The compression lands on *development*, not on calibration convergence. |
+| 2026-09-09 | **U3a** | `rate_limit` (29) is at parity with `server_error` (28); also `authentication_failed` (4), `oauth_org_not_allowed` (1), `invalid_request` (1). **3 of 29 limit hits are `isSidechain: true`.** | The normaliser must not read "an error record" as "a limit hit" — capture `error` as an enum. Subagents hit the ceiling too, so limit accounting is **per-pool, not per-session** (invariant 4 · `U2`/`U8`). |
 
 ---
 
-## 6. Next three actions
+## 6. Next actions
 
 1. ~~**W1**~~ ([#3](https://github.com/francisbrero/Model-Use-Index/issues/3))
    — the one-day spike. **Done 2026-09-09: go, reframed. 43.4% of Phoenix Opus
    value shows no complexity signal — release orchestration and CI shepherding
    on Opus. A4 is a strong second at 93% cache traffic.** See §1.
-2. **W2** ([#4](https://github.com/francisbrero/Model-Use-Index/issues/4)) —
+2. ~~**U3a**~~ ([#5](https://github.com/francisbrero/Model-Use-Index/issues/5))
+   — **Done 2026-09-09: qualified go.** Limit hits *are* on disk, and a
+   structured `quotaLimits` object exists on the newer client — but 29 records
+   are only **6 distinct episodes**. Enough to build and sanity-check the
+   allowance model now; **not** enough to fit a ceiling, so the displayed number
+   stays share-of-period until live hits accumulate. M1's no-headroom constraint
+   is unchanged. See §2.
+3. **W2** ([#4](https://github.com/francisbrero/Model-Use-Index/issues/4)) —
    hand-test the `Agentic / Medium` hypothesis on Haiku. W1 lowered the stakes
    here — the 25% misallocation figure it defends is now a secondary analysis,
    not the headline — but it is still the cheapest way to find out whether the
-   tier matrix is trustworthy at all, so it still runs before Phase 0.
-3. **U3a** ([#5](https://github.com/francisbrero/Model-Use-Index/issues/5)) —
-   grep existing history for past rate-limit errors. Twenty minutes, and it may
-   save six weeks of waiting for calibration data. **W1 promoted this**: with A1
-   re-aimed, A2 (under-provisioning) is a leading candidate for the second
-   headline, and U3a is its gating evidence.
+   tier matrix is trustworthy at all, so it still runs before the build.
+4. **The PRD emphasis pass** — A1 re-aimed at high-ceremony low-reasoning
+   orchestration (not "trivial sessions"), A4 named as the second headline, and
+   the taxonomy's top level set to *kind of work*. Queued behind W2.
+5. **M1, the first E2E slice** ([#14](https://github.com/francisbrero/Model-Use-Index/issues/14))
+   — see §3.
 
 **`U10` is resolved out of band** ([#13](https://github.com/francisbrero/Model-Use-Index/issues/13),
-answered 2026-09-09) — it was the only unknown blocking the first E2E slice, and
+answered 2026-09-09) — it was the only *unknown* blocking the first E2E slice, and
 the slice's step-4 acceptance test now has a rule and a numeric target
-(`/release-prod` = $1,447 ± 5% notional list value, against W1's $1,511 hand-read). That unblocks the slice; it
-does not promote it ahead of W2 and U3a, which still gate committing to the
-build.
+(`/release-prod` = **$1,447 ± 5%** notional list value as the assertion, with W1's
+$1,511 hand-read kept as the separate reference — see §2 U10 for why centring on
+$1,511 would be self-contradictory).
 
-Everything else waits on these three. **A PRD emphasis pass is now queued behind
-W2** — A1 must be re-aimed at high-ceremony low-reasoning orchestration (not
-"trivial sessions"), and A4 named as the second headline. Do not fix Phase 0
-scope until it lands.
+**That unblocks the slice; it does not promote it ahead of W2**, which gates
+committing to the build. Ordering decided 2026-09-09: run U3a, then W2, then the
+emphasis pass, then #14 — **U3a is now done, so W2 is next.**
+
+**Where the gate actually falls inside #14.** Steps 1–4 (skeleton, schema,
+backfill, dedup, work units) contain no taxonomy and no verdict logic, so neither
+W2 nor the emphasis pass can invalidate them. Steps 5–6 (classifier, verdicts)
+depend on both. The gate is therefore **between step 4 and step 5** — recorded
+because reading it as a blanket gate on all six steps is stricter than the
+evidence supports, and reading it as no gate at all builds an analysis W1 already
+showed was mis-aimed. Both misreadings have happened.
+
+Do not fix the deferred Phase 0 scope until the emphasis pass lands.
 
 **W1 produced a fourth action, and it may outrank the first three.** Configure
 Phoenix `/release-prod` to delegate to Sonnet with an Opus escalation path for
@@ -566,12 +748,13 @@ become the register.
 |---|---|---|---|
 | `W1` | [#3](https://github.com/francisbrero/Model-Use-Index/issues/3) | Week one — gate | **answered 2026-09-09** |
 | `W2` | [#4](https://github.com/francisbrero/Model-Use-Index/issues/4) | Week one — gate | open |
-| `U3a` | [#5](https://github.com/francisbrero/Model-Use-Index/issues/5) | Tier 1 | open |
+| `U3a` | [#5](https://github.com/francisbrero/Model-Use-Index/issues/5) | Tier 1 | **answered 2026-09-09** |
 | `U10` | [#13](https://github.com/francisbrero/Model-Use-Index/issues/13) | Tier 1 — **slice blocker** | **answered 2026-09-09** |
 | `U1` | [#6](https://github.com/francisbrero/Model-Use-Index/issues/6) | Tier 1 | open |
 | `U2` | [#7](https://github.com/francisbrero/Model-Use-Index/issues/7) | Tier 1 | open |
 | `U3` | [#8](https://github.com/francisbrero/Model-Use-Index/issues/8) | Tier 1 | open |
-| `U4` | [#9](https://github.com/francisbrero/Model-Use-Index/issues/9) | Tier 1 | **answered incidentally by W1** (U4REF) |
+| `U4` | [#9](https://github.com/francisbrero/Model-Use-Index/issues/9) | Tier 1 | **answered incidentally by W1** (U4REF) — close #9 against §5 |
+| `M1` | [#14](https://github.com/francisbrero/Model-Use-Index/issues/14) | Milestone — the E2E slice | open, gated (see §6) |
 | `M0` | [#10](https://github.com/francisbrero/Model-Use-Index/issues/10) | Milestone | open |
 
 Tier 2 (`U5`–`U7`) is tracked on the M0 checklist rather than as separate issues;
