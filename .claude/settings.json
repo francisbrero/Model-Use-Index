@@ -1,0 +1,51 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)",
+      "Bash(git stash:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue comment:*)",
+      "Bash(uv run:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv add:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(pytest:*)",
+      "Bash(ruff check:*)",
+      "Bash(ruff format:*)",
+      "Bash(ollama list)",
+      "Bash(ollama show:*)",
+      "Bash(ollama ps)",
+      "Bash(sqlite3 :memory::*)",
+      "Bash(npx --yes markdownlint-cli2:*)",
+      "Bash(mui:*)",
+      "Bash(uv lock:*)",
+      "Bash(uv tool run:*)",
+      "Bash(datasette:*)",
+      "Bash(launchctl list:*)",
+      "Bash(launchctl print:*)",
+      "Bash(make:*)",
+      "Bash(sqlite3 *.db .schema:*)",
+      "Bash(sqlite3 *.db .tables)",
+      "Bash(curl -s http://localhost:11434/:*)",
+      "Bash(pmset -g ps)"
+    ],
+    "deny": [
+      "Bash(rm -rf ~/.model-use-index:*)",
+      "Bash(rm -rf ~/.claude:*)"
+    ],
+    "ask": []
+  }
+}
