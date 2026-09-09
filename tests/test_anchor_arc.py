@@ -110,6 +110,11 @@ def to_sessions(records):
     Ties are rare rather than routine: 1 group of 2 turns in 42,528 measured
     (0.005%), both untagged sidechains, so none can move a boundary today. This
     is insurance against an irreproducible number, not a fix for a live bug.
+
+    The `or ""` fallbacks are defensive only and deliberately untested: U4REF
+    found `timestamp` present on 80,037/80,037 assistant records, so a fixture
+    for a missing one would assert a shape the transcript writer never produces
+    (same reasoning as the `not skill` guard in `anchor_runs`).
     """
     by_session = {}
     for turn in dedup(records):

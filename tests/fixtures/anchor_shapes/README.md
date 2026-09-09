@@ -7,8 +7,9 @@ Session ids are `SYNTH-*`, paths are `/synthetic/repo`, message ids are
 appears here. Token counts are round numbers chosen to make the expected
 attribution arithmetic checkable by hand.
 
-`anchor_shapes.jsonl` encodes the five shapes U10 characterised, one session
-each. `expected.json` gives, per session, the arc boundaries **and** the Opus
+`anchor_shapes.jsonl` encodes the shapes U10 characterised, one session each —
+five from the original characterisation, the rest added because a mutation
+survived without them. `expected.json` gives, per session, the arc boundaries **and** the Opus
 **notional list value** of each arc, of the unattributable remainder, of the
 sidechain value falling inside an arc, and of the session total — everything
 `normalize/work_unit.py` must reproduce under the U10 rule (*anchor → next
@@ -53,11 +54,13 @@ computed from the wrong one of the two is invisible. Real anchor runs are median
 *normal* shape — and it is the shape that distinguishes a correct boundary from
 one that claims turns twice.
 
-The last row is the load-bearing one: a release routine waiting on CI produces
-gaps of hours to days, so a gap is not evidence the arc ended. It also carries a
-duplicate content-block record whose `output_tokens` differ (500 then 2,000) and
-a sidechain turn inside the arc, so the fixture exercises the invariant-10 dedup
-and U8 sidechain traps as well as the boundary rule.
+`SYNTH-idle-gap` is the one that kills the idle-time threshold: a release
+routine waiting on CI produces gaps of hours to days, so a gap is not evidence
+the arc ended. It also carries a duplicate content-block record whose
+`output_tokens` differ (500 then 2,000) and a sidechain turn inside the arc, so
+it exercises the invariant-10 dedup and U8 sidechain traps as well as the
+boundary rule. (Named rather than described as "the last row" — the table has
+been reordered four times and prose that points at a position goes stale.)
 
 `tests/test_anchor_arc.py` consumes all of it, and implements the **rejected**
 candidate rules alongside the chosen one so the register's comparative claim

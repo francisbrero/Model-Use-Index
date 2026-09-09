@@ -207,7 +207,7 @@ scores a work unit, so wrong boundaries give wrong verdicts silently.
 **Answer: attribute from the anchor to the next anchor of any skill, else to
 session end.** Rule id `u10-next-anchor-v1`.
 
-Measured over 991 transcripts / 185 sessions / 383 anchor runs, deduplicated by
+Measured over 991 transcripts / 184 sessions / 383 anchor runs, deduplicated by
 `(message.id, requestId)` with max per usage field (invariant 10). All dollar
 figures are **notional list value**; Opus total $23,473, which reproduces W1's
 $23,059 within 2%.
@@ -273,10 +273,10 @@ centre. Two distinct numbers, deliberately:
 Per-run spread is wide and genuinely so: min $28, median $138, max $271,
 stdev $85 — so a per-run assertion would be far looser than the 10-run total.
 
-**Unattributable remainder — 7.4% of Opus notional list value ($1,731).** 6.0%
-($1,416, 48 sessions) is sessions with no anchor at all; 1.3% ($315) is work
-before a session's first anchor. (Exactly 7.374% = 6.032% + 1.342%; the
-rounded components read as 7.3%, and the dollars reconcile precisely.) This must be a labelled row in the dashboard,
+**Unattributable remainder — 7.4% of Opus notional list value ($1,730).** 6.0%
+($1,415, 47 sessions) is sessions with no anchor at all; 1.3% ($315) is work
+before a session's first anchor. (Exactly 7.337% = 6.002% + 1.336%, and
+$1,415 + $315 = $1,730; the rounded components read as 7.3%.) This must be a labelled row in the dashboard,
 not silently dropped. Sidechain turns hold $1,966 (8.4%), of which $1,737 falls
 inside an anchor arc — so per-routine figures include their subagent cost, which
 is correct, but must not also be counted alongside it (U8, invariant 10 §6).
@@ -298,8 +298,24 @@ boundaries depend on how the rows were read rather than on what they say
 (invariant 2b). Ordering ties by file position, or leaving them to SQL row
 order, is not reproducible.
 
+**The corpus grows while you measure it.** Re-running the loader gives a
+slightly different Opus total each time — $23,473, then $23,574 notional list
+value — because analysing transcripts inside Claude Code appends to the very
+history being read. The whole difference is this project's own sessions ($121,
+0.5%); excluding them reproduces $23,454. Two consequences to carry into `mui`:
+
+- **Session counts and population percentages are as-of-a-moment**, so quote the
+  corpus date beside them. The counts here are 184 sessions / 137 anchored / 47
+  with no anchor — which is also where an earlier "185 / 48" in this entry came
+  from: a miscount, since 137 + 47 = 184.
+- **`/release-prod` stays at $1,447 over 10 runs across re-runs**, because the
+  U10 work never invokes that routine. That is the argument for pinning the
+  regression target to a *named routine* rather than a corpus-wide total: the
+  drift moves the denominator and leaves the target untouched.
+
+
 Measured, so the rule isn't defended by a story: **ties are almost absent — 1
-group, 2 turns of 42,528 (0.005%), in 1 session of 184.** Both turns in it are
+group, 2 turns of 42,528 (0.005%), in 1 of those 184 sessions.** Both turns in it are
 untagged sidechain turns, so today no tie can move an arc boundary. But
 `message.id` order disagrees with file order in that one case, so the two rules
 *do* diverge on real data, and the cost of getting determinism is one sort key.
@@ -493,7 +509,7 @@ Append-only. Date · question · answer · what it changed.
 | 2026-09-09 | **U10** | **W1's own baseline was wrong at scale.** *Anchor → session end* double-counts **$13,118 of Opus notional list value**, because **110 of 137 anchored sessions carry more than one anchor** (median 2, max 9). Re-scored, it gives `/release-prod` $314, not $1,511. | W1's figure was right only because the release sessions were read by hand. **Overlap is the metric that separates these rules**, and it must be asserted as zero in the normaliser's tests. |
 | 2026-09-09 | **U10** | **Idle-gap and `cwd`/`gitBranch` thresholds both fail.** Single `/release-prod` arcs legitimately contain gaps of 529, 699, 1,730 and **8,605 minutes** (waiting on CI, ArgoCD, review) and move across up to 47 turns of other branches. Idle-30 recovers 29% of target; context-change 69%. | **Do not add either as a boundary.** They cut the arc exactly where the routine is waiting or switching worktrees — both normal events *inside* an arc. Recorded so it isn't re-proposed. |
 | 2026-09-09 | **U10** | Known error mode: the rule is **generous at the tail** — the last anchor absorbs to session end. Capping that arc at +150 turns moves `/release-prod` 1.2%; at +50 turns, 21%. | Accepted as-is; **don't cap tightly.** The generosity is bounded and the alternative loses more than it fixes. |
-| 2026-09-09 | **U10** | **Unattributable remainder: 7.4% of Opus notional list value ($1,731)** — 6.0% sessions with no anchor, 1.3% pre-first-anchor work. Sidechain turns are $1,966 (8.4%), $1,737 of it inside an arc. | Must be a **labelled dashboard row**, not dropped. Per-routine figures include subagent cost by construction — never also count it alongside (U8). |
+| 2026-09-09 | **U10** | **Unattributable remainder: 7.4% of Opus notional list value ($1,730)** — 6.0% ($1,415, 47 sessions) with no anchor, 1.3% ($315) pre-first-anchor. Sidechain turns are $1,966 (8.4%), $1,737 of it inside an arc. | Must be a **labelled dashboard row**, not dropped. Per-routine figures include subagent cost by construction — never also count it alongside (U8). |
 | 2026-09-09 | **U10** | **Cross-session arcs unresolved.** 66 sessions end with the anchor tag still on the final turn. | Left open deliberately — Tier 2 for `work_unit`; the 7.4% remainder bounds how much it can matter. |
 
 ---
