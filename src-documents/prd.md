@@ -1102,6 +1102,12 @@ Pure investigation. Its entire purpose is to replace six assumptions with facts.
 **Exit criteria:** a one-page findings memo with sample records for each, and a
 go/no-go on the allowance model vs. direct read.
 
+Tracked as [#10](https://github.com/francisbrero/Model-Use-Index/issues/10), with
+one issue per question; the two week-one gates
+([#3](https://github.com/francisbrero/Model-Use-Index/issues/3),
+[#4](https://github.com/francisbrero/Model-Use-Index/issues/4)) close before Phase
+0 starts. Answers are recorded in `milestones.md`, not in the issue threads.
+
 ### Phase 1 — Capture and consumption *(~1–1.5 weeks)*
 Transcript tailer, OTel collector, hooks, the `codex` wrapper, and the Codex log
 tailer. Normalisation into `work_unit` / `api_call` / `delegated_call`. Model
