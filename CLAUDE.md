@@ -295,7 +295,10 @@ this project would lose credibility on its first published number.
 
 The full accounting rules — dedup, per-field pricing, pool separation, anchor
 attribution, sidechain double-counting, and the pre-publication checks — live in
-[`.claude/skills/guardrails/token-accounting.md`](.claude/skills/guardrails/token-accounting.md).
+the **`/token-accounting`** skill
+([`.claude/skills/token-accounting/SKILL.md`](.claude/skills/token-accounting/SKILL.md)).
+A `UserPromptSubmit` hook surfaces it whenever a prompt mentions cost, spend,
+tokens or usage; invoke it directly with `/token-accounting`.
 
 ### 11. `attributionSkill` identifies routines; it cannot cost them
 
@@ -315,7 +318,7 @@ AGENTS.md -> CLAUDE.md # symlink (Codex CLI)
 GEMINI.md -> CLAUDE.md # symlink (Gemini CLI)
 src-documents/         # prd.md · trd.md · milestones.md (+ rendered .html copies)
 phase0/findings.md     # the six blocking questions (after W1/W2)
-.claude/               # settings.json, agents/, commands/, skills/guardrails/
+.claude/               # settings.json, agents/, commands/, hooks/, skills/
 ```
 
 Target for Phase 1 (TD §12) — build into this shape, don't invent another:

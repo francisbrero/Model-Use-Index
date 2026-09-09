@@ -1,8 +1,17 @@
-# Guardrail — counting tokens and money
+---
+name: token-accounting
+description: How to count tokens and money from Claude Code transcripts without being wrong by 2x. Use BEFORE writing or reviewing any code or ad-hoc script that reads message.usage, sums tokens, prices spend, computes cost or allowance, or attributes consumption to a session, routine, model or pool - and before publishing any token or dollar figure. Triggers on cost, spend, token count, usage, pricing, allowance, headroom, notional list value, ccusage, burn rate, "how much did X cost".
+---
 
-**Enforcement: warn.** Fires on any code that reads `message.usage`, sums
-tokens, prices anything, or attributes spend to a session, routine or model —
-`normalize/`, `enrich/allowance.py`, `analyses/`, and every ad-hoc script.
+# Counting tokens and money
+
+**Invoke as `/token-accounting`.** Also fires as a guardrail (enforcement:
+warn) on any code that reads `message.usage`, sums tokens, prices anything, or
+attributes spend to a session, routine or model — `normalize/`,
+`enrich/allowance.py`, `analyses/`, and every ad-hoc script.
+
+**If you are here because a hook fired, read §1 before writing the query.** The
+naive version of what you are about to write is wrong by ~2×.
 
 ## The invariant
 
@@ -129,3 +138,26 @@ Three questions for any figure leaving the machine:
 
 A number that fails any of the three is worse than no number, because it will be
 believed. That is the failure mode this whole guardrail is defending against.
+
+## How this gets in front of you
+
+Three routes, because relying on memory is how the 91% error happened:
+
+| Route | Fires when |
+|---|---|
+| `/token-accounting` | You invoke it directly |
+| `UserPromptSubmit` hook | A prompt mentions cost, spend, tokens, usage, pricing, allowance, headroom, `$N`, "how much" |
+| `PreToolUse` hook (`Write`/`Edit`/`NotebookEdit`) | An edit touches `*_input_tokens`, `output_tokens`, `message.usage`, `allowance_pct` or `notional` |
+
+The `PreToolUse` hook exists because the prompt-level one only sees the opening
+message. A session that starts *"implement the normaliser"* and reaches
+usage-summing forty turns later would never fire it — and that is precisely
+where this bug lands.
+
+Both hooks are `sh`, take no network, and `exit 0` unconditionally
+(`CLAUDE.md` invariant 1 — this repo does not get to slow down the thing it
+observes, and that applies to its own tooling). They match generously and are
+cheap; a missed reminder costs a wrong published number, a spurious one costs a
+few tokens.
+
+**If you are editing the matchers, widen rather than narrow.**
