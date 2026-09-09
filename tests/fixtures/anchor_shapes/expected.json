@@ -1,0 +1,217 @@
+{
+  "rule": "anchor -> next anchor of any skill, else session end",
+  "rule_id": "u10-next-anchor-v1",
+  "dedup_key": [
+    "message.id",
+    "requestId"
+  ],
+  "dedup_reduction": "max per usage field",
+  "dollar_label": "notional list value",
+  "sessions": {
+    "SYNTH-single": {
+      "arcs": [
+        {
+          "skill": "synth-release",
+          "start": 1,
+          "end": 4,
+          "notional_list_value_usd": 0.306
+        }
+      ],
+      "pre_anchor": [
+        0
+      ],
+      "unattributable_notional_list_value_usd": 0.0765,
+      "sidechain_inside_arc_notional_list_value_usd": 0,
+      "session_total_notional_list_value_usd": 0.3825
+    },
+    "SYNTH-two-distinct": {
+      "arcs": [
+        {
+          "skill": "synth-release",
+          "start": 0,
+          "end": 1,
+          "notional_list_value_usd": 0.153
+        },
+        {
+          "skill": "synth-pr",
+          "start": 2,
+          "end": 3,
+          "notional_list_value_usd": 0.153
+        }
+      ],
+      "pre_anchor": [],
+      "unattributable_notional_list_value_usd": 0,
+      "sidechain_inside_arc_notional_list_value_usd": 0,
+      "session_total_notional_list_value_usd": 0.306
+    },
+    "SYNTH-two-same": {
+      "arcs": [
+        {
+          "skill": "synth-release",
+          "start": 0,
+          "end": 1,
+          "notional_list_value_usd": 0.153
+        },
+        {
+          "skill": "synth-release",
+          "start": 2,
+          "end": 3,
+          "notional_list_value_usd": 0.153
+        }
+      ],
+      "pre_anchor": [],
+      "unattributable_notional_list_value_usd": 0,
+      "sidechain_inside_arc_notional_list_value_usd": 0,
+      "session_total_notional_list_value_usd": 0.306
+    },
+    "SYNTH-pre-anchor": {
+      "arcs": [
+        {
+          "skill": "synth-pr",
+          "start": 2,
+          "end": 2,
+          "notional_list_value_usd": 0.0765
+        }
+      ],
+      "pre_anchor": [
+        0,
+        1
+      ],
+      "unattributable_notional_list_value_usd": 0.153,
+      "sidechain_inside_arc_notional_list_value_usd": 0,
+      "session_total_notional_list_value_usd": 0.2295
+    },
+    "SYNTH-idle-gap": {
+      "arcs": [
+        {
+          "skill": "synth-release",
+          "start": 0,
+          "end": 3,
+          "notional_list_value_usd": 0.411
+        }
+      ],
+      "pre_anchor": [],
+      "notes": "index space is over UNIQUE API responses, after dedup: g0,g1,g2,g3",
+      "unattributable_notional_list_value_usd": 0,
+      "sidechain_inside_arc_notional_list_value_usd": 0.0765,
+      "session_total_notional_list_value_usd": 0.411
+    },
+    "SYNTH-tag-hole": {
+      "arcs": [
+        {
+          "skill": "synth-release",
+          "start": 0,
+          "end": 1,
+          "notional_list_value_usd": 0.153
+        },
+        {
+          "skill": "synth-release",
+          "start": 2,
+          "end": 3,
+          "notional_list_value_usd": 0.153
+        }
+      ],
+      "pre_anchor": [],
+      "unattributable_notional_list_value_usd": 0,
+      "sidechain_inside_arc_notional_list_value_usd": 0,
+      "session_total_notional_list_value_usd": 0.306,
+      "notes": "A hole in the tag run. The rule splits it into two arcs, which is indistinguishable from a genuine re-invocation. Known and accepted -- the register treats re-invocation as a boundary anyway, so both readings agree on the boundary. Asserted here so the behaviour is pinned rather than merely documented: if Claude Code ever drops the tag mid-run, arcs fragment and per-routine cost shatters, and this test says so out loud."
+    },
+    "SYNTH-long-run-then-anchor": {
+      "arcs": [
+        {
+          "skill": "synth-release",
+          "start": 0,
+          "end": 3,
+          "notional_list_value_usd": 0.306
+        },
+        {
+          "skill": "synth-pr",
+          "start": 4,
+          "end": 6,
+          "notional_list_value_usd": 0.2295
+        }
+      ],
+      "pre_anchor": [],
+      "unattributable_notional_list_value_usd": 0,
+      "sidechain_inside_arc_notional_list_value_usd": 0,
+      "session_total_notional_list_value_usd": 0.5355,
+      "notes": "THE shape the rule exists for, and the only one in this fixture where a multi-turn anchor run is followed by another anchor. Run 0 is (start=0, tag_end=2), run 1 starts at 4, so the boundary must be next_run.start-1 = 3. Using next_run.tag_end (5) would claim turns 4 and 5 twice. Every other session's non-final runs have length 1, where start == tag_end and the two are indistinguishable -- real runs are median 15 turns, so this is the normal shape, not an edge case."
+    },
+    "SYNTH-out-of-order": {
+      "arcs": [
+        {
+          "skill": "synth-release",
+          "start": 0,
+          "end": 2,
+          "notional_list_value_usd": 0.2295
+        }
+      ],
+      "pre_anchor": [],
+      "unattributable_notional_list_value_usd": 0,
+      "sidechain_inside_arc_notional_list_value_usd": 0,
+      "session_total_notional_list_value_usd": 0.2295,
+      "notes": "File order is Oa(10:02), Oz(10:00), Om(10:01); timestamp order is Oz, Om, Oa. The ids are deliberately minted so their lexicographic order is the REVERSE of chronological order: sorting on message.id alone reverses the session, and sorting on file position alone puts the anchor at index 1. Only (timestamp, message.id) yields the anchor at index 0 and the arc [0..2]. Every other session's ids happen to sort in timestamp order, which would let the primary sort key be deleted unnoticed."
+    },
+    "SYNTH-no-anchor": {
+      "arcs": [],
+      "pre_anchor": [
+        0,
+        1,
+        2
+      ],
+      "unattributable_notional_list_value_usd": 0.2295,
+      "sidechain_inside_arc_notional_list_value_usd": 0,
+      "session_total_notional_list_value_usd": 0.2295,
+      "notes": "No anchor anywhere. The whole session is unattributable. At full scale this is 6.0% of Opus notional list value ($1,416 across 48 sessions) -- the largest single component of the 7.4% remainder, so a rule that quietly dropped it would understate the labelled remainder most."
+    },
+    "SYNTH-adjacent-anchors": {
+      "arcs": [
+        {
+          "skill": "synth-release",
+          "start": 0,
+          "end": 1,
+          "notional_list_value_usd": 0.153
+        },
+        {
+          "skill": "synth-pr",
+          "start": 2,
+          "end": 3,
+          "notional_list_value_usd": 0.153
+        }
+      ],
+      "pre_anchor": [],
+      "unattributable_notional_list_value_usd": 0,
+      "sidechain_inside_arc_notional_list_value_usd": 0,
+      "session_total_notional_list_value_usd": 0.306,
+      "notes": "Two anchor runs directly adjacent, no untagged turn between. Every other multi-anchor session here has a gap, which lets a run-advance off-by-one skip the second anchor unnoticed; here it would drop a whole arc."
+    },
+    "SYNTH-dup-and-tie": {
+      "arcs": [
+        {
+          "skill": "synth-release",
+          "start": 1,
+          "end": 2,
+          "notional_list_value_usd": 0.24
+        }
+      ],
+      "pre_anchor": [
+        0
+      ],
+      "unattributable_notional_list_value_usd": 0.0765,
+      "sidechain_inside_arc_notional_list_value_usd": 0,
+      "session_total_notional_list_value_usd": 0.3165,
+      "notes": "Two traps at once. (1) The msg_synth_T2 group is written 2000, 500, 900 -- HIGH first. The SYNTH-idle-gap group is written low-then-high, where last-by-file-order happens to equal max; this one is its mirror, so the two together kill first-seen AND last-wins. Invariant 10 names both as wrong. (2) T0 (untagged) and T1 (anchored) share an identical timestamp, with T0 written first, so the (timestamp, message.id) tie-break decides the anchor's index. Sorting on timestamp alone leaves it order-dependent, which would make arc boundaries irreproducible (invariant 2b). The tied pair also breaks the 1:1 between message.id and requestId (T0 carries req_T9, T1 carries req_T1), so message.id and requestId order them oppositely: a tie-break on requestId would swap the anchor and the untagged turn. Real retries break that 1:1, which is why the dedup key is a pair and the sort key is not."
+    }
+  },
+  "rates_notional_list_value_usd_per_1m": {
+    "opus": {
+      "input": 15.0,
+      "output": 75.0,
+      "cache_write": 18.75,
+      "cache_read": 1.5
+    }
+  },
+  "rates_version": "synthetic-fixture-v1",
+  "notes": "Every dollar figure here is NOTIONAL LIST VALUE. Rates are the synthetic fixture's own registry, not production rates; they preserve the relative structure that matters (output 5x input, cache_write 1.25x, cache_read 0.1x) so mispricing cache_read as input fails a test."
+}
