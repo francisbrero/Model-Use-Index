@@ -33,7 +33,7 @@ Statuses: `open` · `in progress` · `answered` · `moot`
 Two experiments. Neither produces code you keep. Both can invalidate weeks of
 work, which is the point.
 
-### W1 — The one-day spike *(status: open)*
+### W1 — The one-day spike *(status: **answered 2026-09-09** — see §5)*
 
 A throwaway script over your **existing** transcript history. Not a prototype —
 delete it afterwards.
@@ -54,6 +54,58 @@ answer how much Opus consumption went to sessions that look trivial
 | ~3% | The over-provisioning story isn't there. The interesting question is probably **context efficiency (A4)** or **under-provisioning (A2)** instead — reshape the PRD's emphasis before building. |
 
 Either answer is worth a day. This is also a free rehearsal for U4 and U8.
+
+**Result (2026-09-09).** Ran over 970 transcripts / 354 sessions; 180 sessions
+carry Opus consumption, 16.87 B Opus tokens, **$43,683 notional list value**.
+
+| Definition of "trivial" | Sessions | Share of Opus notional value |
+|---|---|---|
+| No mutation of any kind (incl. `Bash` writes) | 8 | **0.03%** |
+| ≤ 25 assistant turns, any work | 27 | 0.2% |
+| ≤ 50 assistant turns, any work | 40 | 0.6% |
+| ≤ 5 mutations total | 28 | 0.2% |
+| `Edit`-tool-free only (naive — **wrong**, see below) | 51 | 11.6% |
+
+**The naive `no Edit` cut is a false positive and must not be quoted.** Under
+this repo's own bypass-mode instruction, agents edit files with `sed`/heredocs
+through `Bash`, so an `Edit`-free session is often a heavy mutating session. The
+11.6% bucket is dominated by sessions like *1,567 turns · 798 `Bash` · 412
+sidechain · $1,627* — the opposite of trivial. Counting `Bash` write verbs as
+mutations collapses that 11.6% to **0.03%**.
+
+**This is the ~3% branch, and then some.** 93.6% of Opus notional value sits in
+sessions over 250 assistant turns. There is no meaningful population of trivial
+Opus sessions to reclaim; the over-provisioning story does not exist at this
+operator's usage profile.
+
+**Where the value actually is — context, not model tier:**
+
+| Component | Opus tokens | Notional | Share |
+|---|---|---|---|
+| cache read | 15.93 B | $23,895 | **54.7%** |
+| cache write | 897 M | $16,820 | 38.5% |
+| output | 39.5 M | $2,964 | 6.8% |
+| input | 297 K | $4 | 0.0% |
+
+**93.2% of Opus spend is cache traffic, not generation.** That is A4 (context
+efficiency), not A1 (over-provisioning).
+
+**Go/no-go:** **No-go on "over-provisioning as the headline."** A1 stays as a
+secondary analysis; **A4 becomes the headline**, with A2 (under-provisioning) the
+second candidate pending U3a. The PRD's emphasis needs reshaping before Phase 0
+scope is fixed.
+
+**Incidental answers.** U4REF: `message.usage` was present on **80,037 / 80,037**
+assistant messages — 0 missing, 0 unparseable lines across 970 files. The field
+carries `cache_creation_input_tokens`, `cache_read_input_tokens`,
+`service_tier`, and a nested `cache_creation` 1h/5m split. Records also carry
+`version`, `cwd`, `gitBranch`, `isSidechain` and `requestId`, so invariant 7's
+drift-bisect-by-version plan is viable. U8 rehearsal: session grouping by
+`sessionId` worked, but **`isSidechain` turns are billed into the parent session**
+— up to 2,102 sidechain turns in one session — so subagent attribution is a real
+unknown, not a formality.
+
+The spike script was deleted, per the issue.
 
 ### W2 — Test the central hypothesis by hand *(status: open)*
 
@@ -222,15 +274,26 @@ Append-only. Date · question · answer · what it changed.
 
 | Date | ID | Answer | Consequence |
 |---|---|---|---|
-| | | | |
+| 2026-09-09 | W1 | Trivial-Opus share is **0.03%** of $43,683 notional (8 of 180 sessions). 93.6% of value is in 250+ turn sessions. | **No-go on over-provisioning as the headline.** A1 demoted to secondary. |
+| 2026-09-09 | W1 | **93.2% of Opus notional value is cache traffic** (54.7% read, 38.5% write); output is 6.8%. | **A4 (context efficiency) becomes the headline analysis.** Reshape PRD emphasis before fixing Phase 0 scope. |
+| 2026-09-09 | W1 | The naive `no Edit` cut reads 11.6% but is a false positive — `Bash`-driven edits. | Any future triviality rule must classify `Bash` command verbs, not just tool names. Feeds the taxonomy. |
+| 2026-09-09 | U4REF | `message.usage` present on **80,037/80,037** assistant messages; 0 bad lines in 970 files. | Source A token capture is sound. `version`/`cwd`/`gitBranch`/`isSidechain` also present — invariant 7 drift-bisect is viable. |
+| 2026-09-09 | U8 (rehearsal) | `sessionId` grouping works, but sidechain turns bill into the parent session (one session: 2,102 sidechain turns). | Subagent attribution is a genuine open unknown; don't assume per-agent split comes free. |
 
 ---
 
 ## 6. Next three actions
 
-1. **W1** — the one-day spike. Does the finding exist at all?
-2. **W2** — hand-test the `Agentic / Medium` hypothesis on Haiku.
+1. ~~**W1** — the one-day spike.~~ **Done 2026-09-09: 0.03%. No-go on the
+   over-provisioning headline; A4 (context efficiency) takes its place.** See §1.
+2. **W2** — hand-test the `Agentic / Medium` hypothesis on Haiku. W1 lowered the
+   stakes here — the 25% misallocation figure it defends is now a secondary
+   analysis, not the headline — but it is still the cheapest way to find out
+   whether the tier matrix is trustworthy at all, so it still runs before Phase 0.
 3. **U3a** — grep existing history for past rate-limit errors. Twenty minutes,
-   and it may save six weeks of waiting for calibration data.
+   and it may save six weeks of waiting for calibration data. **W1 promoted
+   this**: with A1 demoted, A2 (under-provisioning) is a leading candidate for
+   the second headline, and U3a is its gating evidence.
 
-Everything else waits on these three.
+Everything else waits on these three. **A PRD emphasis pass (A4 to the front)
+is now queued behind W2** — do not fix Phase 0 scope until it lands.
