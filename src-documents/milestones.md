@@ -175,7 +175,7 @@ holds $3,844 across 573 sessions, separate from any repo directory.
 
 The spike script was deleted, per the issue.
 
-### W2 — Test the central hypothesis by hand *(status: open · [#4](https://github.com/francisbrero/Model-Use-Index/issues/4))*
+### W2 — Test the central hypothesis by hand *(status: **in progress** — redesigned Opus→Haiku 2026-09-09; worklist ready, six hand-runs outstanding · [#4](https://github.com/francisbrero/Model-Use-Index/issues/4) — see §5)*
 
 **The tier matrix came from a screenshot of somebody else's report.** It
 reproduces that report 28/28 — which proves fidelity to the source, not that the
@@ -189,6 +189,15 @@ Haiku by hand. Do they land?
 Half a day, and it validates or kills the central hypothesis before a line of the
 tool is written. **The finding you are most excited about is the one with the
 least evidence behind it.** Correct that now rather than in Phase 3.
+
+**Redesigned 2026-09-09 — the Sonnet pool does not exist.** 97.9% of Sonnet
+records are subagent turns; only 78 main-agent records survive, across two
+one-shot Q&A sessions. The control is therefore **Opus, not Sonnet**, which
+weakens the possible conclusion: Haiku failing means *Haiku cannot do this*, not
+*Haiku is worse than Sonnet*. Candidate selection is done — 227 work units in
+band, six selected, verdict rule fixed in advance in
+[`phase0/w2-worklist.md`](../phase0/w2-worklist.md). **What remains is the six
+hand-runs, which is the half-day and cannot be automated.**
 
 ---
 
@@ -677,6 +686,10 @@ Append-only. Date · question · answer · what it changed.
 | 2026-09-09 | **U3a** | **A structured `quotaLimits` object exists — but only on client `2.1.245` (1 of 29).** `{status, resetsAt (unix epoch), rateLimitType: "seven_day", unifiedRateLimitFallbackAvailable, overageStatus, overageDisabledReason, isUsingOverage}`. The other 28 (`2.1.220`) carry the reset only as UI display text — local wall-clock, tz-named, no date on the 5-hour form. | **Key the allowance model on `quotaLimits`; parse text only as fallback.** Invariant 7 in miniature — the good field arrived in a point release, so record `version` on every limit-hit row. |
 | 2026-09-09 | **U3a** | **Go/no-go: qualified go — backfill for the *shape*, live capture for the *fit*.** 6 boundary points, with 75–2,097 deduped assistant records in the 5h preceding each, is enough to build and sanity-check `enrich/allowance.py`; it is not enough to fit a ceiling with a usable interval (4 of 6 fall inside one 42-hour stretch, 1 is a spend limit — a different mechanism). | **Build the fit against backfill; display share-of-period until live hits accumulate** — `U3`'s stated fallback stands, and M1's no-headroom constraint is unchanged. The compression lands on *development*, not on calibration convergence. |
 | 2026-09-09 | **U3a** | `rate_limit` (29) is at parity with `server_error` (28); also `authentication_failed` (4), `oauth_org_not_allowed` (1), `invalid_request` (1). **3 of 29 limit hits are `isSidechain: true`.** | The normaliser must not read "an error record" as "a limit hit" — capture `error` as an enum. Subagents hit the ceiling too, so limit accounting is **per-pool, not per-session** (invariant 4 · `U2`/`U8`). |
+| 2026-09-09 | **W2** | **W2 cannot run as written — the Sonnet pool does not exist.** 3,730 Sonnet assistant records, but **3,652 (97.9%) are `isSidechain: true`** (subagent turns, one `subagents` directory). Only **78 main-agent records across 2 sessions**, both one-shot Q&A (`Retrieval / Low`), neither agentic. | **Method redesigned to Opus→Haiku** (operator call). Consequence carried forward: a Haiku failure means *"Haiku cannot do this"*, not *"Haiku is worse than Sonnet"* — so the cell may move to `mid` only after a confirming Sonnet run the history cannot supply. |
+| 2026-09-09 | **W2** | **The `Agentic / Medium` band is 227 of 750 Phoenix work units, $3,887.59 notional list value**; median unit $12.55 / 18 tool calls / 32 turns. 150 have self-describing prompts; 77 are continuations (`ok`, `approved`) — real work, not restatable, kept in the denominator. | Pool is ample. Worklist of 20 candidates and 6 selected runs in [`phase0/w2-worklist.md`](../phase0/w2-worklist.md), with a **verdict rule fixed in advance** so the result isn't read to taste. |
+| 2026-09-09 | **W2** | The band is dominated by `gh`, `git`, `argocd`, `kubectl`, `pnpm` — release orchestration and CI shepherding, often triggered by a one-word approval. | **Independent corroboration of W1's reframed headline** from a different filter over the same corpus: the volume in the cell under test *is* high-ceremony low-reasoning orchestration. |
+| 2026-09-09 | **W2** | Mutating work had to be detected via **`Bash` verbs**, not `Edit`/`Write` — bypass-mode agents edit through `sed`/heredocs. An `Edit`-only filter would have mis-sized the band. | W1's false-positive trap recurred immediately in a second, unrelated analysis. Any taxonomy rule must classify `Bash` verbs; this is now twice-observed, not a one-off. |
 
 ---
 
@@ -698,6 +711,9 @@ Append-only. Date · question · answer · what it changed.
    here — the 25% misallocation figure it defends is now a secondary analysis,
    not the headline — but it is still the cheapest way to find out whether the
    tier matrix is trustworthy at all, so it still runs before the build.
+   **In progress: redesigned Opus→Haiku (no Sonnet pool exists), candidates
+   selected, verdict rule fixed. Six hand-runs outstanding** — see
+   [`phase0/w2-worklist.md`](../phase0/w2-worklist.md).
 4. **The PRD emphasis pass** — A1 re-aimed at high-ceremony low-reasoning
    orchestration (not "trivial sessions"), A4 named as the second headline, and
    the taxonomy's top level set to *kind of work*. Queued behind W2.
