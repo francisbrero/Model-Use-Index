@@ -137,7 +137,7 @@ def notional_list_value(usage, rates):
 
 
 def arc_value(turns, arc, rates):
-    span = turns[arc["start"] + 1 : arc["end"] + 1]
+    span = turns[arc["start"] : arc["end"] + 1]
     return sum(notional_list_value(t["usage"], rates) for t in span)
 
 
