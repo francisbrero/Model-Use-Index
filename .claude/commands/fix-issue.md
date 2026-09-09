@@ -21,7 +21,14 @@ if dev/active/issue-{number}/ exists:
 Parse the issue body for ambiguity. Use `AskUserQuestion` to resolve anything
 unclear **before** planning, and record the answers in `context.md`.
 
-For this project specifically, check whether the issue depends on a Phase 0
+**First, check where the project actually is.** Read `src-documents/milestones.md`
+§1 and §6. If W1 or W2 is still `open` and this issue is Phase 1+ build work,
+stop and say so — those two experiments come before committing to the build and
+either can invalidate it. An issue that *is* W1, W2 or U3a is the right work;
+note that W1/W2 produce throwaway scripts, so skip the dev-docs and review-loop
+ceremony below for those and just report the number.
+
+Then check whether the issue depends on a Phase 0
 finding that isn't settled yet (subagent on-disk layout, Codex log location and
 token counts, whether allowance is readable or must be modelled,
 `OTEL_LOG_RAW_API_BODIES`, transcript-vs-OTel agreement, which hooks fire — PRD

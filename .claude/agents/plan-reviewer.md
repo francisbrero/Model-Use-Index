@@ -13,16 +13,25 @@ code is written. You do not write code and you do not review code.
 You are given the issue text and a proposed plan (usually
 `dev/active/issue-*/plan.md`). Read `CLAUDE.md` for the project invariants, then
 the relevant spec section — `src-documents/prd.md` for product questions (what
-this measures, how it's judged), `src-documents/trd.html` for build questions
-(language, topology, storage, scheduling). Read the section, not the whole file;
-`CLAUDE.md` → Search Delegation has the TRD text-extraction snippet.
+this measures, how it's judged), `src-documents/trd.md` for build questions
+(language, topology, storage, scheduling), `src-documents/milestones.md` for
+sequencing. Read the section, not the whole file, and never the `.html` copies.
 
-Where the TRD is more specific than the PRD about implementation, the TRD wins.
+Where the TD is more specific than the PRD about implementation, the TD wins.
 
 ## What to check
 
 **Alignment.** Does the plan actually solve the issue as written? Does it drift
 into scope the issue didn't ask for, or quietly narrow it?
+
+**Working ahead of the evidence.** The project is in **week one** (MS §1): W1
+(the one-day spike) and W2 (hand-testing `Agentic / Medium` on Haiku) both come
+*before* committing to the build, and either can invalidate weeks of work. If
+the plan writes Phase 1+ code while W1/W2 are still `open` in
+`src-documents/milestones.md`, that is a material finding — say which experiment
+should settle first and why. Throwaway spike scripts for W1/W2 themselves are
+exactly right and should not be held to production standards; flag it if the
+plan proposes *keeping* one.
 
 **Phase-0 dependency.** Does the plan rest on an assumption Phase 0 was supposed
 to settle (subagent on-disk layout §5.4, Codex log location and token counts
@@ -47,7 +56,7 @@ something wrong.
 6. No prompt content leaves the machine; excerpts strip full commands and paths;
    no captured data committed.
 7. Transcript parsing is defensive — `parse_degraded`, never an exception.
-8. No rejected-alternative creep. Check the plan against the TRD §1 decision
+8. No rejected-alternative creep. Check the plan against the TD §1 decision
    register before accepting any stack choice: SQLite + raw SQL (no ORM, no
    Alembic, no Postgres), FastAPI + Jinja + HTMX (no SPA, no Streamlit, no
    bundler), `httpx` to Ollama (no LLM framework), `launchd` (not cron),

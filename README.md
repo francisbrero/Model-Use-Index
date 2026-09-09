@@ -13,12 +13,16 @@ ate it.
 
 ## Status
 
-**Phase 0 — reconnaissance.** Nothing is built yet; the technical design is
-proposed for review.
+**Week one — before committing to the build.** Nothing is built yet. Two
+experiments come first, and either can invalidate weeks of work: **W1**, a
+throwaway spike over existing transcript history to find whether the
+over-provisioning finding exists at all, and **W2**, hand-testing the one tier
+cell the headline number rests on. Phase 0 follows; Phase 1 follows that.
 
-- [`phase0/findings.md`](phase0/findings.md) — the six questions that block Phase 1
+- [`src-documents/milestones.md`](src-documents/milestones.md) — what to do next: unknowns, milestones, standing risks
 - [`src-documents/prd.md`](src-documents/prd.md) — product spec: problem, taxonomy, verdict rules, phases
-- [`src-documents/trd.html`](src-documents/trd.html) — technical design: language, topology, storage, scheduling
+- [`src-documents/trd.md`](src-documents/trd.md) — technical design: language, topology, storage, scheduling
+- [`phase0/findings.md`](phase0/findings.md) — the six questions that block Phase 1
 
 ## Design in one paragraph
 

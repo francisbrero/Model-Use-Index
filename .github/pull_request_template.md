@@ -31,11 +31,11 @@ Tick what applies; the ones in play for this diff must be affirmatively checked
       field extraction added under `collect/`; nothing there touches Ollama
 - [ ] **`raw_event` stays append-only** — no enrichment writes over capture;
       labels keyed by `classifier_version`
-- [ ] **No rejected-alternative creep** (TRD §1) — no ORM/Alembic/Postgres, no
+- [ ] **No rejected-alternative creep** (TD §1) — no ORM/Alembic/Postgres, no
       SPA/Streamlit/bundler, no LLM framework, no `cron`; DuckDB and
       `sqlite-vec` still behind their triggers
 - [ ] **Classifier prompt restates the schema and enums** in the prompt text,
-      not just `format=` (TRD §6)
+      not just `format=` (TD §6)
 - [ ] **One authoritative consumption source per provider** — others record a
       delta and contribute no tokens
 - [ ] **No cross-pool summing** of allowance
