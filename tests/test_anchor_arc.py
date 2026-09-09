@@ -35,6 +35,8 @@ SESSION_IDS = [
     "SYNTH-tag-hole",
     "SYNTH-long-run-then-anchor",
     "SYNTH-out-of-order",
+    "SYNTH-no-anchor",
+    "SYNTH-adjacent-anchors",
 ]
 
 
@@ -343,6 +345,32 @@ def test_arc_survives_a_six_day_idle_gap(sessions):
     turns = sessions["SYNTH-idle-gap"]
     (arc,) = arcs(turns)
     assert arc["end"] == len(turns) - 1
+
+
+def test_a_session_with_no_anchor_is_entirely_unattributable(sessions):
+    """The largest component of the remainder, and the easiest to lose.
+
+    At full scale, sessions with no anchor at all are 6.0% of Opus notional list
+    value ($1,416 across 48 sessions) against 1.3% for pre-first-anchor work. A
+    rule that returned an empty remainder here would understate the labelled
+    7.4% figure by four fifths while every arc assertion still passed.
+    """
+    turns = sessions["SYNTH-no-anchor"]
+    assert all(t["skill"] is None for t in turns), "the fixture must be untagged"
+    assert arcs(turns) == []
+    assert unattributable(turns) == list(range(len(turns)))
+
+
+def test_adjacent_anchor_runs_both_produce_an_arc(sessions):
+    """Two anchors with no untagged turn between them. Every other multi-anchor
+    session here has a gap, which lets a run-advance off-by-one skip the second
+    anchor silently; here it would drop an entire arc."""
+    turns = sessions["SYNTH-adjacent-anchors"]
+    runs = anchor_runs(turns)
+    assert [(start, tag_end) for start, tag_end, _ in runs] == [(0, 1), (2, 3)], (
+        "the fixture's two runs must be directly adjacent"
+    )
+    assert [a["skill"] for a in arcs(turns)] == ["synth-release", "synth-pr"]
 
 
 def test_boundary_is_the_next_runs_start_not_its_tag_end(sessions):

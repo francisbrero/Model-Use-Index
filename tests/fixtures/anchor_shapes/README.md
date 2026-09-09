@@ -31,6 +31,8 @@ fails a test rather than passing quietly.
 | `SYNTH-tag-hole` | one skill, tagged either side of an untagged turn | a hole fragments the arc — accepted, but pinned so it can't change silently |
 | `SYNTH-long-run-then-anchor` | a **3-turn** anchor run, then a second anchor | the only session where the next run's `start` and `tag_end` differ |
 | `SYNTH-out-of-order` | records written non-chronologically | order is part of the rule, not of the file layout |
+| `SYNTH-no-anchor` | no anchor anywhere | the largest remainder component — 6.0% of Opus value at full scale |
+| `SYNTH-adjacent-anchors` | two runs with no gap between them | a run-advance off-by-one would drop a whole arc |
 
 `SYNTH-long-run-then-anchor` is the one that matters most. Everywhere else a
 non-final anchor run is one turn long, so `start == tag_end` and a boundary
@@ -49,3 +51,9 @@ and U8 sidechain traps as well as the boundary rule.
 candidate rules alongside the chosen one so the register's comparative claim
 (the W1 baseline double-counts; this rule conserves) is executable rather than
 merely asserted.
+
+**Every session here exists to kill a specific mutation.** The suite was built
+by mutating the implementation and adding whatever fixture the survivors
+required — three review rounds found nine mutations that changed behaviour while
+the tests stayed green, each one a missing shape rather than a wrong assertion.
+If you add a case to the rule, mutate it first and check something fails.

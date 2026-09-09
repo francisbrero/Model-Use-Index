@@ -294,7 +294,7 @@ the 383 runs above collapse from those 17,180 records. Turn order must be
 `(timestamp, file position)`: "the next anchor" is only meaningful in time.
 
 Fixture `tests/fixtures/anchor_shapes/` + reference implementation
-`tests/test_anchor_arc.py` (73 tests). It implements the **rejected** candidates
+`tests/test_anchor_arc.py` (89 tests over 10 synthetic sessions). It implements the **rejected** candidates
 alongside the chosen rule, so the double-count comparison above is executable
 rather than merely asserted. It sits in `tests/` because nothing is built yet
 (MS §1); `normalize/work_unit.py` should import it and drop the local copy.
