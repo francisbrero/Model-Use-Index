@@ -410,16 +410,30 @@ def test_boundary_is_the_next_runs_start_not_its_tag_end(sessions):
     assert max(claimed_counts(turns, arcs).values()) == 1
 
 
-def test_turns_are_ordered_by_timestamp_not_file_order(sessions):
-    """`SYNTH-out-of-order` is written to the file as O2, O0, O1. Read in file
-    order the anchor lands at index 1 and turn 0 falls wrongly into the
-    remainder; in timestamp order the arc covers the whole session."""
+def test_turns_are_ordered_by_timestamp(sessions):
+    """`SYNTH-out-of-order` pins **timestamp as the primary key**, against both
+    of the wrong orderings.
+
+    Its records are written to the file as Oa(10:02), Oz(10:00), Om(10:01), and
+    the ids are minted so lexicographic order is the *reverse* of chronological
+    order. Sorting on file position puts the anchor at index 1 and loses turn 0
+    to the remainder; sorting on `message.id` alone reverses the session; only
+    `(timestamp, message.id)` gives the anchor index 0 and the arc [0..2].
+
+    Without that contradiction the test proves nothing: in every other session
+    the ids happen to sort in timestamp order, so the primary key could be
+    deleted outright and the suite would stay green.
+    """
     turns = sessions["SYNTH-out-of-order"]
-    assert [t["timestamp"] for t in turns] == sorted(t["timestamp"] for t in turns), (
-        "turns must be sorted into chronological order"
+    ids = [t["message_key"][0] for t in turns]
+    assert ids != sorted(ids), (
+        "id order must contradict timestamp order, or timestamp-primary is untested"
     )
     assert [t["position"] for t in turns] != sorted(t["position"] for t in turns), (
         "the fixture must actually be out of file order, or this proves nothing"
+    )
+    assert [t["timestamp"] for t in turns] == sorted(t["timestamp"] for t in turns), (
+        "turns must be sorted into chronological order"
     )
     (arc,) = arcs(turns)
     assert (arc["start"], arc["end"]) == (0, len(turns) - 1)
@@ -484,6 +498,12 @@ def test_non_usage_fields_are_reconciled_across_a_duplicate_group(field, order):
     (turn,) = dedup(records)
     key = "skill" if field == "attributionSkill" else "sidechain"
     assert turn[key] == value, f"{field} lost when carried by the {order} block"
+    # `== value` alone cannot separate any-of from last-wins when the *later*
+    # block is the bare one, so assert the bare block does not clear the field
+    if order == ("first", "second"):
+        assert turn[key] is not None and turn[key] is not False, (
+            f"a later bare block must not overwrite {field} — that is last-wins"
+        )
 
 
 def test_a_hole_in_a_tag_run_fragments_the_arc(sessions):
@@ -582,9 +602,9 @@ def test_dedup_is_max_not_last_by_file_order(sessions):
     assert turns[2]["usage"]["cache_read"] == 8000
 
 
-def test_order_tie_is_broken_by_file_position(sessions):
+def test_order_tie_is_broken_by_message_id(sessions):
     """Two turns sharing an identical timestamp: the untagged one is written
-    first, so `(timestamp, file position)` puts the anchor second.
+    first, so `(timestamp, message.id)` puts the anchor second.
 
     Real transcripts routinely emit several turns inside the same second.
     Sorting on timestamp alone leaves the order unspecified, and since the arc
@@ -594,6 +614,12 @@ def test_order_tie_is_broken_by_file_position(sessions):
     turns = sessions["SYNTH-dup-and-tie"]
     assert turns[0]["timestamp"] == turns[1]["timestamp"], (
         "the fixture must contain a genuine timestamp tie"
+    )
+    # the pair also breaks the message.id / requestId 1:1, so the two fields
+    # order it oppositely — a tie-break on requestId would swap these turns
+    assert turns[0]["message_key"][1] > turns[1]["message_key"][1], (
+        "requestId must order the tie the other way, or requestId-vs-message.id "
+        "is untested"
     )
     assert turns[0]["message_key"][0] < turns[1]["message_key"][0], (
         "the tie must resolve on message.id, a property of the record"
@@ -606,7 +632,7 @@ def test_order_tie_is_broken_by_file_position(sessions):
 
 
 def test_tied_timestamps_are_ordered_deterministically(sessions):
-    """The property the `(timestamp, position)` key actually buys: the same
+    """The property the `(timestamp, message.id)` key actually buys: the same
     records in a different input order must yield the same arcs.
 
     Python's `sort` is stable, so *within this module* dropping the tie-break

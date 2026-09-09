@@ -316,7 +316,7 @@ boundary arithmetic, four-field pricing, conservation, dedup — at fixture scal
 The population figures above ($13,118, 92.6%, 7.4%, the candidate table) came
 from a throwaway script over `~/.claude/projects/`, deleted like W1's. To redo
 them: load every `type: "assistant"` record, dedup by `(message.id, requestId)`
-taking max per usage field, group by session, order by `(timestamp, file
+taking max per usage field, group by session, order by `(timestamp,
 message.id)`, derive contiguous `attributionSkill` runs, apply each candidate rule,
 and sum Opus notional list value per skill while counting turns claimed more than
 once. The 991-transcript corpus reproduces $23,473 total, which is the check that

@@ -151,7 +151,7 @@
       "unattributable_notional_list_value_usd": 0,
       "sidechain_inside_arc_notional_list_value_usd": 0,
       "session_total_notional_list_value_usd": 0.2295,
-      "notes": "File order is O2, O0, O1; timestamp order is O0, O1, O2. After sorting, the anchor is at index 0 and the untagged turn last, so the arc is [0..2]. Read in file order the anchor would land at index 1 and turn 0 would fall into the unattributable remainder. 'The next anchor' is only meaningful in time."
+      "notes": "File order is Oa(10:02), Oz(10:00), Om(10:01); timestamp order is Oz, Om, Oa. The ids are deliberately minted so their lexicographic order is the REVERSE of chronological order: sorting on message.id alone reverses the session, and sorting on file position alone puts the anchor at index 1. Only (timestamp, message.id) yields the anchor at index 0 and the arc [0..2]. Every other session's ids happen to sort in timestamp order, which would let the primary sort key be deleted unnoticed."
     },
     "SYNTH-no-anchor": {
       "arcs": [],
@@ -201,7 +201,7 @@
       "unattributable_notional_list_value_usd": 0.0765,
       "sidechain_inside_arc_notional_list_value_usd": 0,
       "session_total_notional_list_value_usd": 0.3165,
-      "notes": "Two traps at once. (1) The msg_synth_T2 group is written 2000, 500, 900 -- HIGH first. The SYNTH-idle-gap group is written low-then-high, where last-by-file-order happens to equal max; this one is its mirror, so the two together kill first-seen AND last-wins. Invariant 10 names both as wrong. (2) T0 (untagged) and T1 (anchored) share an identical timestamp, with T0 written first, so the (timestamp, file position) tie-break decides the anchor's index. Sorting on timestamp alone leaves it order-dependent, which would make arc boundaries irreproducible (invariant 2b)."
+      "notes": "Two traps at once. (1) The msg_synth_T2 group is written 2000, 500, 900 -- HIGH first. The SYNTH-idle-gap group is written low-then-high, where last-by-file-order happens to equal max; this one is its mirror, so the two together kill first-seen AND last-wins. Invariant 10 names both as wrong. (2) T0 (untagged) and T1 (anchored) share an identical timestamp, with T0 written first, so the (timestamp, message.id) tie-break decides the anchor's index. Sorting on timestamp alone leaves it order-dependent, which would make arc boundaries irreproducible (invariant 2b). The tied pair also breaks the 1:1 between message.id and requestId (T0 carries req_T9, T1 carries req_T1), so message.id and requestId order them oppositely: a tie-break on requestId would swap the anchor and the untagged turn. Real retries break that 1:1, which is why the dedup key is a pair and the sort key is not."
     }
   },
   "rates_notional_list_value_usd_per_1m": {
