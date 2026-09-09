@@ -33,6 +33,13 @@ fails a test rather than passing quietly.
 | `SYNTH-out-of-order` | records written non-chronologically | order is part of the rule, not of the file layout |
 | `SYNTH-no-anchor` | no anchor anywhere | the largest remainder component — 6.0% of Opus value at full scale |
 | `SYNTH-adjacent-anchors` | two runs with no gap between them | a run-advance off-by-one would drop a whole arc |
+| `SYNTH-dup-and-tie` | a dup group written **high-then-low**, plus tied timestamps | kills last-by-file-order, and pins the tie-break |
+
+`SYNTH-dup-and-tie` is the mirror of `SYNTH-idle-gap`: that group is written
+500 then 2,000, where last-by-file-order happens to *equal* max, so it cannot
+tell the two reductions apart. This one is written 2,000 / 500 / 900, where max
+is 2,000 and last-wins would be 900. Invariant 10 rejects both first-seen and
+last-by-file-order, so it takes one group in each direction to hold that.
 
 `SYNTH-long-run-then-anchor` is the one that matters most. Everywhere else a
 non-final anchor run is one turn long, so `start == tag_end` and a boundary

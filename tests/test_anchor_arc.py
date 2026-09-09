@@ -37,6 +37,7 @@ SESSION_IDS = [
     "SYNTH-out-of-order",
     "SYNTH-no-anchor",
     "SYNTH-adjacent-anchors",
+    "SYNTH-dup-and-tie",
 ]
 
 
@@ -72,6 +73,7 @@ def dedup(records):
         }
         if key not in groups:
             groups[key] = {
+                "message_key": key,
                 "session": record["sessionId"],
                 "skill": record.get("attributionSkill") or None,
                 "sidechain": bool(record.get("isSidechain")),
@@ -93,14 +95,24 @@ def dedup(records):
 
 
 def to_sessions(records):
-    """Group deduplicated turns by session, ordered by (timestamp, file
-    position). Order is part of the rule, not an accident of file layout: the
-    arc boundary is 'the next anchor', which is only meaningful in time."""
+    """Group deduplicated turns by session, ordered by `(timestamp, message.id)`.
+
+    Order is part of the rule, not an accident of file layout: the arc boundary
+    is "the next anchor", which is only meaningful in time.
+
+    The tie-break is `message.id` rather than file position deliberately. Real
+    transcripts emit several turns inside the same second, and file position is
+    a property of *how the records were read*, not of the records — so ordering
+    on it makes the arc boundary depend on read order, and a normaliser doing
+    `ORDER BY timestamp` in SQL would resolve ties differently again. Both keys
+    here come from the record, so every derived number is reproducible from
+    `raw_event` alone (invariant 2b).
+    """
     by_session = {}
     for turn in dedup(records):
         by_session.setdefault(turn["session"], []).append(turn)
     for turns in by_session.values():
-        turns.sort(key=lambda t: (t["timestamp"] or "", t["position"]))
+        turns.sort(key=lambda t: (t["timestamp"] or "", t["message_key"][0] or ""))
     return by_session
 
 
@@ -548,6 +560,72 @@ def test_sidechain_flag_is_reconciled_across_a_duplicate_group():
         records = [{**base, "isSidechain": flag} for flag in order]
         (turn,) = dedup(records)
         assert turn["sidechain"] is True, f"order {order} lost the flag"
+
+
+def test_dedup_is_max_not_last_by_file_order(sessions):
+    """Invariant 10 rejects first-seen *and* last-by-file-order, so the fixture
+    carries a duplicate group in each direction.
+
+    `SYNTH-idle-gap`'s group is written 500 then 2,000 — there last-wins happens
+    to equal max, so it cannot tell the two apart. This group is written 2,000,
+    500, 900: max is 2,000, last-wins would be 900 and first-seen 2,000. Only
+    max satisfies both sessions at once.
+    """
+    turns = sessions["SYNTH-dup-and-tie"]
+    assert len(turns) == 3, "three content blocks must collapse to one response"
+    assert turns[2]["usage"]["output"] == 2000, (
+        "max per field — not last-by-file-order (900), not the mean"
+    )
+    assert turns[2]["usage"]["cache_read"] == 8000
+
+
+def test_order_tie_is_broken_by_file_position(sessions):
+    """Two turns sharing an identical timestamp: the untagged one is written
+    first, so `(timestamp, file position)` puts the anchor second.
+
+    Real transcripts routinely emit several turns inside the same second.
+    Sorting on timestamp alone leaves the order unspecified, and since the arc
+    boundary is defined by order, that would make derived numbers
+    irreproducible — invariant 2b.
+    """
+    turns = sessions["SYNTH-dup-and-tie"]
+    assert turns[0]["timestamp"] == turns[1]["timestamp"], (
+        "the fixture must contain a genuine timestamp tie"
+    )
+    assert turns[0]["message_key"][0] < turns[1]["message_key"][0], (
+        "the tie must resolve on message.id, a property of the record"
+    )
+    assert turns[0]["skill"] is None
+    assert turns[1]["skill"] == "synth-release"
+    (arc,) = arcs(turns)
+    assert (arc["start"], arc["end"]) == (1, 2)
+    assert unattributable(turns) == [0]
+
+
+def test_tied_timestamps_are_ordered_deterministically(sessions):
+    """The property the `(timestamp, position)` key actually buys: the same
+    records in a different input order must yield the same arcs.
+
+    Python's `sort` is stable, so *within this module* dropping the tie-break
+    degrades to file order and is indistinguishable. The mutation this guards
+    against is a reimplementation that reorders — a normaliser doing
+    `ORDER BY timestamp` in SQL, where ties come back in whatever order the
+    query planner chose. Sorting a shuffled input is how that gets caught here
+    without depending on CPython's stability guarantee.
+    """
+    records = [
+        json.loads(line)
+        for line in (FIXTURES / "anchor_shapes.jsonl").read_text().splitlines()
+        if line.strip()
+    ]
+    tied = [r for r in records if r["sessionId"] == "SYNTH-dup-and-tie"]
+    baseline = to_sessions(tied)["SYNTH-dup-and-tie"]
+    # the two tied records are the ones whose relative order is contestable
+    reordered = [tied[1], tied[0], *tied[2:]]
+    shuffled = to_sessions(reordered)["SYNTH-dup-and-tie"]
+    assert [t["message_key"] for t in shuffled] == [
+        t["message_key"] for t in baseline
+    ], "tied timestamps must resolve to a stable order, not the input order"
 
 
 def test_dedup_takes_max_output_across_a_streaming_group(sessions):

@@ -185,6 +185,23 @@
       "sidechain_inside_arc_notional_list_value_usd": 0,
       "session_total_notional_list_value_usd": 0.306,
       "notes": "Two anchor runs directly adjacent, no untagged turn between. Every other multi-anchor session here has a gap, which lets a run-advance off-by-one skip the second anchor unnoticed; here it would drop a whole arc."
+    },
+    "SYNTH-dup-and-tie": {
+      "arcs": [
+        {
+          "skill": "synth-release",
+          "start": 1,
+          "end": 2,
+          "notional_list_value_usd": 0.24
+        }
+      ],
+      "pre_anchor": [
+        0
+      ],
+      "unattributable_notional_list_value_usd": 0.0765,
+      "sidechain_inside_arc_notional_list_value_usd": 0,
+      "session_total_notional_list_value_usd": 0.3165,
+      "notes": "Two traps at once. (1) The msg_synth_T2 group is written 2000, 500, 900 -- HIGH first. The SYNTH-idle-gap group is written low-then-high, where last-by-file-order happens to equal max; this one is its mirror, so the two together kill first-seen AND last-wins. Invariant 10 names both as wrong. (2) T0 (untagged) and T1 (anchored) share an identical timestamp, with T0 written first, so the (timestamp, file position) tie-break decides the anchor's index. Sorting on timestamp alone leaves it order-dependent, which would make arc boundaries irreproducible (invariant 2b)."
     }
   },
   "rates_notional_list_value_usd_per_1m": {

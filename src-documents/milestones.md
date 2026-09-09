@@ -227,7 +227,7 @@ the release sessions by hand, where the overlap does not bite.
 
 **Candidates scored against W1's $1,511 hand-read regression target:**
 
-Read *Attributed* and *Overlap* together: the two rules that reach 92.6% cover
+Read *Attributed* and *Double-counted* together: the two rules that reach 92.6% cover
 the same turns, but only one of them covers each turn once.
 
 | Rule | `/release-prod` | vs target | Attributed | Double-counted |
@@ -259,7 +259,7 @@ Merging same-skill re-invocations into one arc changes nothing (no `/release-pro
 run is adjacent to another), so re-invocation is treated as a boundary.
 
 **Regression target for `normalize/work_unit.py`:** assert on **$1,447 ± 5%**
-(`[$1,375, $1,519]`) — the rule's *own* output over 10 runs, $145/run.
+(`[$1,375, $1,519]`) — the rule's *own* output over 10 runs, mean $145/run.
 W1's **$1,511** is the independent hand-read validation reference, not the test's
 centre. Two distinct numbers, deliberately:
 
@@ -291,10 +291,14 @@ only** (17,180; never on `user`/`system`/`attachment`/`mode`), so a normaliser
 reading assistant records for `usage` sees every anchor for free. The tag repeats
 per content block, so anchor runs must be derived *after* invariant-10 dedup —
 the 383 runs above collapse from those 17,180 records. Turn order must be
-`(timestamp, file position)`: "the next anchor" is only meaningful in time.
+`(timestamp, message.id)`: "the next anchor" is only meaningful in time, and the
+tie-break must come from the record — real transcripts emit several turns inside
+one second, and ordering ties by file position or SQL row order would make arc
+boundaries depend on how the rows were read rather than what they say
+(invariant 2b).
 
 Fixture `tests/fixtures/anchor_shapes/` + reference implementation
-`tests/test_anchor_arc.py` (89 tests over 10 synthetic sessions). It implements the **rejected** candidates
+`tests/test_anchor_arc.py` (99 tests over 11 synthetic sessions). It implements the **rejected** candidates
 alongside the chosen rule, so the double-count comparison above is executable
 rather than merely asserted. It sits in `tests/` because nothing is built yet
 (MS §1); `normalize/work_unit.py` should import it and drop the local copy.
@@ -305,7 +309,7 @@ The population figures above ($13,118, 92.6%, 7.4%, the candidate table) came
 from a throwaway script over `~/.claude/projects/`, deleted like W1's. To redo
 them: load every `type: "assistant"` record, dedup by `(message.id, requestId)`
 taking max per usage field, group by session, order by `(timestamp, file
-position)`, derive contiguous `attributionSkill` runs, apply each candidate rule,
+message.id)`, derive contiguous `attributionSkill` runs, apply each candidate rule,
 and sum Opus notional list value per skill while counting turns claimed more than
 once. The 991-transcript corpus reproduces $23,473 total, which is the check that
 the loader is right before trusting anything else it says.
