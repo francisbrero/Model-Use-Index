@@ -15,7 +15,7 @@ You are given the issue text and a proposed plan (usually
 the relevant spec section — `src-documents/prd.md` for product questions (what
 this measures, how it's judged), `src-documents/trd.md` for build questions
 (language, topology, storage, scheduling), `src-documents/milestones.md` for
-sequencing. Read the section, not the whole file, and never the `.html` copies.
+sequencing. Read the section, not the whole file.
 
 Where the TD is more specific than the PRD about implementation, the TD wins.
 

@@ -14,8 +14,9 @@ a per-pool allowance report with an over/under-provisioning verdict.
 ## Which Document Owns What
 
 Three documents, deliberately split — do not resolve a question from the wrong
-one. **Always read the `.md`, never the `.html`** (the HTML files are rendered
-copies; they cost far more context and can't be diffed in review).
+one. Each is markdown and is the only copy — **never generate a rendered `.html`
+alongside one.** A second copy costs far more context, can't be diffed in review,
+and goes stale the moment the markdown moves.
 
 | Document | Owns | Cite as |
 |---|---|---|
@@ -271,7 +272,7 @@ Current:
 CLAUDE.md              # single source of truth
 AGENTS.md -> CLAUDE.md # symlink (Codex CLI)
 GEMINI.md -> CLAUDE.md # symlink (Gemini CLI)
-src-documents/         # prd.md · trd.md · milestones.md (+ rendered .html copies)
+src-documents/         # prd.md · trd.md · milestones.md · ui.html (mockups)
 phase0/findings.md     # the six blocking questions (after W1/W2)
 .claude/               # settings.json, agents/, commands/, skills/guardrails/
 ```
@@ -369,10 +370,10 @@ The dominant cost of a long session is cache-read at Opus rates. Accordingly:
   `sed -n` or grep for the heading rather than reading the whole file.
 - `src-documents/trd.md` is ~470 lines. Grep for the `## N.` heading and read
   that section.
-- **Never read the `.html` files** (`prd.html`, `trd.html`, `ui.html`). They're
-  rendered copies of the markdown — same content at several times the context
-  cost. `ui.html` is the only one with no `.md` equivalent; it's the approved
-  dashboard mockups, so open it in a browser rather than reading the markup.
+- **Never read `src-documents/ui.html`.** It's the approved dashboard mockups and
+  the only HTML left in the repo — hand-authored, not a render. Open it in a
+  browser; reading the markup costs thousands of lines of styling to learn what a
+  screenshot would tell you.
 
 ## PR Creation
 
