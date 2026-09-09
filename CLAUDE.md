@@ -264,6 +264,51 @@ stretch.** Classifier is `qwen3:4b` via Ollama, runs at 02:00 with the machine t
 itself. Verify actual quantisation with `ollama show` before trusting a tag's
 advertised size — tags are not uniformly Q4.
 
+### 10. Deduplicate `usage` before any arithmetic
+
+**Summing `message.usage` per JSONL record overstates cost by ~91%.** Measured
+on this operator's history: $43,972 naive against $23,059 correct, with 34,314
+of 72,083 Opus assistant records being duplicates (W1, 2026-09-09).
+
+Claude Code writes **one assistant record per content block** — a turn with text
+plus two `tool_use` blocks becomes three records — and each repeats *the same*
+`usage` object. The records have distinct `uuid`s and are genuinely separate
+lines, so nothing about them looks wrong.
+
+- **Dedup key is `(message.id, requestId)`**, not `uuid` and not the record.
+- **Take the max per field across the group.** Within a duplicate group,
+  `output_tokens` may differ — a partial streaming snapshot is written first and
+  the final count later (5,951 groups here). First-seen dedup *undercounts*
+  output; last-by-file-order is not reliable either.
+- Cache fields are constant within a group; `max` is safe for all four.
+- This belongs in `normalize/`, never in `collect/` — invariant 2 still holds,
+  and the raw duplicate records stay in `raw_event` untouched (invariant 2b).
+- `mui doctor` should report the duplicate ratio. A sudden change means the
+  transcript writer changed, which is invariant 7's canary in another guise.
+
+Not a local quirk — it is publicly documented in
+[ccusage #888](https://github.com/ryoppippi/ccusage/issues/888),
+[claude-code #5034](https://github.com/anthropics/claude-code/issues/5034) and
+[claude-devtools #74](https://github.com/matt1398/claude-devtools/issues/74),
+one of which measures 51–55% of entries as duplicates. **Any tool that reports
+Claude Code cost without this is wrong by roughly 2×**, which is the specific way
+this project would lose credibility on its first published number.
+
+The full accounting rules — dedup, per-field pricing, pool separation, anchor
+attribution, sidechain double-counting, and the pre-publication checks — live in
+the **`/token-accounting`** skill
+([`.claude/skills/token-accounting/SKILL.md`](.claude/skills/token-accounting/SKILL.md)).
+A `UserPromptSubmit` hook surfaces it whenever a prompt mentions cost, spend,
+tokens or usage; invoke it directly with `/token-accounting`.
+
+### 11. `attributionSkill` identifies routines; it cannot cost them
+
+The field tags only a **contiguous run** of turns — the skill invocation itself —
+then stops, while the work the routine drives continues untagged and carries most
+of the cost. Grouping spend by the field undercounts by an order of magnitude.
+Attribute from the tag as an **anchor** to the end of its arc. How to bound that
+arc is an open Phase 0 question, not a solved one.
+
 ## Repository Layout
 
 Current:
@@ -274,7 +319,7 @@ AGENTS.md -> CLAUDE.md # symlink (Codex CLI)
 GEMINI.md -> CLAUDE.md # symlink (Gemini CLI)
 src-documents/         # prd.md · trd.md · milestones.md · ui.html (mockups)
 phase0/findings.md     # the six blocking questions (after W1/W2)
-.claude/               # settings.json, agents/, commands/, skills/guardrails/
+.claude/               # settings.json, agents/, commands/, hooks/, skills/
 ```
 
 Target for Phase 1 (TD §12) — build into this shape, don't invent another:
