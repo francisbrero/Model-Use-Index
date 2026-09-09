@@ -306,7 +306,7 @@ untagged sidechain turns, so today no tie can move an arc boundary. But
 Cheap insurance against an irreproducible number, not a live bug.
 
 Fixture `tests/fixtures/anchor_shapes/` + reference implementation
-`tests/test_anchor_arc.py` (99 tests over 11 synthetic sessions). It implements the **rejected** candidates
+`tests/test_anchor_arc.py` (100 tests over 11 synthetic sessions). It implements the **rejected** candidates
 alongside the chosen rule, so the double-count comparison above is executable
 rather than merely asserted. It sits in `tests/` because nothing is built yet
 (MS §1); `normalize/work_unit.py` should import it and drop the local copy.

@@ -137,7 +137,7 @@ def notional_list_value(usage, rates):
 
 
 def arc_value(turns, arc, rates):
-    span = turns[arc["start"] : arc["end"] + 1]
+    span = turns[arc["start"] + 1 : arc["end"] + 1]
     return sum(notional_list_value(t["usage"], rates) for t in span)
 
 
@@ -232,6 +232,15 @@ def rates(expected):
 
 
 @pytest.fixture(scope="module")
+def raw_records():
+    return [
+        json.loads(line)
+        for line in (FIXTURES / "anchor_shapes.jsonl").read_text().splitlines()
+        if line.strip()
+    ]
+
+
+@pytest.fixture(scope="module")
 def sessions():
     records = [
         json.loads(line)
@@ -239,6 +248,24 @@ def sessions():
         if line.strip()
     ]
     return to_sessions(records)
+
+
+def test_duplicate_blocks_carry_distinct_uuids(raw_records):
+    """The fixture must reproduce *why* the duplicates are deceptive.
+
+    Claude Code gives every content-block record its own `uuid`, so a duplicate
+    group looks like several legitimate separate records — nothing about them is
+    malformed. A fixture that reused one uuid across a group would misrepresent
+    the shape and quietly suggest `uuid` was a usable dedup key. Invariant 10
+    says it is not.
+    """
+    uuids = [r["uuid"] for r in raw_records]
+    assert len(uuids) == len(set(uuids)), "content-block records need distinct uuids"
+    groups = Counter((r["message"]["id"], r.get("requestId")) for r in raw_records)
+    assert max(groups.values()) > 1, (
+        "the fixture must contain at least one real duplicate group"
+    )
+    assert len(uuids) > len(groups), "duplicate blocks must outnumber API responses"
 
 
 def test_every_fixture_session_is_expected(sessions, expected):

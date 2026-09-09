@@ -35,6 +35,11 @@ fails a test rather than passing quietly.
 | `SYNTH-adjacent-anchors` | two runs with no gap between them | a run-advance off-by-one would drop a whole arc |
 | `SYNTH-dup-and-tie` | a dup group written **high-then-low**, plus tied timestamps | kills last-by-file-order, and pins the tie-break |
 
+Every content-block record carries its **own `uuid`**, as real transcripts do —
+that is precisely why duplicate groups look legitimate and why `uuid` is not a
+usable dedup key (invariant 10). A fixture reusing one uuid across a group would
+misrepresent the shape it exists to document.
+
 `SYNTH-dup-and-tie` is the mirror of `SYNTH-idle-gap`: that group is written
 500 then 2,000, where last-by-file-order happens to *equal* max, so it cannot
 tell the two reductions apart. This one is written 2,000 / 500 / 900, where max
