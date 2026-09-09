@@ -26,6 +26,9 @@ Three registers and a log:
 
 Statuses: `open` · `in progress` · `answered` · `moot`
 
+Tracked items carry their GitHub issue next to the status. The issue is a
+worklist; **the answer belongs here** (see §6 *Issue tracking*).
+
 ---
 
 ## 1. Week one — before building anything
@@ -33,7 +36,7 @@ Statuses: `open` · `in progress` · `answered` · `moot`
 Two experiments. Neither produces code you keep. Both can invalidate weeks of
 work, which is the point.
 
-### W1 — The one-day spike *(status: open)*
+### W1 — The one-day spike *(status: open · [#3](https://github.com/francisbrero/Model-Use-Index/issues/3))*
 
 A throwaway script over your **existing** transcript history. Not a prototype —
 delete it afterwards.
@@ -55,7 +58,7 @@ answer how much Opus consumption went to sessions that look trivial
 
 Either answer is worth a day. This is also a free rehearsal for U4 and U8.
 
-### W2 — Test the central hypothesis by hand *(status: open)*
+### W2 — Test the central hypothesis by hand *(status: open · [#4](https://github.com/francisbrero/Model-Use-Index/issues/4))*
 
 **The tier matrix came from a screenshot of somebody else's report.** It
 reproduces that report 28/28 — which proves fidelity to the source, not that the
@@ -78,31 +81,31 @@ least evidence behind it.** Correct that now rather than in Phase 3.
 
 These change the plan, not just the implementation.
 
-#### U1 · Do Codex session logs carry token counts? `open`
+#### U1 · Do Codex session logs carry token counts? `open` · [#6](https://github.com/francisbrero/Model-Use-Index/issues/6)
 - **Cost to resolve:** ~1 hour. Run a Codex subagent; locate and inspect its records.
 - **Blocks:** PRD §5.1 Source E · G6 · TD §12 build order step 7
 - **If the answer is bad:** G6 collapses. An OpenAI-side gateway moves from Phase 4a to Phase 1 — a schedule change, not a design tweak.
 - **Answer:**
 
-#### U2 · How do subagent runs appear on disk? `open`
+#### U2 · How do subagent runs appear on disk? `open` · [#7](https://github.com/francisbrero/Model-Use-Index/issues/7)
 - **Cost:** ~30 min. Spawn a known subagent; diff `~/.claude/projects/` before and after.
 - **Blocks:** PRD §5.4 · G3 · Phase 3 sentiment work
 - **If the answer is bad:** Silently misattributes a large share of consumption to the main thread. **This one doesn't fail loudly** — the numbers just quietly mean something other than what they say, and you find out months later.
 - **Note:** Research returned contradictory accounts (inlined with `isSidechain` vs. separate files). Likely version-dependent. Hooks are the belt-and-braces answer either way.
 - **Answer:**
 
-#### U3 · Is allowance consumption machine-readable? `open`
+#### U3 · Is allowance consumption machine-readable? `open` · [#8](https://github.com/francisbrero/Model-Use-Index/issues/8)
 - **Cost:** ~1 hour. Inspect OTel output, `/usage` internals, and the error payload on a limit hit.
 - **Blocks:** PRD §6.2 · the headline number on every screen
 - **If the answer is bad:** Capacity must be *fitted* from limit-hit events, which runs on a calendar clock you cannot compress. Dashboard falls back to share-of-period until the fit converges.
 - **Answer:**
 
-#### U3a · Do past rate-limit hits already appear in existing transcripts? `open`
+#### U3a · Do past rate-limit hits already appear in existing transcripts? `open` · [#5](https://github.com/francisbrero/Model-Use-Index/issues/5)
 - **Cost:** ~20 min. Grep backfilled `raw_event` for rate-limit `api_error` records.
 - **Why it's called out separately:** **This is the highest-leverage check on the list.** If historical limit hits are already on disk, backfill hands you calibration data on day one instead of in six weeks. Nothing else on this register compresses the schedule as much.
 - **Answer:**
 
-#### U4 · Does `message.usage` appear on every assistant message? `open`
+#### U4 · Does `message.usage` appear on every assistant message? `open` · [#9](https://github.com/francisbrero/Model-Use-Index/issues/9)
 - **Cost:** ~20 min (W1 answers this incidentally).
 - **Blocks:** Every number in the system.
 - **If the answer is bad:** Coverage target of 95% is unreachable from the transcript alone; OTel becomes load-bearing rather than a cross-check.
@@ -144,7 +147,7 @@ These change the plan, not just the implementation.
 Framed as de-risking moments rather than as phases. Each definition of done is a
 measurement.
 
-### M0 · Phase 0 memo — *target: end of week 1*
+### M0 · Phase 0 memo — *target: end of week 1* · [#10](https://github.com/francisbrero/Model-Use-Index/issues/10)
 **Done when:** U1–U7 each have a recorded answer in §5, with sample records
 attached, and a go/no-go on the allowance model vs. direct read.
 **Also produced:** the golden-file fixtures TD §11 needs. Collect them now; they
@@ -228,9 +231,33 @@ Append-only. Date · question · answer · what it changed.
 
 ## 6. Next three actions
 
-1. **W1** — the one-day spike. Does the finding exist at all?
-2. **W2** — hand-test the `Agentic / Medium` hypothesis on Haiku.
-3. **U3a** — grep existing history for past rate-limit errors. Twenty minutes,
-   and it may save six weeks of waiting for calibration data.
+1. **W1** ([#3](https://github.com/francisbrero/Model-Use-Index/issues/3)) — the
+   one-day spike. Does the finding exist at all?
+2. **W2** ([#4](https://github.com/francisbrero/Model-Use-Index/issues/4)) —
+   hand-test the `Agentic / Medium` hypothesis on Haiku.
+3. **U3a** ([#5](https://github.com/francisbrero/Model-Use-Index/issues/5)) — grep
+   existing history for past rate-limit errors. Twenty minutes, and it may save
+   six weeks of waiting for calibration data.
 
 Everything else waits on these three.
+
+### Issue tracking
+
+The week-one gates and the Tier 1 unknowns are tracked as GitHub issues; **this
+document stays the source of truth for the answers.** Record each answer here
+(inline, then §5) and close the issue against it — don't let the issue thread
+become the register.
+
+| Register ID | Issue | Tier |
+|---|---|---|
+| `W1` | [#3](https://github.com/francisbrero/Model-Use-Index/issues/3) | Week one — gate |
+| `W2` | [#4](https://github.com/francisbrero/Model-Use-Index/issues/4) | Week one — gate |
+| `U3a` | [#5](https://github.com/francisbrero/Model-Use-Index/issues/5) | Tier 1 |
+| `U1` | [#6](https://github.com/francisbrero/Model-Use-Index/issues/6) | Tier 1 |
+| `U2` | [#7](https://github.com/francisbrero/Model-Use-Index/issues/7) | Tier 1 |
+| `U3` | [#8](https://github.com/francisbrero/Model-Use-Index/issues/8) | Tier 1 |
+| `U4` | [#9](https://github.com/francisbrero/Model-Use-Index/issues/9) | Tier 1 |
+| `M0` | [#10](https://github.com/francisbrero/Model-Use-Index/issues/10) | Milestone |
+
+Tier 2 (`U5`–`U7`) is tracked on the M0 checklist rather than as separate issues;
+Tier 3 (`U8`, `U9`) gets an issue when its phase opens.
