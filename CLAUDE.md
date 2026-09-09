@@ -293,6 +293,10 @@ one of which measures 51–55% of entries as duplicates. **Any tool that reports
 Claude Code cost without this is wrong by roughly 2×**, which is the specific way
 this project would lose credibility on its first published number.
 
+The full accounting rules — dedup, per-field pricing, pool separation, anchor
+attribution, sidechain double-counting, and the pre-publication checks — live in
+[`.claude/skills/guardrails/token-accounting.md`](.claude/skills/guardrails/token-accounting.md).
+
 ### 11. `attributionSkill` identifies routines; it cannot cost them
 
 The field tags only a **contiguous run** of turns — the skill invocation itself —
