@@ -1,0 +1,151 @@
+.DS_Store
+.AppleDouble
+._*
+.Spotlight-V100
+.Trashes
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Captured content — the highest-risk category in this repo
+#
+# This project's *input* is real Claude Code transcripts: actual prompts, file
+# contents and shell commands. None of it is ever committed (CLAUDE.md
+# invariant 6, PRD §13 Privacy, G4). Fixtures are the sole exception and must be
+# hand-written or scrubbed and obviously synthetic (TRD §11).
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Transcript / session / delegation records
+*.jsonl
+delegations.jsonl
+transcripts/
+raw/
+data/
+
+# Hook spool — one file per invocation, drained by mui-collect (TRD §4)
+spool/
+hooks/spool-out/
+
+# Golden-file fixtures are the deliberate exception (TRD §11)
+!tests/fixtures/**
+!tests/fixtures/**/*.jsonl
+!tests/fixtures/**/*.json
+
+# Phase 0 sample records come straight off the machine (PRD §14)
+phase0/**
+!phase0/README.md
+!phase0/findings.md
+
+# The store contains prompt text. Keep it in a FileVault-covered location and
+# never in a synced folder (TRD §5.2) — and never in git.
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.db.zst
+.model-use-index/
+backups/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Local config and secrets
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Machine-specific Claude Code overrides — not shared
+.claude/settings.local.json
+
+# config.toml carries local paths and thresholds; the example is committed
+# because its hash becomes rules_version (TRD §10)
+config.toml
+!config.toml.example
+
+# Telemetry env vars belong in the shell profile, never in a repo — a
+# repo-committed OTEL header is a known exfiltration vector (PRD §5.1 Source B)
+.env
+.env.*
+!.env.example
+
+# Rendered launchd plists (templates in launchd/ are committed)
+*.plist
+!launchd/*.plist.template
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Python — 3.12+, uv, ruff, pytest (TRD §3)
+# ─────────────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+sdist/
+wheels/
+*.egg-info/
+.eggs/
+.installed.cfg
+
+# uv / virtualenvs — uv.lock IS committed (reproducibility, TRD §10)
+.venv/
+venv/
+env/
+.python-version
+
+# Test and lint caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.dmypy.json
+.pyre/
+.pytype/
+.cache/
+.hypothesis/
+
+# Coverage — not a target here, but the tooling still litters (TRD §11)
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+nosetests.xml
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ML / local model artifacts
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Embeddings live in SQLite as BLOBs (TRD §7); anything dumped to disk is
+# derived and re-creatable — and may encode prompt content
+*.npy
+*.npz
+*.faiss
+embeddings/
+models/
+.ollama/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Web — FastAPI + Jinja + HTMX, no build step and no npm (TRD §8)
+# If a node_modules/ ever appears here, something has gone wrong with the stack
+# decision rather than with this file.
+# ─────────────────────────────────────────────────────────────────────────────
+node_modules/
+.parcel-cache/
+*.map
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Editors, notebooks, working notes
+# ─────────────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+.ipynb_checkpoints/
+
+# Per-issue dev docs — local session context, not shared (/fix-issue)
+dev/active/
+dev/archive/
+
+# Scratch
+/tmp/
+scratch/
+*.log
+*.tmp
+*.bak

@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Five Ways to Read the Spend</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+<style>
+:root{
+  --bg:#F6F7F9; --surface:#FFFFFF; --surface-2:#F0F2F5;
+  --ink:#12161C; --ink-2:#333C47; --muted:#59636F; --faint:#8C95A1;
+  --rule:#DCE0E6; --rule-strong:#C2C9D2;
+  --accent:#2E56A8; --accent-soft:#E7EDF9;
+  --ok:#3F7D4E;   --ok-soft:#E6F0E8;
+  --warn:#9A6206;  --warn-soft:#FAF0DD;
+  --crit:#AC3A2C;  --crit-soft:#FBE8E5;
+  --flag:#71468A;  --flag-soft:#F2EAF7;
+  --shadow:0 1px 2px rgba(18,22,28,.05), 0 8px 24px -16px rgba(18,22,28,.25);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1116; --surface:#161A20; --surface-2:#1D222A;
+    --ink:#E4E8ED; --ink-2:#C3CAD3; --muted:#939DAA; --faint:#6E7986;
+    --rule:#242A32; --rule-strong:#333B45;
+    --accent:#7FA5EA; --accent-soft:#1A2536;
+    --ok:#79B287;   --ok-soft:#16241A;
+    --warn:#D6A24B;  --warn-soft:#2A2113;
+    --crit:#E0806F;  --crit-soft:#2C1815;
+    --flag:#B990D2;  --flag-soft:#241A2C;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1116; --surface:#161A20; --surface-2:#1D222A;
+  --ink:#E4E8ED; --ink-2:#C3CAD3; --muted:#939DAA; --faint:#6E7986;
+  --rule:#242A32; --rule-strong:#333B45;
+  --accent:#7FA5EA; --accent-soft:#1A2536;
+  --ok:#79B287;   --ok-soft:#16241A;
+  --warn:#D6A24B;  --warn-soft:#2A2113;
+  --crit:#E0806F;  --crit-soft:#2C1815;
+  --flag:#B990D2;  --flag-soft:#241A2C;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Newsreader",Georgia,serif;font-size:17px;line-height:1.6}
+.shell{max-width:1080px;margin:0 auto;padding:0 24px 100px}
+
+/* masthead */
+.mast{border-bottom:2px solid var(--ink);padding:42px 0 22px;margin-bottom:8px}
+.kicker{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+h1{font-family:"Archivo",system-ui,sans-serif;font-weight:700;
+  font-size:clamp(36px,5.6vw,58px);line-height:1;letter-spacing:-.028em;margin:0 0 14px;text-wrap:balance}
+.lede{font-size:19px;color:var(--muted);max-width:62ch;margin:0 0 8px;font-style:italic}
+
+/* sticky option nav */
+.jump{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--rule);
+  display:flex;gap:2px;overflow-x:auto;padding:8px 0;margin-bottom:44px}
+.jump a{flex:0 0 auto;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.05em;
+  color:var(--muted);text-decoration:none;padding:7px 11px;border:1px solid transparent;white-space:nowrap}
+.jump a:hover{color:var(--accent);border-color:var(--rule);background:var(--surface)}
+.jump a:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.jump a b{color:var(--faint);font-weight:500;margin-right:7px}
+
+/* option block */
+.opt{margin:0 0 84px;scroll-margin-top:64px}
+.opt-head{display:flex;gap:18px;align-items:baseline;margin-bottom:6px}
+.opt-num{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--accent);
+  letter-spacing:.1em;padding-top:6px}
+.opt h2{font-family:"Archivo",system-ui,sans-serif;font-weight:700;font-size:30px;
+  letter-spacing:-.022em;margin:0;text-wrap:balance}
+.thesis{font-size:18px;color:var(--muted);margin:0 0 22px;max-width:64ch;padding-left:44px}
+@media(max-width:640px){.thesis{padding-left:0}}
+
+/* screen frame */
+.screen{border:1px solid var(--rule-strong);background:var(--surface);
+  box-shadow:var(--shadow);overflow:hidden;font-family:"Archivo",system-ui,sans-serif;font-size:13px;line-height:1.45}
+.chrome{display:flex;align-items:center;gap:10px;padding:9px 14px;
+  border-bottom:1px solid var(--rule);background:var(--surface-2);
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--faint);letter-spacing:.06em}
+.dots{display:flex;gap:5px}
+.dots i{width:8px;height:8px;border-radius:50%;background:var(--rule-strong);display:block}
+.chrome .grow{flex:1}
+.pad{padding:18px}
+.scrollx{overflow-x:auto}
+
+/* shared bits */
+.mono{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.lbl{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--faint)}
+.pill{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10px;
+  letter-spacing:.03em;padding:2px 7px;border:1px solid;white-space:nowrap;border-radius:2px}
+.ok{color:var(--ok);background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 42%,transparent)}
+.mut{color:var(--muted);background:var(--surface-2);border-color:var(--rule-strong)}
+.warn{color:var(--warn);background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 42%,transparent)}
+.crit{color:var(--crit);background:var(--crit-soft);border-color:color-mix(in srgb,var(--crit) 42%,transparent)}
+.flag{color:var(--flag);background:var(--flag-soft);border-color:color-mix(in srgb,var(--flag) 42%,transparent)}
+.bg-ok{background:var(--ok)}.bg-mut{background:var(--rule-strong)}
+.bg-warn{background:var(--warn)}.bg-crit{background:var(--crit)}.bg-flag{background:var(--flag)}
+
+/* trade-off strip */
+.tradeoff{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:0;border:1px solid var(--rule);border-top:0;background:var(--surface-2)}
+.tradeoff div{padding:14px 16px;border-right:1px solid var(--rule);
+  font-family:"Archivo",system-ui,sans-serif;font-size:13px;line-height:1.5;color:var(--ink-2)}
+.tradeoff div:last-child{border-right:0}
+.tradeoff dt{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:5px}
+
+/* 01 ledger */
+table.ledger{border-collapse:collapse;width:100%;min-width:760px;font-variant-numeric:tabular-nums}
+table.ledger th{text-align:left;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--faint);font-weight:600;padding:0 12px 9px;border-bottom:1px solid var(--rule-strong)}
+table.ledger td{padding:8px 12px;border-bottom:1px solid var(--rule);font-size:12.5px;color:var(--ink-2)}
+table.ledger tr:last-child td{border-bottom:0}
+table.ledger td.a{color:var(--ink);font-weight:500}
+.costcell{display:flex;align-items:center;gap:9px;justify-content:flex-end}
+.costbar{height:9px;background:var(--accent);opacity:.85;flex:0 0 auto}
+.costnum{font-family:"IBM Plex Mono",monospace;font-size:11.5px;width:64px;text-align:right;color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;align-items:center}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:10.5px;padding:4px 9px;
+  border:1px solid var(--rule-strong);color:var(--muted);background:var(--surface)}
+.chip.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.summary{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--rule);margin-bottom:16px}
+.summary div{flex:1 1 130px;padding:11px 14px;border-right:1px solid var(--rule)}
+.summary div:last-child{border-right:0}
+.summary b{display:block;font-family:"IBM Plex Mono",monospace;font-size:19px;
+  color:var(--ink);margin-top:3px;font-weight:500}
+
+/* 02 matrix */
+.mx{display:grid;grid-template-columns:96px repeat(3,1fr);gap:8px;min-width:620px}
+.mx .hd{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--faint);padding:0 0 4px;align-self:end}
+.mx .rh{font-family:"Archivo",sans-serif;font-size:12.5px;font-weight:600;color:var(--ink);
+  align-self:center;padding-right:8px}
+.mx .rh small{display:block;font-family:"IBM Plex Mono",monospace;font-size:9.5px;
+  font-weight:400;color:var(--faint);letter-spacing:.04em;margin-top:2px}
+.cell{border:1px solid var(--rule);background:var(--surface);padding:11px 12px;min-height:96px;
+  display:flex;flex-direction:column;gap:7px;position:relative}
+.cell.hot{border-color:color-mix(in srgb,var(--warn) 55%,transparent);background:var(--warn-soft)}
+.cell.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.cell .amt{font-family:"IBM Plex Mono",monospace;font-size:17px;color:var(--ink);font-weight:500}
+.cell .sub{font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--faint);letter-spacing:.04em}
+.cell .exp{font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--muted);
+  margin-top:auto;letter-spacing:.03em}
+.stack{display:flex;height:7px;width:100%;gap:1px}
+.stack span{display:block;height:100%}
+.mxlegend{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;padding-top:13px;border-top:1px solid var(--rule)}
+.mxlegend span{display:flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",monospace;
+  font-size:10px;color:var(--muted)}
+.mxlegend i{width:11px;height:11px;display:block}
+
+/* 03 queue */
+.card{border:1px solid var(--rule);border-left:3px solid var(--warn);
+  background:var(--surface);padding:16px 18px;margin-bottom:12px;display:grid;gap:11px}
+.card.c-crit{border-left-color:var(--crit)}
+.card.c-flag{border-left-color:var(--flag)}
+.card-top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.card h4{font-family:"Archivo",sans-serif;font-size:16px;font-weight:600;margin:0;
+  letter-spacing:-.012em;color:var(--ink);max-width:52ch}
+.impact{font-family:"IBM Plex Mono",monospace;text-align:right;flex:0 0 auto}
+.impact b{display:block;font-size:20px;font-weight:500;color:var(--ink)}
+.impact span{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint)}
+.evid{display:flex;flex-wrap:wrap;gap:7px}
+.evid code{font-family:"IBM Plex Mono",monospace;font-size:10.5px;padding:3px 8px;
+  background:var(--surface-2);border:1px solid var(--rule);color:var(--muted)}
+.change{display:flex;align-items:center;gap:11px;flex-wrap:wrap;padding:10px 12px;
+  background:var(--surface-2);border:1px solid var(--rule);font-family:"IBM Plex Mono",monospace;font-size:11.5px}
+.change .from{color:var(--muted);text-decoration:line-through}
+.change .to{color:var(--ok);font-weight:500}
+.change .arw{color:var(--faint)}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font-family:"IBM Plex Mono",monospace;font-size:11px;padding:6px 13px;cursor:pointer;
+  border:1px solid var(--rule-strong);background:var(--surface);color:var(--ink-2)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme="dark"] .btn.pri{color:#0E1116}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.pri{color:#0E1116}}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.pri:hover{opacity:.88;color:#fff}
+
+/* 04 trace */
+.trace{min-width:720px}
+.trk{display:grid;grid-template-columns:132px 1fr;gap:0;align-items:center;
+  border-bottom:1px solid var(--rule)}
+.trk:last-of-type{border-bottom:0}
+.trk .who{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--muted);
+  padding:9px 10px 9px 0;letter-spacing:.03em}
+.trk .who b{color:var(--ink);font-weight:500}
+.lane{position:relative;height:32px}
+.blk{position:absolute;top:7px;height:18px;border:1px solid;font-family:"IBM Plex Mono",monospace;
+  font-size:9px;line-height:16px;padding:0 4px;overflow:hidden;white-space:nowrap;color:var(--ink)}
+.b-front{background:color-mix(in srgb,var(--crit) 22%,transparent);border-color:color-mix(in srgb,var(--crit) 50%,transparent)}
+.b-mid{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+.mk{position:absolute;top:0;bottom:0;width:0;border-left:1px dashed var(--crit)}
+.mk b{position:absolute;top:-1px;left:3px;font-family:"IBM Plex Mono",monospace;
+  font-size:8.5px;color:var(--crit);white-space:nowrap;font-weight:500}
+.axis{display:grid;grid-template-columns:132px 1fr;border-top:1px solid var(--rule-strong);margin-top:2px}
+.axis .ticks{display:flex;justify-content:space-between;padding:6px 0;
+  font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--faint)}
+.costline{display:grid;grid-template-columns:132px 1fr;margin-top:10px;align-items:center}
+.costline .who{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--faint);padding-right:10px}
+
+/* 05 flow */
+svg .rb{stroke:none}
+svg .rb-ok{fill:var(--ok)} svg .rb-mut{fill:var(--rule-strong)}
+svg .rb-warn{fill:var(--warn)} svg .rb-flag{fill:var(--flag)} svg .rb-crit{fill:var(--crit)}
+svg .nd{fill:var(--ink)} svg .nd-2{fill:var(--muted)}
+svg .nl{fill:var(--ink);font-family:"Archivo",sans-serif;font-size:11.5px;font-weight:600}
+svg .nv{fill:var(--faint);font-family:"IBM Plex Mono",monospace;font-size:10px}
+svg .ch{fill:var(--faint);font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase}
+
+/* closing */
+.rec{border:1px solid var(--rule-strong);border-top:3px solid var(--accent);
+  background:var(--surface);padding:26px 28px;box-shadow:var(--shadow)}
+.rec h2{font-family:"Archivo",sans-serif;font-size:24px;font-weight:700;margin:0 0 6px;letter-spacing:-.02em}
+.rec p{margin:12px 0;max-width:64ch}
+.rec ol{margin:14px 0;padding-left:20px}
+.rec li{margin:9px 0;max-width:64ch}
+.rec strong{font-weight:600;color:var(--ink)}
+.note{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--faint);
+  margin-top:12px;letter-spacing:.03em;line-height:1.6}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.unit{font-size:.58em;letter-spacing:.06em;color:var(--faint);margin-left:3px;font-weight:400}
+.notional{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--faint);text-align:right}
+table.ledger th:last-child,table.ledger td:last-child{text-align:right}
+.deleg{font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--flag);
+  border:1px solid color-mix(in srgb,var(--flag) 40%,transparent);background:var(--flag-soft);
+  padding:1px 5px;margin-left:6px;border-radius:2px;font-weight:400;white-space:nowrap}
+.b-ext{background:var(--flag-soft);border-color:color-mix(in srgb,var(--flag) 55%,transparent)}
+.pools{margin-top:20px;padding-top:16px;border-top:1px solid var(--rule)}
+.poolrow{display:grid;grid-template-columns:150px 1fr 210px;gap:12px;align-items:center;margin-bottom:9px}
+.poolrow .pname{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink)}
+.pbar{height:14px;background:var(--surface-2);border:1px solid var(--rule);position:relative}
+.pbar i{display:block;height:100%;background:var(--crit);opacity:.55}
+.pbar em{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--crit)}
+.poolrow .pval{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--muted);text-align:right}
+.poolnote{font-family:"Archivo",sans-serif;font-size:12.5px;color:var(--muted);
+  margin:12px 0 0;line-height:1.55;max-width:72ch}
+@media(max-width:640px){.poolrow{grid-template-columns:1fr;gap:4px}.poolrow .pval{text-align:left}}
+
+.rev{font-family:"IBM Plex Mono",monospace;font-size:11.5px;line-height:1.65;color:var(--muted);
+  max-width:66ch;margin:16px 0 0;padding-left:13px;border-left:2px solid var(--accent)}
+.rev b{color:var(--accent);font-weight:500}
+
+</style>
+</head>
+<body>
+<div class="shell">
+<header class="mast">
+<p class="kicker">Design options &middot; Model Use Index &middot; for discussion</p>
+<h1>Five Ways to Read the Spend</h1>
+<p class="lede">Five distinct answers to what the Model Use Index dashboard should be.
+Same data, same verdict engine &mdash; five different bets on what you do when you open it.</p>
+<p class="rev"><b>v0.2</b> &middot; measured in allowance headroom rather than dollars, since we are on
+seats and no per-token invoice exists. Dollars survive as a muted, notional column. Codex
+delegation now appears where it is visible.</p>
+</header>
+<nav class="jump"><a href="#ledger"><b>01</b>The Ledger</a><a href="#matrix"><b>02</b>The Provisioning Matrix</a><a href="#queue"><b>03</b>The Action Queue</a><a href="#trace"><b>04</b>The Session Trace</a><a href="#flow"><b>05</b>The Flow</a><a href="#recommend"><b>&rarr;</b>Recommendation</a></nav>
+<section class="opt" id="ledger">
+<div class="opt-head"><span class="opt-num">01</span><h2>The Ledger</h2></div>
+<p class="thesis">A dense, sortable table of every classified group — allowance first, notional dollars second. Your reference report, tightened.</p>
+<div class="screen"><div class="chrome"><span class="dots"><i></i><i></i><i></i></span>
+<span>model-use-index — ledger</span><span class="grow"></span><span>localhost:7331</span></div>
+<div class="pad">
+<div class="chips"><span class="chip on">Last 30 days</span>
+<span class="chip on">Pool: Anthropic seat</span><span class="chip">All departments</span>
+<span class="chip">Verdict: any</span>
+<span class="chip" style="margin-left:auto;border-style:dashed">+ add filter</span></div>
+<div class="summary">
+<div><span class="lbl">Allowance consumed</span><b>100<span class="unit">pts</span></b></div>
+<div><span class="lbl">Reclaimable</span><b style="color:var(--warn)">8.4<span class="unit">pts</span></b></div>
+<div><span class="lbl">Limit hits / 30d</span><b style="color:var(--crit)">3</b></div>
+<div><span class="lbl">Work units</span><b>2,914</b></div>
+<div><span class="lbl">Classifier conf.</span><b>0.87</b></div></div>
+<div class="scrollx"><table class="ledger"><thead><tr>
+<th>Activity</th><th>Work type</th><th>Complexity</th><th>Model</th>
+<th>Justification</th><th style="text-align:right">Allowance &middot; pts</th>
+<th style="text-align:right">List value</th></tr></thead>
+<tbody><tr>
+<td class="a">debugging</td>
+<td>Reasoning</td><td>High</td>
+<td class="mono" style="font-size:11px">claude-sonnet-4-6</td>
+<td><span class="pill mut">Acceptable</span></td>
+<td><div class="costcell"><div class="costbar" style="width:48px"></div>
+<span class="costnum">11.9</span></div></td>
+<td class="notional">$1,727</td></tr><tr>
+<td class="a">testing <span class="deleg" title="part of this work was delegated to a Codex subagent">&rarr; codex</span></td>
+<td>Agentic</td><td>Medium</td>
+<td class="mono" style="font-size:11px">claude-sonnet-4-6</td>
+<td><span class="pill mut">Acceptable</span></td>
+<td><div class="costcell"><div class="costbar" style="width:36px"></div>
+<span class="costnum">8.9</span></div></td>
+<td class="notional">$1,298</td></tr><tr>
+<td class="a">feature-development</td>
+<td>Agentic</td><td>High</td>
+<td class="mono" style="font-size:11px">claude-opus-4-6</td>
+<td><span class="pill ok">Justified</span></td>
+<td><div class="costcell"><div class="costbar" style="width:34px"></div>
+<span class="costnum">8.4</span></div></td>
+<td class="notional">$1,224</td></tr><tr>
+<td class="a">data-analysis</td>
+<td>Reasoning</td><td>High</td>
+<td class="mono" style="font-size:11px">claude-opus-4-6</td>
+<td><span class="pill ok">Justified</span></td>
+<td><div class="costcell"><div class="costbar" style="width:33px"></div>
+<span class="costnum">8.2</span></div></td>
+<td class="notional">$1,191</td></tr><tr>
+<td class="a">automation</td>
+<td>Agentic</td><td>Medium</td>
+<td class="mono" style="font-size:11px">claude-sonnet-4-6</td>
+<td><span class="pill mut">Acceptable</span></td>
+<td><div class="costcell"><div class="costbar" style="width:20px"></div>
+<span class="costnum">5.0</span></div></td>
+<td class="notional">$730.57</td></tr><tr>
+<td class="a">architecture-design</td>
+<td>Reasoning</td><td>High</td>
+<td class="mono" style="font-size:11px">claude-sonnet-4-6</td>
+<td><span class="pill mut">Acceptable</span></td>
+<td><div class="costcell"><div class="costbar" style="width:20px"></div>
+<span class="costnum">4.9</span></div></td>
+<td class="notional">$704.33</td></tr><tr>
+<td class="a">security-review</td>
+<td>Reasoning</td><td>High</td>
+<td class="mono" style="font-size:11px">claude-sonnet-4-6</td>
+<td><span class="pill flag">Acceptable (high stakes)</span></td>
+<td><div class="costcell"><div class="costbar" style="width:16px"></div>
+<span class="costnum">4.1</span></div></td>
+<td class="notional">$591.62</td></tr><tr>
+<td class="a">refactoring <span class="deleg" title="part of this work was delegated to a Codex subagent">&rarr; codex</span></td>
+<td>Agentic</td><td>Medium</td>
+<td class="mono" style="font-size:11px">claude-sonnet-4-6</td>
+<td><span class="pill mut">Acceptable</span></td>
+<td><div class="costcell"><div class="costbar" style="width:16px"></div>
+<span class="costnum">4.0</span></div></td>
+<td class="notional">$574.29</td></tr><tr>
+<td class="a">pipeline-analysis</td>
+<td>Reasoning</td><td>Medium</td>
+<td class="mono" style="font-size:11px">claude-sonnet-4-6</td>
+<td><span class="pill mut">Acceptable</span></td>
+<td><div class="costcell"><div class="costbar" style="width:16px"></div>
+<span class="costnum">3.9</span></div></td>
+<td class="notional">$560.65</td></tr><tr>
+<td class="a">incident-response</td>
+<td>Reasoning</td><td>High</td>
+<td class="mono" style="font-size:11px">claude-sonnet-4-6</td>
+<td><span class="pill flag">Acceptable (high stakes)</span></td>
+<td><div class="costcell"><div class="costbar" style="width:15px"></div>
+<span class="costnum">3.8</span></div></td>
+<td class="notional">$550.17</td></tr><tr>
+<td class="a">feature-development</td>
+<td>Agentic</td><td>High</td>
+<td class="mono" style="font-size:11px">claude-opus-4-7@20250514</td>
+<td><span class="pill ok">Justified</span></td>
+<td><div class="costcell"><div class="costbar" style="width:15px"></div>
+<span class="costnum">3.8</span></div></td>
+<td class="notional">$549.91</td></tr><tr>
+<td class="a">code-review</td>
+<td>Reasoning</td><td>Medium</td>
+<td class="mono" style="font-size:11px">claude-sonnet-4-6</td>
+<td><span class="pill mut">Acceptable</span></td>
+<td><div class="costcell"><div class="costbar" style="width:15px"></div>
+<span class="costnum">3.8</span></div></td>
+<td class="notional">$546.29</td></tr></tbody></table></div>
+<p class="lbl" style="margin:14px 0 0">Showing 12 of 41 groups &middot; sorted by allowance &middot;
+list value is notional &mdash; seat plan, no per-token invoice</p></div></div>
+<dl class="tradeoff"><div><dt>Reads as</dt>An accounting record. Complete, exportable, defensible in a budget review.</div><div><dt>Costs you</dt>It states facts and proposes nothing. You still have to find the finding.</div><div><dt>Right when</dt>Someone challenges a number and you need the whole basis on one screen.</div></dl></section><section class="opt" id="matrix">
+<div class="opt-head"><span class="opt-num">02</span><h2>The Provisioning Matrix</h2></div>
+<p class="thesis">Work type × complexity, every cell weighted by allowance consumed and split by verdict, with pool balance underneath. Built to answer one question: where is scarce headroom going to the wrong tier?</p>
+<div class="screen"><div class="chrome"><span class="dots"><i></i><i></i><i></i></span>
+<span>model-use-index — matrix</span><span class="grow"></span><span>localhost:7331</span></div>
+<div class="pad"><div class="scrollx"><div class="mx"><div class="hd"></div><div class="hd" style="text-align:center">Low complexity</div><div class="hd" style="text-align:center">Medium complexity</div><div class="hd" style="text-align:center">High complexity</div><div class="rh">Agentic</div><div class="cell" style="opacity:.4"><span class="sub">no volume</span></div><div class="cell  sel"><div class="amt">25.2<span class="unit">pts</span></div>
+<div class="stack"><span class="bg-mut" style="flex:2603.02"></span><span class="bg-warn" style="flex:1059.21"></span></div>
+<div class="sub">7 groups &middot; 25% of allowance</div>
+<div class="exp">expects small</div></div><div class="cell  "><div class="amt">18.1<span class="unit">pts</span></div>
+<div class="stack"><span class="bg-ok" style="flex:2629.00"></span></div>
+<div class="sub">5 groups &middot; 18% of allowance</div>
+<div class="exp">expects frontier</div></div><div class="rh">Reasoning</div><div class="cell" style="opacity:.4"><span class="sub">no volume</span></div><div class="cell  "><div class="amt">7.6<span class="unit">pts</span></div>
+<div class="stack"><span class="bg-mut" style="flex:1106.94"></span></div>
+<div class="sub">2 groups &middot; 8% of allowance</div>
+<div class="exp">expects small</div></div><div class="cell  "><div class="amt">41.2<span class="unit">pts</span></div>
+<div class="stack"><span class="bg-ok" style="flex:2407.88"></span><span class="bg-mut" style="flex:2431.61"></span><span class="bg-flag" style="flex:1141.79"></span></div>
+<div class="sub">9 groups &middot; 41% of allowance</div>
+<div class="exp">expects frontier</div></div><div class="rh">Synthesis</div><div class="cell" style="opacity:.4"><span class="sub">no volume</span></div><div class="cell  "><div class="amt">6.7<span class="unit">pts</span></div>
+<div class="stack"><span class="bg-ok" style="flex:973.59"></span></div>
+<div class="sub">3 groups &middot; 7% of allowance</div>
+<div class="exp">expects mid</div></div><div class="cell" style="opacity:.4"><span class="sub">no volume</span></div><div class="rh">Retrieval</div><div class="cell hot "><div class="amt">1.1<span class="unit">pts</span></div>
+<div class="stack"><span class="bg-warn" style="flex:158.93"></span></div>
+<div class="sub">1 groups &middot; 1% of allowance</div>
+<div class="exp">expects small</div></div><div class="cell" style="opacity:.4"><span class="sub">no volume</span></div><div class="cell" style="opacity:.4"><span class="sub">no volume</span></div></div></div>
+<div class="mxlegend"><span><i class="bg-ok"></i>Justified</span><span><i class="bg-mut"></i>Acceptable</span><span><i class="bg-flag"></i>High stakes</span><span><i class="bg-warn"></i>Overprovisioned</span><span><i class="bg-crit"></i>Underprovisioned</span></div>
+<div class="pools"><div class="lbl" style="margin-bottom:9px">Pool balance &middot; 30 days &middot; never summed</div>
+<div class="poolrow"><span class="pname">Anthropic seat</span>
+<div class="pbar"><i style="width:94%"></i><em style="left:94%"></em></div>
+<span class="pval">94% of ceiling &middot; <b style="color:var(--crit)">3 limit hits</b></span></div>
+<div class="poolrow"><span class="pname">Codex / OpenAI seat</span>
+<div class="pbar"><i style="width:38%;background:var(--ok)"></i></div>
+<span class="pval">38% of ceiling &middot; slack available</span></div>
+<p class="poolnote">Anthropic is the binding constraint; Codex has room. Delegating suitable
+Agentic/Medium work is a transfer between ceilings, not a saving &mdash; and this week it is
+the right move. Deliberately not scored as a per-unit verdict.</p></div>
+<p style="font-family:'Archivo',sans-serif;font-size:12.5px;color:var(--muted);margin:16px 0 0;line-height:1.55">
+<b style="color:var(--ink)">Agentic / Medium is selected.</b> 25.2 points of your 30-day allowance
+against an expected tier of <span class="mono">small</span> — the single largest block of
+reclaimable headroom on the board. Click any cell to drill to its work units.</p></div></div>
+<dl class="tradeoff"><div><dt>Reads as</dt>A diagnostic instrument. Misallocation has a shape, and you see it in one glance.</div><div><dt>Costs you</dt>Only works once classification is trusted. A shaky classifier makes a confident-looking wrong picture.</div><div><dt>Right when</dt>This is the daily landing view — it is the literal shape of your original question.</div></dl></section><section class="opt" id="queue">
+<div class="opt-head"><span class="opt-num">03</span><h2>The Action Queue</h2></div>
+<p class="thesis">Not a dashboard. A ranked worklist where every row is a decision with its evidence, its proposed change, and a button.</p>
+<div class="screen"><div class="chrome"><span class="dots"><i></i><i></i><i></i></span>
+<span>model-use-index — queue</span><span class="grow"></span><span>localhost:7331</span></div>
+<div class="pad"><div class="chips"><span class="chip on">Open &middot; 4</span>
+<span class="chip">Snoozed &middot; 2</span><span class="chip">Applied &middot; 7</span>
+<span class="chip" style="margin-left:auto">Sorted by impact</span></div><div class="card ">
+<div class="card-top"><h4>Testing on Agentic/Medium work is running on Opus across 3 model pins</h4>
+<div class="impact"><b>8.3<span class="unit">pts</span></b><span>headroom reclaimable</span></div></div>
+<div class="evid"><code>47 work units</code><code>tool_error_rate 0.04 (p50)</code><code>turns 6.2 vs cohort p75 9</code><code>0 escalations</code></div>
+<div class="change"><span class="lbl" style="margin:0">change</span>
+<span class="from">claude-opus-4-6 / 4-7</span><span class="arw">&rarr;</span><span class="to">claude-sonnet-4-6</span></div>
+<p style="font-family:'Archivo',sans-serif;font-size:13px;color:var(--muted);margin:0;line-height:1.55;max-width:66ch">Every unit completed without a single under-provisioning signal firing. Verifiable next week: if this is right, the Thursday limit hits stop.</p>
+<div class="acts"><button class="btn pri">Apply to settings.json</button>
+<button class="btn">Show the 47 units</button><button class="btn">Dismiss</button></div></div><div class="card c-crit">
+<div class="card-top"><h4>Debugging on Reasoning/High is thrashing on Sonnet — 3× cohort turn count</h4>
+<div class="impact"><b>14.2<span class="unit">h</span></b><span>engineer time / 30 d</span></div></div>
+<div class="evid"><code>signals: turn_excess, edit_thrash, corrective_turns</code><code>31 units</code><code>mean 19 turns</code><code>6 mid-session escalations to Opus</code></div>
+<div class="change"><span class="lbl" style="margin:0">change</span>
+<span class="from">claude-sonnet-4-6</span><span class="arw">&rarr;</span><span class="to">claude-opus-4-7</span></div>
+<p style="font-family:'Archivo',sans-serif;font-size:13px;color:var(--muted);margin:0;line-height:1.55;max-width:66ch">Users are already escalating manually six times a month. The default is simply wrong; this costs more than it saves.</p>
+<div class="acts"><button class="btn pri">Raise default tier</button>
+<button class="btn">Open a failing trace</button><button class="btn">Dismiss</button></div></div><div class="card c-flag">
+<div class="card-top"><h4>security-review runs below expected tier on high-stakes work</h4>
+<div class="impact"><b>4.0<span class="unit">pts</span></b><span>under review — not a saving</span></div></div>
+<div class="evid"><code>11 units</code><code>stakes: high</code><code>tier_delta −1</code><code>no failure signals</code></div>
+<div class="change"><span class="lbl" style="margin:0">change</span>
+<span class="from">claude-sonnet-4-6</span><span class="arw">&rarr;</span><span class="to">review — not a cost finding</span></div>
+<p style="font-family:'Archivo',sans-serif;font-size:13px;color:var(--muted);margin:0;line-height:1.55;max-width:66ch">Nothing is failing. This is a risk flag, not a saving: decide deliberately whether cheap is acceptable here.</p>
+<div class="acts"><button class="btn pri">Acknowledge</button>
+<button class="btn">Show the 11 units</button><button class="btn">Dismiss</button></div></div><div class="card ">
+<div class="card-top"><h4>`onboarding` is a textbook subagent candidate</h4>
+<div class="impact"><b>1.1<span class="unit">pts</span></b><span>clusters to 1 agent</span></div></div>
+<div class="evid"><code>Retrieval / Low</code><code>tool signature: Read×9, Grep×4</code><code>94% cluster coherence</code><code>218 near-identical prompts</code></div>
+<div class="change"><span class="lbl" style="margin:0">change</span>
+<span class="from">main thread, sonnet-4-6</span><span class="arw">&rarr;</span><span class="to">onboarding-guide subagent, haiku</span></div>
+<p style="font-family:'Archivo',sans-serif;font-size:13px;color:var(--muted);margin:0;line-height:1.55;max-width:66ch">Frequent, cheap-to-do, narrow tool set, near-identical prompts. Pin a small model and an allowlist.</p>
+<div class="acts"><button class="btn pri">Scaffold subagent</button>
+<button class="btn">Show the cluster</button><button class="btn">Dismiss</button></div></div></div></div>
+<dl class="tradeoff"><div><dt>Reads as</dt>A colleague who did the analysis and is handing you the call.</div><div><dt>Costs you</dt>Hides the data behind the recommendation. Demands real trust in the verdict engine.</div><div><dt>Right when</dt>You want the tool to change behaviour, not just describe it. This is where value is realised.</div></dl></section><section class="opt" id="trace">
+<div class="opt-head"><span class="opt-num">04</span><h2>The Session Trace</h2></div>
+<p class="thesis">One session in time: turns, subagent and delegated-agent lanes, model switches, and the exact moment things went wrong.</p>
+<div class="screen"><div class="chrome"><span class="dots"><i></i><i></i><i></i></span>
+<span>model-use-index — trace · session 4f2a</span><span class="grow"></span><span>localhost:7331</span></div>
+<div class="pad">
+<div class="summary" style="margin-bottom:18px">
+<div><span class="lbl">Session</span><b style="font-size:13px">4f2a·hg-etl</b></div>
+<div><span class="lbl">Verdict</span><b style="font-size:15px;color:var(--crit)">Underprovisioned</b></div>
+<div><span class="lbl">Turns</span><b>19</b></div>
+<div><span class="lbl">Wall clock</span><b>41m</b></div>
+<div><span class="lbl">Allowance</span><b>0.41<span class="unit">pts</span></b></div>
+<div><span class="lbl">Pools</span><b style="font-size:13px">2</b></div></div>
+<div class="scrollx"><div class="trace"><div class="trk"><div class="who"><b>main</b> thread</div><div class="lane"><div class="blk b-mid" style="left:0%;width:7%">prompt</div><div class="blk b-mid" style="left:7.5%;width:11%">Read×6</div><div class="blk b-mid" style="left:19%;width:9%">Edit</div><div class="blk b-mid" style="left:28.5%;width:13%">Bash pytest ✗</div><div class="blk b-mid" style="left:42%;width:8%">Edit</div><div class="blk b-mid" style="left:50.5%;width:12%">Bash pytest ✗</div><div class="blk b-mid" style="left:63%;width:9%">Edit</div><div class="blk b-front" style="left:72.5%;width:10%">Bash pytest ✓</div><div class="blk b-front" style="left:83%;width:16%">summarise</div><div class="mk" style="left:28.5%"><b>corrective turn</b></div><div class="mk" style="left:50.5%"><b>edit_thrash ×4</b></div><div class="mk" style="left:72%"><b>escalated → opus</b></div></div></div><div class="trk"><div class="who"><b>Explore</b> subagent</div><div class="lane"><div class="blk b-mid" style="left:8%;width:14%">Grep×11</div></div></div><div class="trk"><div class="who"><b>codex</b> delegated</div><div class="lane"><div class="blk b-ext" style="left:30%;width:11%">codex exec</div><div class="blk b-ext" style="left:52%;width:10%">codex exec</div><div class="mk" style="left:30%"><b>openai-seat pool</b></div></div></div>
+<div class="axis"><div></div><div class="ticks"><span>00:00</span><span>10m</span><span>20m</span><span>30m</span><span>41m</span></div></div>
+<div class="costline"><div class="who">cumulative pts</div>
+<div style="height:34px;position:relative;border-bottom:1px solid var(--rule)">
+<svg viewBox="0 0 100 34" preserveAspectRatio="none" width="100%" height="34">
+<path d="M0,33 L8,32 L19,30 L28,27 L42,24 L50,20 L63,17 L72,10 L83,3 L100,2 L100,34 L0,34 Z"
+ fill="var(--accent)" opacity="0.14"/>
+<path d="M0,33 L8,32 L19,30 L28,27 L42,24 L50,20 L63,17 L72,10 L83,3 L100,2"
+ fill="none" stroke="var(--accent)" stroke-width="1.2" vector-effect="non-scaling-stroke"/></svg>
+<span class="mono" style="position:absolute;right:0;top:-2px;font-size:10px;color:var(--accent)">0.41 pts</span>
+</div></div></div></div>
+<p style="font-family:'Archivo',sans-serif;font-size:12.5px;color:var(--muted);margin:16px 0 0;line-height:1.55;max-width:70ch">
+Two thirds of the cost lands after the second failed test run. The escalation to Opus at minute 30 is
+what closed it — which is the evidence that the Sonnet default was wrong for this activity,
+not that the engineer was slow.</p></div></div>
+<dl class="tradeoff"><div><dt>Reads as</dt>A flight recorder. The only view where under-provisioning is visible rather than inferred — and where delegated Codex work shows up at all.</div><div><dt>Costs you</dt>Individual, not aggregate. Forensics for one case, never a picture of the month.</div><div><dt>Right when</dt>Something is flagged and you need to see why before you believe it.</div></dl></section><section class="opt" id="flow">
+<div class="opt-head"><span class="opt-num">05</span><h2>The Flow</h2></div>
+<p class="thesis">Allowance flowing from model tier through work type into verdict, scoped to one pool. Proportion made physical.</p>
+<div class="screen"><div class="chrome"><span class="dots"><i></i><i></i><i></i></span>
+<span>model-use-index — flow</span><span class="grow"></span><span>localhost:7331</span></div>
+<div class="pad"><svg viewBox="0 0 880 400" width="100%" role="img" aria-label="Spend flowing from model tier through work type to provisioning verdict"><text x="22" y="12" class="ch">Model tier</text><text x="440" y="12" text-anchor="middle" class="ch">Work type</text><text x="858" y="12" text-anchor="end" class="ch">Verdict</text><path d="M35.0,179.4 C234.2,179.4 234.2,22.0 433.5,22.0 L433.5,85.9 C234.2,85.9 234.2,243.2 35.0,243.2 Z" class="rb rb-mut" opacity="0.34"/><path d="M35.0,22.0 C234.2,22.0 234.2,85.9 433.5,85.9 L433.5,146.8 C234.2,146.8 234.2,83.0 35.0,83.0 Z" class="rb rb-ok" opacity="0.34"/><path d="M35.0,83.0 C234.2,83.0 234.2,146.8 433.5,146.8 L433.5,171.4 C234.2,171.4 234.2,107.5 35.0,107.5 Z" class="rb rb-warn" opacity="0.34"/><path d="M35.0,243.2 C234.2,243.2 234.2,173.3 433.5,173.3 L433.5,255.4 C234.2,255.4 234.2,325.3 35.0,325.3 Z" class="rb rb-mut" opacity="0.34"/><path d="M35.0,107.5 C234.2,107.5 234.2,255.4 433.5,255.4 L433.5,311.2 C234.2,311.2 234.2,163.4 35.0,163.4 Z" class="rb rb-ok" opacity="0.34"/><path d="M35.0,325.3 C234.2,325.3 234.2,311.2 433.5,311.2 L433.5,337.7 C234.2,337.7 234.2,351.7 35.0,351.7 Z" class="rb rb-flag" opacity="0.34"/><path d="M35.0,351.7 C234.2,351.7 234.2,338.2 433.5,338.2 L433.5,360.8 C234.2,360.8 234.2,374.3 35.0,374.3 Z" class="rb rb-ok" opacity="0.34"/><path d="M35.0,374.3 C234.2,374.3 234.2,374.7 433.5,374.7 L433.5,378.3 C234.2,378.3 234.2,378.0 35.0,378.0 Z" class="rb rb-warn" opacity="0.34"/><path d="M446.5,22.0 C645.8,22.0 645.8,22.0 845.0,22.0 L845.0,77.2 C645.8,77.2 645.8,77.2 446.5,77.2 Z" class="rb rb-ok" opacity="0.34"/><path d="M446.5,173.3 C645.8,173.3 645.8,77.2 845.0,77.2 L845.0,127.8 C645.8,127.8 645.8,223.9 446.5,223.9 Z" class="rb rb-ok" opacity="0.34"/><path d="M446.5,338.2 C645.8,338.2 645.8,127.8 845.0,127.8 L845.0,148.3 C645.8,148.3 645.8,358.7 446.5,358.7 Z" class="rb rb-ok" opacity="0.34"/><path d="M446.5,223.9 C645.8,223.9 645.8,164.3 845.0,164.3 L845.0,238.6 C645.8,238.6 645.8,298.2 446.5,298.2 Z" class="rb rb-mut" opacity="0.34"/><path d="M446.5,77.2 C645.8,77.2 645.8,238.6 845.0,238.6 L845.0,296.4 C645.8,296.4 645.8,135.1 446.5,135.1 Z" class="rb rb-mut" opacity="0.34"/><path d="M446.5,298.2 C645.8,298.2 645.8,312.4 845.0,312.4 L845.0,336.4 C645.8,336.4 645.8,322.2 446.5,322.2 Z" class="rb rb-flag" opacity="0.34"/><path d="M446.5,135.1 C645.8,135.1 645.8,352.4 845.0,352.4 L845.0,374.7 C645.8,374.7 645.8,157.3 446.5,157.3 Z" class="rb rb-warn" opacity="0.34"/><path d="M446.5,374.7 C645.8,374.7 645.8,374.7 845.0,374.7 L845.0,378.0 C645.8,378.0 645.8,378.0 446.5,378.0 Z" class="rb rb-warn" opacity="0.34"/><rect x="22.0" y="22.0" width="13" height="141.4" class="nd nd-0"/><text x="42.0" y="91.7" text-anchor="start" class="nl">Frontier</text><text x="42.0" y="103.7" text-anchor="start" class="nv">42 pts</text><rect x="22.0" y="179.4" width="13" height="198.6" class="nd nd-0"/><text x="42.0" y="277.7" text-anchor="start" class="nl">Mid</text><text x="42.0" y="289.7" text-anchor="start" class="nv">58 pts</text><rect x="433.5" y="22.0" width="13" height="135.3" class="nd nd-1"/><text x="453.5" y="88.7" text-anchor="start" class="nl">Agentic</text><text x="453.5" y="100.7" text-anchor="start" class="nv">44 pts</text><rect x="433.5" y="173.3" width="13" height="148.9" class="nd nd-1"/><text x="453.5" y="246.8" text-anchor="start" class="nl">Reasoning</text><text x="453.5" y="258.8" text-anchor="start" class="nv">48 pts</text><rect x="433.5" y="338.2" width="13" height="20.5" class="nd nd-1"/><text x="453.5" y="347.4" text-anchor="start" class="nl">Synthesis</text><text x="453.5" y="359.4" text-anchor="start" class="nv">7 pts</text><rect x="433.5" y="374.7" width="13" height="6.0" class="nd nd-1"/><text x="453.5" y="376.7" text-anchor="start" class="nl">Retrieval</text><text x="453.5" y="388.7" text-anchor="start" class="nv">1 pts</text><rect x="845.0" y="22.0" width="13" height="126.3" class="nd nd-2"/><text x="838.0" y="84.1" text-anchor="end" class="nl">Justified</text><text x="838.0" y="96.1" text-anchor="end" class="nv">41 pts</text><rect x="845.0" y="164.3" width="13" height="132.2" class="nd nd-2"/><text x="838.0" y="229.3" text-anchor="end" class="nl">Acceptable</text><text x="838.0" y="241.3" text-anchor="end" class="nv">43 pts</text><rect x="845.0" y="312.4" width="13" height="24.0" class="nd nd-2"/><text x="838.0" y="323.4" text-anchor="end" class="nl">Acceptable · high stakes</text><text x="838.0" y="335.4" text-anchor="end" class="nv">8 pts</text><rect x="845.0" y="352.4" width="13" height="25.6" class="nd nd-2"/><text x="838.0" y="364.2" text-anchor="end" class="nl">Overprovisioned</text><text x="838.0" y="376.2" text-anchor="end" class="nv">8 pts</text></svg>
+<p style="font-family:'Archivo',sans-serif;font-size:12.5px;color:var(--muted);margin:20px 0 0;line-height:1.55;max-width:70ch">
+Ribbon width is allowance consumed; colour is the verdict it ends in. Anthropic pool only. The one thing this view makes unmissable:
+almost all mid-tier spend lands in <b style="color:var(--ink)">Acceptable</b>, and almost all
+frontier spend lands in <b style="color:var(--ink)">Justified</b> — except one visible amber
+band running from Frontier through Agentic.</p></div></div>
+<dl class="tradeoff"><div><dt>Reads as</dt>An argument. Built to be understood in six seconds by someone who won't read a table.</div><div><dt>Costs you</dt>Low information density and hard to act on. A picture, not a tool.</div><div><dt>Right when</dt>You are showing this to a budget holder, or putting one image in a deck.</div></dl></section>
+<section class="rec" id="recommend">
+<h2>What I'd actually build</h2>
+<p>These are five different answers to &ldquo;what is a dashboard <em>for</em>&rdquo;, not five skins.
+They are not mutually exclusive, and picking one is the wrong exercise &mdash; the useful question
+is which one you land on when you open the tool.</p>
+<ol>
+<li><strong>02 The Matrix is the landing view.</strong> It is the most direct rendering of the question
+you started with, and it is the only view where a misallocation has a visible <em>shape</em>.</li>
+<li><strong>03 The Queue is where the value is realised.</strong> A tool that only describes spend gets
+looked at twice and then forgotten. One that proposes a change and takes the change gets used.
+Everything in the PRD exists to make these cards trustworthy.</li>
+<li><strong>01 The Ledger is the drill-down, not the home page.</strong> Keep it exactly as complete as
+your reference report &mdash; it is what you open when someone disputes a number.</li>
+<li><strong>04 The Trace is the credibility layer.</strong> The first time the tool says
+<em>underprovisioned</em>, you will not believe it. This is the view that settles it.</li>
+<li><strong>05 The Flow is not part of the tool.</strong> Build it as an export when you need to put
+one image in front of a budget holder.</li>
+</ol>
+<p>Sequencing follows the PRD phases: <strong>01 ships in Phase 2</strong> because it needs only
+classification. <strong>02 and 04 arrive in Phase 3</strong> with the outcome signals.
+<strong>03 comes last</strong>, once the gold set says the verdicts are worth acting on.</p>
+<p><strong>Two things changed in v0.2 and they touch every screen.</strong> The unit is now
+points of allowance rather than dollars &mdash; on seat plans the scarce thing is frontier headroom,
+not money, and a headroom claim can actually be checked next week by watching the limit hits stop.
+And the pool-balance strip under 02 is doing quiet but important work: it is the only place that
+answers whether delegating to Codex is the right move, because that is a transfer between ceilings
+rather than a saving, and the answer depends on which ceiling is binding this week.</p>
+<p class="note">Figures throughout are the 28 rows from your reference report, re-scored through the
+verdict rules in &sect;8 of the PRD and re-expressed as share of a 30-day allowance. The session
+trace in 04, the pool ceilings in 02, the limit-hit counts and the unit counts in 03 are
+illustrative &mdash; that data does not exist yet, and whether allowance consumption is even
+machine-readable is Phase&nbsp;0 question&nbsp;#3.</p>
+</section>
+</div>
+</body>
+</html>

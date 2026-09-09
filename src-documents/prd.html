@@ -1,0 +1,1705 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Model Use Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap">
+<style>
+:root{
+  --bg:#F6F7F9; --surface:#FFFFFF; --surface-2:#F0F2F5;
+  --ink:#12161C; --ink-2:#333C47; --muted:#59636F; --faint:#8C95A1;
+  --rule:#DCE0E6; --rule-strong:#C2C9D2;
+  --accent:#2E56A8; --accent-soft:#E7EDF9;
+  --ok:#3F7D4E;   --ok-soft:#E6F0E8;
+  --warn:#9A6206;  --warn-soft:#FAF0DD;
+  --crit:#AC3A2C;  --crit-soft:#FBE8E5;
+  --flag:#71468A;  --flag-soft:#F2EAF7;
+  --shadow:0 1px 2px rgba(18,22,28,.05), 0 8px 24px -16px rgba(18,22,28,.25);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1116; --surface:#161A20; --surface-2:#1D222A;
+    --ink:#E4E8ED; --ink-2:#C3CAD3; --muted:#939DAA; --faint:#6E7986;
+    --rule:#242A32; --rule-strong:#333B45;
+    --accent:#7FA5EA; --accent-soft:#1A2536;
+    --ok:#79B287;   --ok-soft:#16241A;
+    --warn:#D6A24B;  --warn-soft:#2A2113;
+    --crit:#E0806F;  --crit-soft:#2C1815;
+    --flag:#B990D2;  --flag-soft:#241A2C;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1116; --surface:#161A20; --surface-2:#1D222A;
+  --ink:#E4E8ED; --ink-2:#C3CAD3; --muted:#939DAA; --faint:#6E7986;
+  --rule:#242A32; --rule-strong:#333B45;
+  --accent:#7FA5EA; --accent-soft:#1A2536;
+  --ok:#79B287;   --ok-soft:#16241A;
+  --warn:#D6A24B;  --warn-soft:#2A2113;
+  --crit:#E0806F;  --crit-soft:#2C1815;
+  --flag:#B990D2;  --flag-soft:#241A2C;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Newsreader",Georgia,"Times New Roman",serif;
+  font-size:17px; line-height:1.62; font-optical-sizing:auto;
+}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px 96px;
+  display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:1080px){
+  .wrap{grid-template-columns:236px minmax(0,1fr);gap:56px;padding-right:56px}
+}
+
+/* ---- masthead ---- */
+.mast{grid-column:1/-1;border-bottom:2px solid var(--ink);
+  padding:44px 0 20px;margin-bottom:40px}
+.mast .kicker{font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 14px}
+.mast h1{font-family:"Archivo",system-ui,sans-serif;font-weight:700;
+  font-size:clamp(38px,6.2vw,64px);line-height:.98;letter-spacing:-.028em;
+  margin:0 0 12px;text-wrap:balance}
+.mast .sub{font-size:20px;color:var(--muted);margin:0 0 26px;max-width:56ch;font-style:italic}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:2px 24px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px}
+.meta div{padding:9px 0;border-top:1px solid var(--rule)}
+.meta dt{color:var(--faint);text-transform:uppercase;letter-spacing:.09em;font-size:10px}
+.meta dd{margin:3px 0 0;color:var(--ink-2)}
+
+/* ---- toc rail ---- */
+.rail{display:none}
+@media(min-width:1080px){
+  .rail{display:block;position:sticky;top:0;align-self:start;
+    max-height:100vh;overflow-y:auto;padding:8px 0 40px;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;line-height:1.5}
+  .rail .rail-h{color:var(--faint);text-transform:uppercase;letter-spacing:.12em;
+    font-size:10px;padding-bottom:10px;border-bottom:1px solid var(--rule);margin-bottom:12px}
+  .rail a{display:block;color:var(--muted);text-decoration:none;padding:5px 0 5px 10px;
+    border-left:2px solid transparent}
+  .rail a:hover{color:var(--accent);border-left-color:var(--accent);background:var(--accent-soft)}
+  .rail a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+}
+
+/* ---- prose ---- */
+.doc{min-width:0;max-width:74ch}
+.doc h2{font-family:"Archivo",system-ui,sans-serif;font-weight:700;
+  font-size:27px;letter-spacing:-.018em;line-height:1.18;
+  margin:64px 0 4px;padding-top:22px;border-top:1px solid var(--rule-strong);text-wrap:balance}
+.doc h2:first-of-type{margin-top:8px}
+.doc h3{font-family:"Archivo",system-ui,sans-serif;font-weight:600;
+  font-size:18px;letter-spacing:-.005em;margin:38px 0 2px;color:var(--ink)}
+.doc h4{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:500;
+  font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);margin:28px 0 2px}
+.doc p{margin:14px 0}
+.doc ul,.doc ol{margin:14px 0;padding-left:22px}
+.doc li{margin:7px 0}
+.doc li::marker{color:var(--faint)}
+.doc a{color:var(--accent);text-decoration:none;
+  border-bottom:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
+.doc a:hover{border-bottom-color:var(--accent)}
+.doc a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+.doc strong{font-weight:600;color:var(--ink)}
+.doc em{font-style:italic}
+.doc hr{border:0;border-top:1px solid var(--rule);margin:48px 0}
+
+/* code */
+.doc code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.83em;
+  background:var(--surface-2);padding:.14em .38em;border-radius:3px;
+  color:var(--ink-2);border:1px solid var(--rule)}
+.doc pre{background:var(--surface);border:1px solid var(--rule);
+  border-left:3px solid var(--accent);
+  padding:16px 18px;overflow-x:auto;margin:20px 0;box-shadow:var(--shadow)}
+.doc pre code{background:none;border:0;padding:0;font-size:12.5px;line-height:1.6;color:var(--ink-2)}
+
+/* callouts */
+.doc blockquote{margin:22px 0;padding:14px 18px;background:var(--warn-soft);
+  border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);
+  border-left:3px solid var(--warn);
+  font-family:"Archivo",system-ui,sans-serif;font-size:14.5px;line-height:1.58;font-style:normal}
+.doc blockquote p{margin:6px 0}
+.doc blockquote code{background:color-mix(in srgb,var(--warn) 12%,transparent);border-color:transparent}
+
+/* tables */
+.tablewrap{overflow-x:auto;margin:22px 0;border:1px solid var(--rule);background:var(--surface);box-shadow:var(--shadow)}
+.doc table{border-collapse:collapse;width:100%;font-family:"Archivo",system-ui,sans-serif;
+  font-size:13.5px;line-height:1.48;font-variant-numeric:tabular-nums}
+.doc thead th{text-align:left;font-weight:600;font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--faint);padding:11px 14px;
+  border-bottom:1px solid var(--rule-strong);white-space:nowrap;background:var(--surface-2)}
+.doc tbody td{padding:11px 14px;border-bottom:1px solid var(--rule);vertical-align:top;color:var(--ink-2)}
+.doc tbody tr:last-child td{border-bottom:0}
+.doc tbody td:first-child{color:var(--ink);font-weight:500}
+.doc table code{font-size:.8em}
+
+/* verdict pills injected post-render */
+.pill{display:inline-block;font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:10.5px;letter-spacing:.04em;padding:2px 7px;border-radius:2px;
+  border:1px solid;white-space:nowrap;vertical-align:baseline}
+.p-ok{color:var(--ok);background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 40%,transparent)}
+.p-warn{color:var(--warn);background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
+.p-crit{color:var(--crit);background:var(--crit-soft);border-color:color-mix(in srgb,var(--crit) 40%,transparent)}
+.p-flag{color:var(--flag);background:var(--flag-soft);border-color:color-mix(in srgb,var(--flag) 40%,transparent)}
+.p-mut{color:var(--muted);background:var(--surface-2);border-color:var(--rule-strong)}
+
+/* ascii diagram */
+.doc pre.ascii{border-left-color:var(--rule-strong);background:var(--surface-2)}
+.doc pre.ascii code{font-size:11.5px;line-height:1.42;color:var(--muted)}
+
+.foot{grid-column:1/-1;margin-top:72px;padding-top:20px;border-top:2px solid var(--ink);
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;color:var(--faint);
+  display:flex;flex-wrap:wrap;gap:6px 28px;justify-content:space-between}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.doc hr{display:none}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="mast">
+  <p class="kicker">Product requirements · Internal tooling · HG Insights</p>
+  <h1>Model Use Index</h1>
+  <p class="sub">A local-first observability and right-sizing system for Claude Code usage.</p>
+  <dl class="meta">
+    <div><dt>Owner</dt><dd>Francis Brero</dd></div>
+    <div><dt>Status</dt><dd>Draft for review</dd></div>
+    <div><dt>Date</dt><dd>8 September 2026</dd></div>
+    <div><dt>Scope</dt><dd>Single operator, one machine</dd></div>
+    <div><dt>Verdict rules</dt><dd>28 / 28 reference rows reproduced</dd></div>
+  </dl>
+</header>
+<nav class="rail"><div class="rail-h">Contents</div>
+<a href="#1-problem">1. Problem</a>
+<a href="#2-target-artifact">2. Target artifact</a>
+<a href="#3-goals-and-non-goals">3. Goals and non-goals</a>
+<a href="#4-constraints-and-environment">4. Constraints and environment</a>
+<a href="#5-architecture">5. Architecture</a>
+<a href="#6-data-model">6. Data model</a>
+<a href="#7-classification-taxonomy">7. Classification taxonomy</a>
+<a href="#8-verdict-engine-model-justification">8. Verdict engine</a>
+<a href="#9-the-local-classifier">9. The local classifier</a>
+<a href="#10-analyses">10. Analyses</a>
+<a href="#11-phase-3-frustration-and-sentiment">11. Phase 3</a>
+<a href="#12-dashboard">12. Dashboard</a>
+<a href="#13-non-functional-requirements">13. Non-functional requirements</a>
+<a href="#14-delivery-plan">14. Delivery plan</a>
+<a href="#15-risks">15. Risks</a>
+<a href="#16-open-questions">16. Open questions</a>
+<a href="#17-appendix-a-sources">17. Appendix A</a>
+<a href="#18-appendix-b-confidence-in-these-findings">18. Appendix B</a></nav>
+<main class="doc">
+<h2 id="1-problem">1. Problem</h2>
+<p>We are spending real money on frontier-model tokens inside Claude Code, and we
+have no idea whether we are spending it well. The current state of knowledge is
+a monthly invoice and a vague sense that Opus is expensive.</p>
+<p>Three specific questions are unanswerable today:</p>
+<ol>
+<li><strong>Where are we over-provisioning?</strong> How much scarce frontier-model headroom
+   goes on work a cheap model would have finished correctly? We are on seat
+   subscriptions, so this is not an invoice question — it is why someone gets
+   rate-limited on Thursday afternoon (§2.1).</li>
+<li><strong>Where are we under-provisioning?</strong> Which tasks are failing, thrashing, or
+   burning ten turns on a cheap model when one turn on a strong model would
+   have closed it? This is the more expensive failure and the harder one to see,
+   because it shows up as <em>wasted engineer time</em>, not as a line item.</li>
+<li><strong>What work is repetitive enough to deserve a purpose-built subagent</strong> with a
+   pinned cheap model, a narrow tool allowlist, and a tuned prompt?</li>
+</ol>
+<p>A fourth question sits underneath all three: <strong>how much of this work is not
+visible at all?</strong> Codex subagents invoked from inside Claude Code consume a
+separate allowance that no Claude Code telemetry can see (§5.1 Source E).</p>
+<p>A fifth follows once the rest are instrumented: <strong>which
+subagents and task types actually make people angry?</strong> Frustration is a leading
+indicator of a badly-scoped agent, and it is currently invisible.</p>
+<h3>1.1 Why existing tooling doesn't answer this</h3>
+<ul>
+<li><code>/usage</code> and <code>/insights</code> give per-session cost. They do not classify <em>what the
+  work was</em>, so they cannot tell you whether the spend was appropriate.</li>
+<li>Cloud FinOps tools (Cloudability, Vantage, Finout) allocate cost to a
+  department tag. They stop at "Engineering spent $12k." They have no semantic
+  layer, and on a seat plan they have no dollars to allocate either.</li>
+<li>LLM observability platforms (Langfuse, Helicone, Portkey) capture traces.
+  They render what happened; they do not judge whether the model choice was right.</li>
+</ul>
+<p>The missing piece in all of them is a <strong>semantic enrichment layer</strong> — a cheap
+classifier that reads each unit of work and labels it, so that cost can be
+grouped by <em>kind of work</em> rather than by <em>session id</em>.</p>
+<hr />
+<h2 id="2-target-artifact">2. Target artifact</h2>
+<p>The primary deliverable is a report we are calling the <strong>Model Use Index</strong>.
+One row per (department × model × activity × work type × complexity), with a
+provisioning verdict and its headroom impact attached.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>department</code></td>
+<td>dimension</td>
+<td>Config / user mapping. Constant for v1 (single operator).</td>
+</tr>
+<tr>
+<td><code>provider</code></td>
+<td>dimension</td>
+<td>Captured. <code>anthropic</code> | <code>openai</code> | …</td>
+</tr>
+<tr>
+<td><code>allowance_pool</code></td>
+<td>dimension</td>
+<td>Which seat allowance this drew from. <strong>Consumption never sums across pools.</strong></td>
+</tr>
+<tr>
+<td><code>ai_model</code></td>
+<td>dimension</td>
+<td>Captured — exact model string incl. version pin</td>
+</tr>
+<tr>
+<td><code>ai_activity</code></td>
+<td>classified enum</td>
+<td>Local classifier</td>
+</tr>
+<tr>
+<td><code>work_type</code></td>
+<td>classified enum</td>
+<td>Local classifier</td>
+</tr>
+<tr>
+<td><code>task_complexity</code></td>
+<td>classified enum</td>
+<td>Local classifier</td>
+</tr>
+<tr>
+<td><code>model_justification</code></td>
+<td><strong>derived verdict</strong></td>
+<td>Rules engine (§8)</td>
+</tr>
+<tr>
+<td><code>allowance_pct</code></td>
+<td><strong>primary measure</strong></td>
+<td>Share of the pool's period allowance consumed</td>
+</tr>
+<tr>
+<td><code>list_value_usd</code></td>
+<td>secondary measure</td>
+<td>Notional. Ranking aid only — see below.</td>
+</tr>
+</tbody>
+</table></div>
+<h3>2.1 The unit of account is headroom, not dollars</h3>
+<p>We are on <strong>seat subscriptions, not metered API billing.</strong> This is not a
+detail; it changes what the report is for.</p>
+<p>Running Opus on trivial work does not move an invoice. It burns the 5-hour and
+weekly seat allowance faster and gets someone rate-limited on Thursday
+afternoon. The scarce resource is <strong>frontier-model headroom</strong>, and that is what
+the report must measure.</p>
+<p>So the primary measure is <strong>share of allowance consumed</strong>, per pool. A dollar
+figure is still computed — it is useful for ranking and for talking to Finance —
+but it is labelled <em>notional list value</em> everywhere it appears, because nobody
+can reconcile it against anything we actually pay.</p>
+<p>Three consequences worth stating up front:</p>
+<ul>
+<li><strong>Recommendations become verifiable.</strong> "Saves $909/month" is a promise we
+  cannot keep on a subscription. "Reclaims 6.2 points of weekly Opus allowance"
+  is a claim that can be checked the following week by watching whether the
+  limit-hit events stop.</li>
+<li><strong>The finding becomes personally felt.</strong> Nobody changes their workflow over
+  $900 of notional spend. Getting rate-limited mid-afternoon is a real,
+  irritating, personal cost — and this report says exactly which
+  low-complexity work ate the headroom.</li>
+<li><strong>Pools do not add up.</strong> Anthropic allowance and OpenAI/Codex allowance are
+  separate ceilings. Summing them into one number would be meaningless, and
+  worse, would hide the one move that matters most (§10 A6).</li>
+</ul>
+<blockquote>
+<p>⚠ <strong>Honest caveat on the weighting.</strong> Per-token allowance weight may well
+track list price closely, in which case allowance units are close to a
+rescaled dollar figure. <strong>The value of this reframe is not the weighting —
+it is the fixed denominator and the per-pool split.</strong> A percentage of a
+ceiling you actually hit means something; a dollar figure on a plan with no
+per-token invoice does not.</p>
+</blockquote>
+<h3>2.2 Supporting columns</h3>
+<p>Not in the reference report, but required, because they are what make the
+verdict trustworthy:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>turns</code>, <code>tool_calls</code></td>
+<td>Effort proxy; the denominator for "did it go well"</td>
+</tr>
+<tr>
+<td><code>retry_rate</code>, <code>error_rate</code></td>
+<td>Under-provisioning evidence</td>
+</tr>
+<tr>
+<td><code>cache_read_tokens</code> / <code>cache_creation_tokens</code></td>
+<td>Cache efficiency is a separate lever from model choice</td>
+</tr>
+<tr>
+<td><code>agent_type</code></td>
+<td>Which subagent did this; null for main thread</td>
+</tr>
+<tr>
+<td><code>delegated_to</code></td>
+<td>Set when work was handed to an external agent (§5.1 Source E)</td>
+</tr>
+<tr>
+<td><code>frustration_score</code></td>
+<td>Phase 3</td>
+</tr>
+<tr>
+<td><code>confidence</code></td>
+<td>Classifier self-reported; gates whether a row is actionable</td>
+</tr>
+</tbody>
+</table></div>
+<p>The report must be filterable and drillable — a row is not useful unless you can
+click through to the three heaviest sessions behind it.</p>
+<p><strong>Non-goal for v1:</strong> real-time. A report fresh as of last night is entirely
+sufficient for a decision loop that runs weekly. This single decision removes
+most of the engineering risk in the project.</p>
+<hr />
+<h2 id="3-goals-and-non-goals">3. Goals and non-goals</h2>
+<h3>Goals</h3>
+<ul>
+<li><strong>G1</strong> — Attribute every unit of allowance consumption to a classified unit of
+  work, per pool.</li>
+<li><strong>G2</strong> — Produce a defensible over/under-provisioning verdict per unit of work,
+  with the evidence attached.</li>
+<li><strong>G3</strong> — Surface a ranked list of subagent candidates: recurring work patterns
+  where a pinned cheap model would return real headroom.</li>
+<li><strong>G4</strong> — Run entirely on the operator's laptop. No prompt content leaves the machine.</li>
+<li><strong>G5</strong> — Add zero measurable latency to the interactive coding loop.</li>
+<li><strong>G6</strong> — Account for work delegated to <strong>external agents invoked from inside
+  Claude Code</strong> — today, Codex subagents. Spend that is invisible is worse than
+  spend that is unmeasured, because it makes the rows that use it look cheap.</li>
+</ul>
+<h3>Non-goals (v1)</h3>
+<ul>
+<li>Multi-user / team rollout. The schema must not preclude it (§6.2) but nothing
+  is built for it.</li>
+<li>Real-time alerting or budget enforcement.</li>
+<li>Automatic model routing. This system <em>recommends</em>; a human changes the config.</li>
+<li>General coverage of non-Claude-Code AI usage (IDE autocomplete, chat UI).
+  G6 is narrower: only agents <strong>Claude Code itself invokes</strong>.</li>
+<li>An Anthropic-side gateway. See §5.4 — this is now a decided "no", not a defer.</li>
+<li>Anything that requires a server we have to operate.</li>
+</ul>
+<h3>Success criteria</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>Measure</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Coverage</td>
+<td>% of allowance consumption attributable to a classified work unit, <strong>including delegated calls</strong></td>
+<td>&gt; 95%</td>
+</tr>
+<tr>
+<td>Attribution</td>
+<td>% of Codex sessions correctly joined to a parent work unit</td>
+<td>&gt; 98%</td>
+</tr>
+<tr>
+<td>Classifier agreement</td>
+<td>Agreement with hand-labelled 200-row gold set on <code>work_type</code> and <code>task_complexity</code></td>
+<td>&gt; 80%</td>
+</tr>
+<tr>
+<td>Allowance model</td>
+<td>Predicted vs. observed limit-hit events over 30 days</td>
+<td>within 15%</td>
+</tr>
+<tr>
+<td>Cost of the system</td>
+<td>Classification compute + storage</td>
+<td>$0 marginal, &lt; 30 min/night</td>
+</tr>
+<tr>
+<td>Actionability</td>
+<td>Distinct right-sizing actions produced in month one</td>
+<td>≥ 3</td>
+</tr>
+<tr>
+<td>Intrusiveness</td>
+<td>p95 added latency to an interactive turn</td>
+<td>0 ms</td>
+</tr>
+</tbody>
+</table></div>
+<p>That last one is a hard constraint, and it is why the classifier runs as a
+batch job rather than inline.</p>
+<hr />
+<h2 id="4-constraints-and-environment">4. Constraints and environment</h2>
+<ul>
+<li><strong>Hardware:</strong> Apple Silicon, M3 or better, <strong>8 GB unified memory</strong>. This is the
+  binding constraint on the whole design. After macOS, an IDE, a browser and
+  Claude Code itself, the realistic budget for a local model is <strong>~3 GB
+  resident, 4 GB at an absolute stretch</strong>.</li>
+<li><strong>OS:</strong> macOS. Single machine.</li>
+<li><strong>Auth:</strong> Claude Code subscription auth (see §5.4 — this materially constrains
+  the gateway option).</li>
+<li><strong>Providers:</strong> Predominantly Anthropic, but the design must accommodate other
+  providers, because the target report has a <code>gpt-4.1</code> row in it. Model tiering
+  must be provider-agnostic.</li>
+</ul>
+<hr />
+<h2 id="5-architecture">5. Architecture</h2>
+<p>Four planes, deliberately decoupled so each can fail independently:</p>
+<pre class="ascii"><code>  ┌─────────────────────────────────────────────────────────────┐
+  │  CAPTURE   transcript │ OTel │ hooks │ delegated-agent logs  │
+  └────────────────────┬────────────────────────────────────────┘
+                       │  raw events (append-only, never mutated)
+  ┌────────────────────▼────────────────────────────────────────┐
+  │  NORMALISE  reconcile sources → canonical `work_unit`        │
+  │             join delegated calls to their parent             │
+  └────────────────────┬────────────────────────────────────────┘
+                       │
+  ┌────────────────────▼────────────────────────────────────────┐
+  │  ENRICH     local classifier (batch, nightly)                │
+  │             + deterministic outcome-signal extractor         │
+  │             + allowance model  + verdict rules engine        │
+  └────────────────────┬────────────────────────────────────────┘
+                       │
+  ┌────────────────────▼────────────────────────────────────────┐
+  │  SERVE      SQLite  →  local dashboard  +  SQL console       │
+  └─────────────────────────────────────────────────────────────┘
+</code></pre>
+<p><strong>Design principle:</strong> the raw event store is append-only and is never
+overwritten by enrichment. Classification labels live in a separate table keyed
+by <code>work_unit_id</code> plus a <code>classifier_version</code>. When the taxonomy changes — and
+it will — we re-run enrichment over history rather than losing it.</p>
+<h3>5.0 The question underneath the question</h3>
+<p>"Which capture mechanism" reduces to <strong>"where does the text come from."</strong>
+Split the problem and most of it collapses:</p>
+<ul>
+<li><strong>Consumption accounting is solved.</strong> OTel gives tokens, model, session and
+  <code>prompt.id</code> correlation through a documented, supported interface. Low risk,
+  no decisions.</li>
+<li><strong>Semantic capture is the real question</strong>, because classification needs
+  message text, and only the transcript has it at acceptable risk.</li>
+<li><strong>Delegated work is the blind spot</strong>, and it needs its own source entirely.</li>
+</ul>
+<p>Everything below follows from that.</p>
+<h3>5.1 Capture sources</h3>
+<h4>Source A — Transcript tailer (primary; required)</h4>
+<p>Claude Code writes append-only JSONL session transcripts under
+<code>~/.claude/projects/&lt;slugified-cwd&gt;/&lt;session-id&gt;.jsonl</code>. A <code>fswatch</code>/<code>watchdog</code>
+process tails these and appends new records to our raw store.</p>
+<p><em>Gives us:</em> full message text (needed for classification), per-assistant-message
+<code>message.usage</code> token counts (<code>input_tokens</code>, <code>output_tokens</code>,
+<code>cache_creation_input_tokens</code>, <code>cache_read_input_tokens</code>), the model string,
+tool calls with their inputs, tool results with <code>is_error</code>, <code>cwd</code>, <code>gitBranch</code>,
+<code>version</code>, and the <code>uuid</code>/<code>parentUuid</code> chain that rebuilds turn structure.</p>
+<p><em>Why primary — and this was under-weighted in v0.1:</em> <strong>it is retroactive.</strong>
+Every other source starts collecting from zero. The transcript gives us months
+of history on day one. For a tool whose entire purpose is finding patterns
+<em>across</em> sessions, that is the difference between a real finding in a day and
+waiting a month for enough data to say anything. It also means the classifier
+can be calibrated against work the operator actually remembers doing.</p>
+<blockquote>
+<p>⚠ <strong>Known risk.</strong> This schema is internal and unstable across Claude Code
+versions; Anthropic explicitly advises against depending on it. Mitigations:
+(a) the parser is defensive — unknown fields ignored, missing fields produce a
+<code>parse_degraded</code> flag rather than an exception; (b) a schema-drift canary
+alerts if the share of records failing to yield token counts crosses 1%;
+(c) the <code>version</code> field is recorded on every record so drift bisects to a
+release; (d) Source B is the cross-check.</p>
+<p><strong>The risk asymmetry is what settles this.</strong> If the parser breaks, the tool
+degrades, the files are still on disk, and a fixed parser re-ingests
+everything. Nothing is lost or corrupted. A gateway failure, by contrast,
+breaks the workday mid-task. One risk lands on the observability system; the
+other lands on the thing being observed.</p>
+</blockquote>
+<h4>Source B — Native OpenTelemetry export (primary; required)</h4>
+<p>Claude Code emits OTLP metrics and logs when <code>CLAUDE_CODE_ENABLE_TELEMETRY=1</code>.
+A local collector (or a ~100-line OTLP receiver) writes to the same store.</p>
+<p><em>Gives us:</em> <code>claude_code.cost.usage</code> and <code>claude_code.token.usage</code> with <code>model</code>,
+<code>session.id</code> and token-type attributes; events including
+<code>claude_code.api_request</code>, <code>api_error</code>, <code>tool_result</code>, <code>tool_decision</code>,
+<code>user_prompt</code>, <code>assistant_response</code>. Critically it carries <code>prompt.id</code>, which
+correlates every event from a single user prompt, and <code>client_request_id</code> per
+API call.</p>
+<p><em>Why it earns its place:</em> it is a <strong>supported, documented interface</strong>, unlike the
+transcript schema. It is the authoritative source for token counts, and
+<code>prompt.id</code> gives turn correlation more reliable than walking <code>parentUuid</code>.</p>
+<pre><code class="language-bash">export CLAUDE_CODE_ENABLE_TELEMETRY=1
+export OTEL_METRICS_EXPORTER=otlp
+export OTEL_LOGS_EXPORTER=otlp
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+export OTEL_LOG_USER_PROMPTS=1
+export OTEL_LOG_TOOL_DETAILS=1
+export OTEL_METRIC_EXPORT_INTERVAL=30000
+</code></pre>
+<blockquote>
+<p><strong>Security note.</strong> These belong in the operator's shell profile, outside any
+repo. There is a documented exfiltration technique where a hostile repo's
+checked-in settings point telemetry headers at an attacker-controlled helper
+command. Our ingest endpoint is <code>localhost</code> only.</p>
+</blockquote>
+<p>Research surfaced an undocumented <code>OTEL_LOG_RAW_API_BODIES=1</code> reported to emit
+full request/response bodies. <strong>Unverified.</strong> If real, it would give us the
+assembled context window — see A4 in §10. Phase 0 tests it.</p>
+<h4>Source C — Hooks (targeted; required)</h4>
+<p>Not bulk capture — a small set of hooks recording facts the message stream
+cannot express. Each writes one JSON line to a file and exits 0. A hook that
+hangs, hangs the session.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Hook</th>
+<th>Recorded</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SubagentStart</code> / <code>SubagentStop</code></td>
+<td><code>agent_id</code>, <code>agent_type</code>, parent <code>session_id</code>, duration</td>
+<td>The only reliable source for <em>which named subagent</em> did the work</td>
+</tr>
+<tr>
+<td><strong><code>PreModelSwitch</code> / <code>PostModelSwitch</code></strong></td>
+<td>from-model, to-model, timestamp</td>
+<td>See below</td>
+</tr>
+<tr>
+<td><code>PreCompact</code></td>
+<td>timestamp, session</td>
+<td>Context-pressure and consumption event</td>
+</tr>
+<tr>
+<td><code>Stop</code> / <code>StopFailure</code></td>
+<td>completion vs. interruption</td>
+<td>Frustration signal</td>
+</tr>
+<tr>
+<td><code>PreToolUse</code> (Bash only)</td>
+<td>command verb</td>
+<td>Detects delegation to an external agent (§ Source E)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong><code>PreModelSwitch</code> deserves separate billing.</strong> When someone escalates
+Sonnet → Opus mid-session, that is a human explicitly saying <em>"this model is not
+working for this task."</em> It is ground truth for under-provisioning that needs no
+classifier and no thresholds — and it produces a <strong>free labelled dataset</strong> to
+calibrate everything else against. The under-provisioning model can be
+bootstrapped from escalation events alone. This moves hooks from "useful
+supplement" to load-bearing for §10 A2.</p>
+<h4>Source E — Delegated-agent logs (required; the v0.1 blind spot)</h4>
+<p><strong>Codex subagents are invoked from inside Claude Code today, and none of
+Sources A, B or C can see what they cost.</strong> Those calls never touch Anthropic's
+API: no transcript API records, no OTel token metrics, and an Anthropic-side
+gateway would not see them either.</p>
+<p>What Claude Code <em>does</em> record is the shell-out — a <code>Bash</code> tool call with the
+prompt as an argument, a duration, an exit status, and the returned text. So a
+delegated work unit appears with its <em>effort</em> visible and its <em>consumption
+absent</em>, which makes those rows look artificially <strong>cheap</strong>. That is worse than
+missing data: it inverts the verdict on exactly the rows we most want to judge.</p>
+<p>Capture is two parts:</p>
+<p><strong>E1 — Tail the external agent's own session records.</strong> Codex keeps local
+session logs with its own token accounting, structurally the same problem as
+Source A. <em>The exact path and record schema must be confirmed empirically —
+Phase 0.</em> An OpenAI-side gateway is the fallback if the logs prove insufficient,
+and carries none of the Anthropic-gateway problems (no subscription-OAuth
+question, no prompt-cache defeat risk on our primary provider).</p>
+<p><strong>E2 — Stamp the parent at the call site.</strong> Timestamp-matching a Codex session
+to the Claude Code turn that spawned it would mostly work and occasionally lie.
+The clean answer is a thin wrapper on the <code>codex</code> invocation that writes a
+sidecar record joining the Codex session id to the parent <code>prompt_id</code>:</p>
+<pre><code class="language-bash">#!/usr/bin/env bash
+# ~/.local/bin/codex — wrapper, ahead of the real binary on PATH
+run_id=&quot;$(uuidgen)&quot;
+printf '{&quot;run_id&quot;:&quot;%s&quot;,&quot;parent_prompt_id&quot;:&quot;%s&quot;,&quot;cwd&quot;:&quot;%s&quot;,&quot;ts&quot;:&quot;%s&quot;}\n' \
+  &quot;$run_id&quot; &quot;${CLAUDE_PROMPT_ID:-unknown}&quot; &quot;$PWD&quot; &quot;$(date -Iseconds)&quot; \
+  &gt;&gt; ~/.model-use-index/delegations.jsonl
+CODEX_RUN_ID=&quot;$run_id&quot; exec /opt/homebrew/bin/codex &quot;$@&quot;
+</code></pre>
+<p>We control how these subagents are invoked, so this is a one-line change at the
+call site rather than an inference problem. Done properly it yields true
+cross-provider attribution, which is what makes multi-model rows trustworthy.</p>
+<h3>5.2 Why there is no Anthropic gateway</h3>
+<p>v0.1 deferred this to Phase 4 as conditional. It is now a <strong>decided no</strong>, for
+four reasons that compound:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>It is not needed</strong></td>
+<td>Coverage is Claude-Code-only. Sources A + B + C cover it. The one thing a gateway uniquely provides — the assembled context window — is wanted for one secondary analysis (A4) and may be obtainable from <code>OTEL_LOG_RAW_API_BODIES</code>.</td>
+</tr>
+<tr>
+<td><strong>Subscription auth / ToS</strong></td>
+<td>Subscription OAuth passes a gateway only if no gateway credential is set <em>and</em> <code>anthropic-beta</code> is forwarded verbatim. Separately, Anthropic's Feb 2026 policy restricts subscription tokens to Claude Code and claude.ai; whether a personal passthrough proxy is in scope is <strong>not settled by any public statement.</strong> We are on seats. This alone is disqualifying without a written answer.</td>
+</tr>
+<tr>
+<td><strong>Silent cache defeat</strong></td>
+<td>A proxy that reorders or merges the <code>system</code> array, or stringifies block content, breaks prompt caching with <strong>no error</strong> — visible only as elevated uncached <code>input_tokens</code>. A consumption tool that inflates the consumption it measures is a special kind of bad.</td>
+</tr>
+<tr>
+<td><strong>Risk lands in the wrong place</strong></td>
+<td>Every other source fails toward "the tool is degraded." This one fails toward "the workday stopped."</td>
+</tr>
+</tbody>
+</table></div>
+<p>Also on the record, if this is ever revisited: LiteLLM allowlists
+<code>anthropic-beta</code> against Anthropic's explicit gateway guidance, has recurring
+bugs where request bodies persist as <code>{}</code> and passthrough requests record
+<code>spend: 0.0</code>, and shipped credential-stealing malware on PyPI for ~40 minutes in
+March 2026. If a gateway is ever needed, <code>mitmproxy</code> in reverse mode is the
+lighter, better-understood option, and an OpenAI-side proxy (Source E fallback)
+is a different and far safer proposition than an Anthropic-side one.</p>
+<h3>5.3 Source reconciliation</h3>
+<p>Sources share <code>session_id</code>; A and B additionally share <code>message.uuid</code>.</p>
+<ol>
+<li>Join B→A on <code>session.id</code> + <code>message.uuid</code> where present.</li>
+<li>Fall back to <code>session.id</code> + timestamp window (±2 s).</li>
+<li><strong>Consumption has exactly one authoritative source per provider</strong> — OTel for
+   Anthropic, the agent's own logs for delegated providers. Other sources record
+   a <code>reconciliation_delta</code> but never contribute tokens. Three sources with
+   different clocks is precisely how double-counting happens; this rule goes in
+   on day one, not in Phase 3.</li>
+<li>Text content always comes from A (or E1 for delegated work).</li>
+<li>Records present in exactly one source are kept with a <code>sources</code> bitmask;
+   single-source coverage is exposed as a data-quality metric.</li>
+<li>Delegated calls join on <code>run_id</code> from the E2 sidecar; a delegation with no
+   matching agent-log record is flagged <code>orphaned</code> and surfaced, never silently
+   dropped.</li>
+</ol>
+<p>A persistent reconciliation delta above 2% is a bug, not rounding.</p>
+<h3>5.4 Subagent attribution — open question</h3>
+<p>Research returned <strong>contradictory</strong> accounts of how Task-tool subagent turns
+appear on disk: inlined into the parent transcript flagged <code>isSidechain: true</code>,
+versus written to separate transcript files with their own <code>sessionId</code>. Likely
+version-dependent.</p>
+<p><strong>Resolve empirically in Phase 0</strong> by spawning a known subagent and diffing
+<code>~/.claude/projects/</code>. G3 and Phase 3 both depend on attributing consumption to
+the agent that spent it; an incorrect assumption here silently misattributes a
+large fraction to the main thread. The <code>SubagentStart</code>/<code>SubagentStop</code> hooks are
+the belt-and-braces answer whichever layout is correct.</p>
+<hr />
+<h2 id="6-data-model">6. Data model</h2>
+<p>SQLite, WAL mode, single file at <code>~/.model-use-index/store.db</code>. A heavy user's
+year is a few hundred MB of text and well under a million work units. SQLite
+handles that without breathing hard, needs no daemon, backs up trivially, and is
+queryable by anything the operator already has. Do not reach for Postgres.</p>
+<h3>6.1 Core tables</h3>
+<pre><code class="language-sql">-- Immutable raw capture. Never updated, never deleted.
+CREATE TABLE raw_event (
+  id            INTEGER PRIMARY KEY,
+  source        TEXT NOT NULL,   -- 'transcript'|'otel'|'hook'|'codex'|'delegation'
+  ingested_at   TEXT NOT NULL,
+  session_id    TEXT,
+  payload       TEXT NOT NULL,   -- verbatim JSON
+  content_hash  TEXT NOT NULL UNIQUE
+);
+
+-- The unit of analysis: one user prompt and everything it caused,
+-- within one agent context.
+CREATE TABLE work_unit (
+  id                     TEXT PRIMARY KEY,   -- prompt_id, or synthesised
+  session_id             TEXT NOT NULL,
+  parent_work_unit_id    TEXT,
+  agent_type             TEXT,               -- NULL = main thread
+  agent_id               TEXT,
+  started_at             TEXT NOT NULL,
+  ended_at               TEXT,
+  cwd  TEXT,  repo TEXT,  git_branch TEXT,  cc_version TEXT,
+  sources                INTEGER NOT NULL,   -- bitmask
+  parse_degraded         INTEGER DEFAULT 0
+);
+
+-- One row per API call, whichever provider served it.
+CREATE TABLE api_call (
+  id                      TEXT PRIMARY KEY,   -- client_request_id / codex call id
+  work_unit_id            TEXT NOT NULL REFERENCES work_unit(id),
+  delegated_call_id       TEXT REFERENCES delegated_call(id),  -- NULL if direct
+  message_uuid            TEXT,
+  provider                TEXT NOT NULL,      -- 'anthropic'|'openai'
+  allowance_pool          TEXT NOT NULL,      -- 'anthropic-seat'|'openai-seat'|'openai-api'
+  model                   TEXT NOT NULL,      -- exact string, version pin included
+  model_tier              TEXT NOT NULL,      -- resolved via model_registry
+  input_tokens            INTEGER NOT NULL,
+  output_tokens           INTEGER NOT NULL,
+  cache_creation_tokens   INTEGER NOT NULL DEFAULT 0,
+  cache_read_tokens       INTEGER NOT NULL DEFAULT 0,
+  allowance_units         REAL NOT NULL,      -- computed, §6.3
+  list_value_usd          REAL NOT NULL,      -- notional; ranking aid only
+  registry_version        TEXT NOT NULL,
+  latency_ms              INTEGER,
+  is_error                INTEGER DEFAULT 0,
+  reconciliation_delta    REAL DEFAULT 0.0,
+  started_at              TEXT NOT NULL
+);
+
+-- Work handed to an external agent invoked from inside Claude Code.
+CREATE TABLE delegated_call (
+  id                 TEXT PRIMARY KEY,    -- run_id from the wrapper sidecar
+  work_unit_id       TEXT REFERENCES work_unit(id),   -- NULL until joined
+  agent              TEXT NOT NULL,       -- 'codex'
+  external_session   TEXT,                -- the agent's own session id
+  invoked_at         TEXT NOT NULL,
+  duration_ms        INTEGER,
+  exit_status        INTEGER,
+  join_method        TEXT NOT NULL,       -- 'sidecar'|'timestamp'|'unjoined'
+  orphaned           INTEGER DEFAULT 0    -- sidecar with no agent-log match
+);
+
+CREATE TABLE tool_call (
+  id TEXT PRIMARY KEY,
+  work_unit_id TEXT NOT NULL REFERENCES work_unit(id),
+  tool_name TEXT NOT NULL,
+  target TEXT,               -- file path, command verb, URL host — normalised
+  is_delegation INTEGER DEFAULT 0,
+  is_error INTEGER DEFAULT 0,
+  duration_ms INTEGER,
+  started_at TEXT NOT NULL
+);
+
+-- Enrichment output. Separate, versioned, re-runnable.
+CREATE TABLE classification (
+  work_unit_id TEXT NOT NULL REFERENCES work_unit(id),
+  classifier_version TEXT NOT NULL,   -- model + prompt hash + taxonomy version
+  ai_activity TEXT NOT NULL,
+  work_type TEXT NOT NULL,
+  task_complexity TEXT NOT NULL,
+  stakes TEXT NOT NULL,               -- 'routine'|'high'
+  confidence REAL NOT NULL,
+  rationale TEXT,
+  classified_at TEXT NOT NULL,
+  PRIMARY KEY (work_unit_id, classifier_version)
+);
+
+-- Deterministic. No model involved.
+CREATE TABLE outcome_signal (
+  work_unit_id TEXT PRIMARY KEY REFERENCES work_unit(id),
+  turns INTEGER, tool_calls INTEGER, tool_error_rate REAL,
+  edit_thrash INTEGER,        -- max edits to a single file
+  model_escalated INTEGER,    -- PreModelSwitch upward occurred
+  compactions INTEGER, user_interrupted INTEGER,
+  corrective_turns INTEGER, prompt_restated INTEGER, completed INTEGER
+);
+
+CREATE TABLE verdict (
+  work_unit_id TEXT NOT NULL REFERENCES work_unit(id),
+  rules_version TEXT NOT NULL,
+  justification TEXT NOT NULL,        -- §8.2
+  expected_tier TEXT NOT NULL, used_tier TEXT NOT NULL, tier_delta INTEGER NOT NULL,
+  evidence TEXT,                      -- JSON: which signals fired
+  headroom_reclaimable REAL,          -- allowance units, overprovisioned rows
+  headroom_pool TEXT,                 -- which pool it would be returned to
+  PRIMARY KEY (work_unit_id, rules_version)
+);
+</code></pre>
+<h3>6.2 Allowance model</h3>
+<p>The primary measure is modelled, not captured, so it is versioned and
+calibrated like any other model in the system.</p>
+<pre><code class="language-sql">CREATE TABLE model_registry (
+  version TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  model_pattern TEXT NOT NULL,     -- glob; matches version-pinned strings
+  tier TEXT NOT NULL,              -- 'small'|'mid'|'frontier'
+  allowance_pool TEXT NOT NULL,
+  au_per_mtok_in REAL NOT NULL,    -- allowance weight, not price
+  au_per_mtok_out REAL NOT NULL,
+  au_per_mtok_cache_read REAL NOT NULL,
+  au_per_mtok_cache_write REAL NOT NULL,
+  usd_per_mtok_in REAL NOT NULL,   -- list price, for the notional column
+  usd_per_mtok_out REAL NOT NULL,
+  effective_from TEXT NOT NULL
+);
+
+CREATE TABLE allowance_pool (
+  pool TEXT PRIMARY KEY,
+  window TEXT NOT NULL,            -- '5h'|'weekly'
+  capacity_au REAL NOT NULL,       -- calibrated, not published
+  calibrated_at TEXT, calibration_r2 REAL
+);
+
+-- Observed ground truth. The only hard data we get about the ceiling.
+CREATE TABLE limit_event (
+  id INTEGER PRIMARY KEY,
+  pool TEXT NOT NULL,
+  observed_at TEXT NOT NULL,
+  window TEXT NOT NULL,
+  source TEXT NOT NULL,            -- 'api_error'|'otel'|'manual'
+  au_consumed_in_window REAL       -- our estimate at the moment it fired
+);
+</code></pre>
+<p><strong>How capacity gets calibrated.</strong> Published allowances are not exposed as a
+number we can read, so <code>capacity_au</code> is fitted: every <code>limit_event</code> is an
+observation that consumption in that window reached the ceiling. With a handful
+of events the estimate converges well enough for a percentage to be meaningful.
+Until then the dashboard shows allowance <strong>share of period total</strong> rather than
+share of ceiling, and says so.</p>
+<p>Whether consumption is exposed programmatically at all is a <strong>Phase 0 question</strong>
+(§14). If it is, we read it and skip the modelling.</p>
+<h3>6.3 Notes on the model</h3>
+<ul>
+<li><strong><code>work_unit</code> is the unit of analysis, not the session.</strong> A session spans
+  hours and a dozen unrelated tasks; classifying at session level produces mush.</li>
+<li><strong>Consumption is always computed, never captured.</strong> Storing tokens and
+  recomputing against a versioned registry means a correction re-values history
+  instead of corrupting it. This applies to both <code>allowance_units</code> and
+  <code>list_value_usd</code>.</li>
+<li><strong><code>allowance_pool</code> is not optional and never sums.</strong> Anthropic seat allowance
+  and OpenAI allowance are separate ceilings. Any query that adds them is a bug,
+  and the dashboard must make that structurally impossible rather than a
+  convention people remember.</li>
+<li><strong>Tier is resolved, not hardcoded.</strong> <code>claude-opus-4-7@20250514</code> and
+  <code>claude-opus-4-7</code> resolve to the same tier; <code>gpt-5-codex</code> resolves in the same
+  registry. Fail loudly on an unmatched model rather than defaulting silently.</li>
+<li><strong><code>department</code> is deliberately absent.</strong> For v1 it is a view-level constant.
+  Multi-user makes it a join on the OTel <code>user.id</code>/<code>user.email</code> attributes.
+  Designing it now would be speculative; leaving the join key available is free.</li>
+</ul>
+<hr />
+<h2 id="7-classification-taxonomy">7. Classification taxonomy</h2>
+<p>Three orthogonal axes plus a stakes flag. Kept deliberately small — a small
+local model's accuracy degrades sharply as the label set grows, and every label
+we add has to earn its place by changing a decision.</p>
+<h3>7.1 <code>work_type</code> — 4 values</h3>
+<p>The <em>cognitive shape</em> of the work. This is the axis that most determines which
+model tier is appropriate.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Retrieval</code></td>
+<td>Find, read, summarise, answer from existing material. Little inference.</td>
+</tr>
+<tr>
+<td><code>Synthesis</code></td>
+<td>Combine and produce prose or a plan. Judgement, but bounded.</td>
+</tr>
+<tr>
+<td><code>Reasoning</code></td>
+<td>Diagnose, design, prove, trade off. Depth over breadth. Failure is subtle.</td>
+</tr>
+<tr>
+<td><code>Agentic</code></td>
+<td>Multi-step execution with tools against real state. Breadth, persistence, error recovery.</td>
+</tr>
+</tbody>
+</table></div>
+<h3>7.2 <code>ai_activity</code> — the domain label</h3>
+<p>Open-ish enum, seeded from the reference report and extensible:</p>
+<p><code>debugging</code>, <code>feature-development</code>, <code>testing</code>, <code>refactoring</code>, <code>code-review</code>,
+<code>architecture-design</code>, <code>security-review</code>, <code>incident-response</code>, <code>data-analysis</code>,
+<code>pipeline-analysis</code>, <code>automation</code>, <code>documentation</code>, <code>dependency-management</code>,
+<code>product-planning</code>, <code>requirements-gathering</code>, <code>roadmap-planning</code>, <code>onboarding</code>,
+<code>research</code>, <code>other</code></p>
+<p>Rules: the enum is passed to the classifier <em>both</em> in the prompt and as a
+structural constraint. <code>other</code> is always available — a forced choice into a
+wrong label is worse than an honest <code>other</code>. If <code>other</code> exceeds 10% of volume,
+the taxonomy needs a new label; that is a monthly review item, not an
+auto-expansion.</p>
+<h3>7.3 <code>task_complexity</code> — 3 values</h3>
+<p><code>Low</code> / <code>Medium</code> / <code>High</code>. <strong>Three, not ten.</strong></p>
+<p>Small models are meaningfully worse at ordinal regression than at categorical
+labelling; a 1–10 scale invites false precision and inter-run instability. Three
+buckets with explicit anchors in the prompt are both more stable and sufficient
+for the decision this feeds.</p>
+<p>Anchors:
+- <strong>Low</strong> — single-step, well-specified, verifiable by inspection. Rename a
+  variable. Summarise a file. Format a table.
+- <strong>Medium</strong> — several steps, some ambiguity, one non-trivial decision. Add an
+  endpoint following an existing pattern. Track down a shallow bug.
+- <strong>High</strong> — genuine ambiguity, cross-cutting change, novel design, or a
+  failure mode that is expensive to get wrong. Design a schema. Diagnose a race
+  condition. Plan a migration.</p>
+<h3>7.4 <code>stakes</code> — 2 values</h3>
+<p><code>routine</code> / <code>high</code>. Orthogonal to complexity: a <em>simple</em> change to auth config
+is low complexity and high stakes. Drives the <code>Acceptable (high stakes)</code> verdict.</p>
+<p>Heuristic seeds (classifier confirms): security-review, incident-response,
+anything touching auth/secrets/payments, production config, database migrations,
+CI/CD pipeline definitions, deploy scripts.</p>
+<hr />
+<h2 id="8-verdict-engine-model-justification">8. Verdict engine — <code>model_justification</code></h2>
+<p>This is the core intellectual property of the system and the one part that
+<strong>must not be done by a model.</strong> The verdict is a deterministic, auditable,
+config-driven function. If it is not reproducible, nobody will act on it.</p>
+<h3>8.1 Expected tier</h3>
+<pre><code>expected_tier = TIER_MATRIX[work_type][task_complexity]
+if stakes == 'high': expected_tier = min(frontier, expected_tier + 1)
+</code></pre>
+<p>Default <code>TIER_MATRIX</code>. <strong>This matrix was reverse-engineered from the reference
+report</strong> (§2) and then verified: the rules below reproduce the
+<code>model_justification</code> value on all 28 visible rows of that report exactly. It is
+still a hypothesis to be calibrated against our own outcome data (§16 Q2), but
+it is a grounded one rather than a guess.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>work_type ↓ / complexity →</th>
+<th>Low</th>
+<th>Medium</th>
+<th>High</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Retrieval</strong></td>
+<td>small</td>
+<td>small</td>
+<td>mid</td>
+</tr>
+<tr>
+<td><strong>Synthesis</strong></td>
+<td>small</td>
+<td>mid</td>
+<td>mid ⚠</td>
+</tr>
+<tr>
+<td><strong>Agentic</strong></td>
+<td>small</td>
+<td>small</td>
+<td>frontier</td>
+</tr>
+<tr>
+<td><strong>Reasoning</strong></td>
+<td>small</td>
+<td>small</td>
+<td>frontier</td>
+</tr>
+</tbody>
+</table></div>
+<p>⚠ <code>Synthesis / High</code> is the one cell with no supporting evidence in the
+reference report — no such row appears. Set to <code>mid</code> on the reasoning that
+synthesis is bounded judgement, and flagged for calibration.</p>
+<p>Two cells are worth noting because they are counter-intuitive and fell out of
+the data rather than from intuition: <strong><code>Agentic / Medium</code> and <code>Reasoning /
+Medium</code> both expect <code>small</code>, not <code>mid</code>.</strong> The implied claim is that
+medium-complexity agentic execution is mechanical enough that a cheap model with
+good tools handles it — which, if true, is where most of the reclaimable headroom
+lives, since that is also where most of the volume sits.</p>
+<h3>8.2 Verdict function</h3>
+<p><code>tier_delta = used_tier − expected_tier</code>, on the ordinal scale
+<code>small=0, mid=1, frontier=2</code>.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>≥ 2 under-provisioning signals fired (§8.3)</td>
+<td><span class="pill p-crit">Underprovisioned</span> <em>(overrides all below)</em></td>
+</tr>
+<tr>
+<td><code>tier_delta ≥ +2</code>, or <code>+1</code> when <code>complexity == Low</code></td>
+<td><span class="pill p-warn">Overprovisioned</span></td>
+</tr>
+<tr>
+<td><code>tier_delta == +1</code> (Medium/High)</td>
+<td><span class="pill p-mut">Acceptable</span></td>
+</tr>
+<tr>
+<td><code>tier_delta == 0</code></td>
+<td><span class="pill p-ok">Justified</span></td>
+</tr>
+<tr>
+<td><code>tier_delta ≤ −1</code> and <code>stakes == routine</code></td>
+<td><span class="pill p-mut">Acceptable</span> <em>(downgrade candidate — it worked)</em></td>
+</tr>
+<tr>
+<td><code>tier_delta ≤ −1</code> and <code>stakes == high</code></td>
+<td><span class="pill p-flag">Acceptable (high stakes)</span> <em>(review)</em></td>
+</tr>
+</tbody>
+</table></div>
+<p>Note the asymmetry, which is intentional: this is a <strong>cost lens</strong>, not a
+symmetric fit score. <code>Justified</code> means "you picked exactly the right tier."
+<code>Acceptable</code> means "you did not overspend" — which covers both a mild overshoot
+and a successful downgrade. <code>Overprovisioned</code> means "you spent money you didn't
+need to." And <code>Underprovisioned</code> overrides everything, because a cheap model
+that burns forty minutes of engineer time is the most expensive outcome in the
+table and the one a pure cost view will never surface.</p>
+<p><strong>Verified.</strong> A reference implementation of §8.1 + §8.2 (<code>verify_rules.py</code>,
+shipped alongside this document) reproduces the <code>model_justification</code> value on
+<strong>28 of 28</strong> rows of the reference report. The matrix and the rules are therefore
+not a plausible-sounding invention — they are the actual decision function behind
+the target artifact, recovered and made explicit.</p>
+<p>The <code>Acceptable (high stakes)</code> verdict is not a cost finding at all — it is a
+risk flag. It marks work where a below-expected tier was used on something
+expensive to get wrong, and it belongs in a review queue rather than a savings
+ledger.</p>
+<h3>8.3 Under-provisioning signals</h3>
+<p>This is the part no existing tool does, and it is entirely deterministic —
+derived from <code>outcome_signal</code>, not from a model's opinion. A signal fires when
+the metric exceeds the <strong>p75 for that (<code>ai_activity</code>, <code>work_type</code>) cohort</strong>,
+so the thresholds self-calibrate rather than being guessed:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Fires when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>turn_excess</code></td>
+<td>turns &gt; cohort p75 × 1.5</td>
+</tr>
+<tr>
+<td><code>tool_error_rate</code></td>
+<td>&gt; cohort p75</td>
+</tr>
+<tr>
+<td><code>edit_thrash</code></td>
+<td>same file edited ≥ 4 times in one work unit</td>
+</tr>
+<tr>
+<td><code>model_escalated</code></td>
+<td>a <code>PreModelSwitch</code> to a higher tier occurred mid-unit</td>
+</tr>
+<tr>
+<td><code>corrective_turns</code></td>
+<td>≥ 2 user messages matching correction patterns</td>
+</tr>
+<tr>
+<td><code>prompt_restated</code></td>
+<td>user re-asked a semantically near-identical request</td>
+</tr>
+<tr>
+<td><code>abandoned</code></td>
+<td>unit ended on interruption without a completed edit/commit</td>
+</tr>
+</tbody>
+</table></div>
+<p>Two or more fired signals ⇒ <code>Underprovisioned</code>, with the fired set written into
+<code>verdict.evidence</code> so the row is defensible when someone challenges it.</p>
+<h3>8.4 Impact — headroom, not dollars</h3>
+<p>For <code>Overprovisioned</code> rows:</p>
+<pre><code>headroom_reclaimable = allowance_units_consumed
+                     − (tokens re-priced at expected_tier allowance weight)
+headroom_pool        = the pool the used model drew from
+</code></pre>
+<p>Reported as <strong>points of the pool's period allowance</strong>, e.g. <em>"reclaims 6.2 points
+of the weekly Anthropic allowance."</em> The notional dollar equivalent may be shown
+alongside, greyed and labelled, for ranking and for conversations with Finance.</p>
+<p>This is a better number than v0.1's <code>est_savings_usd</code> in two ways:</p>
+<ul>
+<li><strong>It is verifiable.</strong> A dollar saving on a seat plan never appears on any
+  invoice, so the claim can never be checked and the dashboard's credibility
+  slowly rots. A headroom claim can be checked the following week by watching
+  whether <code>limit_event</code> rows stop appearing.</li>
+<li><strong>It is still an upper bound, and must be labelled as one.</strong> It assumes the
+  cheaper model completes the work in the same number of tokens. It will not.
+  Treat as a ranking signal for where to look, never as a forecast. A dashboard
+  that promises "8.3 points reclaimable" and delivers 3 destroys the credibility
+  of everything else on the page.</li>
+</ul>
+<h3>8.5 Verdicts are per-pool, and one move is not a verdict at all</h3>
+<p>Every verdict is scoped to the pool the model drew from. <code>Overprovisioned</code> means
+<em>"scarce headroom in </em><em>this</em><em> pool was spent on work a cheaper tier in </em><em>this</em><em>
+pool would have handled."</em></p>
+<p>That leaves one important move the verdict engine deliberately does <strong>not</strong>
+score: <strong>moving work between pools.</strong> Delegating a task from Claude Code to a
+Codex subagent does not reduce consumption — it transfers it to a different
+ceiling. Whether that is good depends entirely on which ceiling is binding, and
+that is a question about the week, not about the task. It belongs in an analysis
+(§10 A6), not in a per-unit verdict, and conflating the two would produce
+confident nonsense.</p>
+<hr />
+<h2 id="9-the-local-classifier">9. The local classifier</h2>
+<h3>9.1 Model selection</h3>
+<p><strong>Recommendation: <code>qwen3:4b</code> via Ollama (~2.5 GB on disk, 256K context).</strong>
+Fallback if memory pressure bites: <code>qwen3:1.7b</code> (~1.4 GB).</p>
+<p>Rationale, from the zero-shot classification evidence available: the Qwen3
+family is a strong outlier at small scale on exactly this kind of task —
+Qwen3-4B scores materially above Llama-3.2-3B and Phi-4-mini at comparable
+size, and is within noise of Qwen3-8B. Going bigger than 4B buys almost nothing
+for coarse labelling, which means our 8 GB ceiling costs us far less accuracy
+than it first appears. Below ~1.7B there is a cliff, not a slope — sub-1B models
+are not usable here.</p>
+<p>Explicitly rejected:
+- <strong>Gemma 4</strong> (<code>e2b</code> is 7.2 GB on disk despite the name) — does not fit.
+- <strong>MLX / <code>mlx-lm</code></strong> — the honest decode advantage is ~1.4–1.8×, but MLX's
+  weakness is <em>prefill</em>, and our workload is prefill-dominated (long transcript
+  excerpt in, ~30 tokens of JSON out). It may well be slower for us. Also note
+  Ollama's own MLX backend reportedly only activates at ≥32 GB unified memory
+  and falls back silently below that. Not worth the complexity; revisit only
+  with a measurement.
+- <strong>Hosted Haiku</strong> — would give better labels, but the entire point is that this
+  system costs nothing to run and never sends prompt content off the machine.
+  Reserved for gold-set generation only (§9.5).</p>
+<p><strong>Verify the actual quantisation before trusting the size.</strong> Ollama tags are not
+uniformly Q4 — some default to Q8_0. Run <code>ollama show</code> and pull an explicit
+<code>-q4_K_M</code> tag if needed.</p>
+<h3>9.2 Execution model — batch, never inline</h3>
+<p>Classification runs as a <strong>nightly batch job</strong> (<code>launchd</code> at 02:00, plus manual
+trigger), not in a hook and not in the request path.</p>
+<p>This is the single most important operational decision in the PRD, and it
+follows directly from the 8 GB constraint. Inline classification would put a
+2.5 GB model in memory alongside the IDE, the browser and Claude Code, on a
+machine that cannot afford it — degrading the very workflow we are trying to
+optimise. Running at 02:00, the model has the machine to itself, <code>OLLAMA_KEEP_ALIVE</code>
+keeps it warm across the batch, and nobody is waiting.</p>
+<p>The cost of this choice is report freshness of up to 24 hours, which for a
+weekly right-sizing loop is irrelevant.</p>
+<p>Throughput sanity check: at an estimated 25–32 tok/s decode for a 4B on an M3,
+and ~30 output tokens per classification, decode is well under a second per unit.
+Prefill of a ~2k-token excerpt dominates. A heavy day of 300 work units should
+complete in well under 30 minutes. If it does not, the excerpt is too long —
+tighten §9.4 before reaching for a smaller model.</p>
+<h3>9.3 Structured output</h3>
+<p>Use Ollama's <code>format</code> parameter with an explicit JSON schema. Ollama compiles
+the schema to a GBNF grammar and constrains sampling, so <strong>output is
+structurally guaranteed valid</strong> regardless of model size. Constraining
+<code>ai_activity</code> and <code>work_type</code> to literal enums in the schema makes an invalid
+label impossible.</p>
+<pre><code class="language-json">{
+  &quot;type&quot;: &quot;object&quot;,
+  &quot;required&quot;: [&quot;ai_activity&quot;,&quot;work_type&quot;,&quot;task_complexity&quot;,&quot;stakes&quot;,&quot;confidence&quot;,&quot;rationale&quot;],
+  &quot;properties&quot;: {
+    &quot;ai_activity&quot;:     {&quot;type&quot;:&quot;string&quot;,&quot;enum&quot;:[&quot;debugging&quot;,&quot;feature-development&quot;, &quot;...&quot;]},
+    &quot;work_type&quot;:       {&quot;type&quot;:&quot;string&quot;,&quot;enum&quot;:[&quot;Retrieval&quot;,&quot;Synthesis&quot;,&quot;Reasoning&quot;,&quot;Agentic&quot;]},
+    &quot;task_complexity&quot;: {&quot;type&quot;:&quot;string&quot;,&quot;enum&quot;:[&quot;Low&quot;,&quot;Medium&quot;,&quot;High&quot;]},
+    &quot;stakes&quot;:          {&quot;type&quot;:&quot;string&quot;,&quot;enum&quot;:[&quot;routine&quot;,&quot;high&quot;]},
+    &quot;confidence&quot;:      {&quot;type&quot;:&quot;number&quot;},
+    &quot;rationale&quot;:       {&quot;type&quot;:&quot;string&quot;,&quot;maxLength&quot;:160}
+  }
+}
+</code></pre>
+<blockquote>
+<p><strong>Critical implementation detail.</strong> Ollama does <em>not</em> inject the schema into
+the prompt — the model never sees it. Grammar constraint alone yields
+structurally valid JSON with semantically garbage values. <strong>The schema, the
+full enum lists, and the complexity anchors must all be restated in the prompt
+text.</strong> This is the single biggest failure mode for a small classifier and the
+most likely cause of a disappointing v1.</p>
+</blockquote>
+<p>Also: <code>temperature: 0</code>, flat schema (nested grammars slow sampling measurably),
+<code>num_ctx</code> capped to what the excerpt actually needs.</p>
+<h3>9.4 What the classifier is shown</h3>
+<p>Not the whole work unit — that would be expensive and would bury the signal.
+A deterministic <strong>excerpt builder</strong> produces a compact, structured summary,
+targeting ~1,500 tokens:</p>
+<ol>
+<li>The user's opening prompt, verbatim, truncated to 600 tokens.</li>
+<li>A tool-call histogram: <code>Read×12, Edit×4, Bash×3, Grep×7</code>.</li>
+<li>Normalised targets: file extensions touched, up to 8 distinct paths (basenames
+   only), bash command <em>verbs</em> only (<code>pytest</code>, <code>git</code>, <code>npm</code>) — never full commands.</li>
+<li>The repo name and branch.</li>
+<li>First and last 200 tokens of the assistant's final message.</li>
+<li>Deterministic counters: turns, errors, duration.</li>
+</ol>
+<p>Two benefits beyond cost: it is <strong>stable</strong> (same input → same excerpt → cacheable),
+and it strips most incidental secrets before anything reaches the model. Since
+the model is local, that is defence in depth rather than a hard requirement, but
+it also means the excerpt can safely be sent to a hosted model for gold-set
+generation.</p>
+<p><strong>Caching:</strong> key on <code>hash(excerpt + classifier_version)</code>. Repetitive work
+produces identical excerpts; expect a meaningful hit rate and near-zero
+marginal cost for re-runs.</p>
+<h3>9.5 Calibration and quality control</h3>
+<p>Not optional. An uncalibrated classifier produces a report nobody trusts, and an
+untrusted report gets ignored — the most likely failure mode for this project is
+not that it breaks, but that it works and nobody believes it.</p>
+<ul>
+<li><strong>Gold set.</strong> Hand-label 200 work units sampled stratified across activity and
+  consumption decile. This is a day of work and it is the highest-leverage day in the
+  project.</li>
+<li><strong>Agreement target.</strong> ≥ 80% on <code>work_type</code> and <code>task_complexity</code>. Report the
+  confusion matrix, not just accuracy — a classifier that systematically reads
+  <code>Agentic</code> as <code>Reasoning</code> breaks the tier matrix in a specific, correctable way.</li>
+<li><strong>Second-opinion sampling.</strong> Send 5% of excerpts to a hosted small model and
+  measure disagreement as a drift alarm. Costs cents per month.</li>
+<li><strong>Self-consistency.</strong> Re-run 20 units three times; label instability above 10%
+  means the prompt anchors are too weak.</li>
+<li><strong>Confidence gating.</strong> Rows below a confidence threshold are excluded from
+  headline verdicts and routed to a review queue rather than silently trusted.</li>
+</ul>
+<hr />
+<h2 id="10-analyses">10. Analyses</h2>
+<p>The dashboard is a means, not the end. Six analyses justify the build.</p>
+<h3>A1 — Over-provisioning ledger <em>(the reference report)</em></h3>
+<p>Consumption grouped by activity × work type × complexity × model, with verdict.
+Sorted by <code>headroom_reclaimable</code> descending, per pool.
+<strong>Action:</strong> change the default model for a class of work, or add a routing rule.</p>
+<h3>A2 — Under-provisioning ledger</h3>
+<p>Work units flagged <code>Underprovisioned</code>, with the fired signals and estimated
+wasted wall-clock. Sorted by <code>turns × duration</code>.
+<strong>Action:</strong> raise the default tier for that activity, or fix the prompt or
+context that caused the thrash.</p>
+<p><em>Bootstrapped from escalation events.</em> Every <code>PreModelSwitch</code> upward is a
+human-labelled example of under-provisioning (§5.1 Source C). Those labels come
+free, need no classifier, and are what the cohort thresholds get calibrated
+against. This is the analysis most likely to produce a genuinely surprising
+finding, and on a seat plan it is also the most valuable: wasted engineer time
+is a real cost in a way that notional token spend is not.</p>
+<h3>A3 — Subagent candidates <em>(G3)</em></h3>
+<p>Cluster work units by embedding of the excerpt (<code>nomic-embed-text</code> via Ollama,
+~274 MB — fits alongside the classifier if run sequentially), then rank by:</p>
+<pre><code>score = frequency × mean_allowance_units
+        × (1 − mean_complexity_ordinal) × tool_signature_coherence
+</code></pre>
+<p>Frequent, expensive, low-complexity, narrow consistent tool set is a textbook
+subagent candidate. Output per candidate: proposed name, observed tool
+allowlist, recommended tier, historical consumption, and 5 example prompts to
+seed the description.</p>
+<h3>A4 — Context efficiency</h3>
+<p>Independent of model choice and often the larger lever. Cache hit rate by repo
+and session shape; consumption of loaded-but-unused skills and MCP tool schemas
+(needs <code>OTEL_LOG_RAW_API_BODIES</code>); compaction frequency; ratio of
+<code>cache_creation</code> to <code>cache_read</code>.
+<strong>Action:</strong> trim CLAUDE.md, lazy-load skills, restructure sessions.</p>
+<p><em>Note:</em> prompt-cache efficiency is pure headroom. A cache miss consumes full
+input allowance for context that was already paid for once — which on a seat
+plan is directly the reason someone hits the wall on Thursday.</p>
+<h3>A5 — Frustration map <em>(Phase 3, see §11)</em></h3>
+<p>Frustration rate by <code>agent_type</code> and <code>ai_activity</code>.</p>
+<h3>A6 — Pool balance <em>(new)</em></h3>
+<p>Consumption against each pool's ceiling, side by side, with limit-hit events
+marked. Which pool is actually binding, and by how much.</p>
+<p>This is the analysis that makes the Codex delegation legible. If the Anthropic
+seat allowance is the constraint and the OpenAI pool has slack, then delegating
+suitable work to Codex is not overspending — it is the correct move, and the
+tool should say so. If both pools are near their ceilings, delegation buys
+nothing and the answer is right-sizing instead.</p>
+<p><strong>Action:</strong> shift a class of work between agents, or conclude that delegation
+is not the lever this week. Explicitly <em>not</em> a per-unit verdict (§8.5).</p>
+<hr />
+<h2 id="11-phase-3-frustration-and-sentiment">11. Phase 3 — Frustration and sentiment</h2>
+<p>Deliberately last, because it depends on subagent attribution being correct and
+on having enough history for baselines to mean anything.</p>
+<p><strong>Signals are behavioural first, lexical second.</strong> Behaviour is harder to fake
+and does not require reading anyone's tone:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Behavioural</th>
+<th>Lexical <em>(local model)</em></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>User interrupted mid-generation (<code>Stop</code>)</td>
+<td>Explicit negation openers ("no,", "that's not", "still")</td>
+</tr>
+<tr>
+<td>Prompt restated with high semantic similarity</td>
+<td>Escalating imperatives, all-caps, repeated punctuation</td>
+</tr>
+<tr>
+<td>≥ 3 corrective turns in one unit</td>
+<td>Directives to stop or start over</td>
+</tr>
+<tr>
+<td>Session abandoned without completion</td>
+<td>Profanity</td>
+</tr>
+<tr>
+<td>Model escalated mid-unit</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p>Score 0–3 per work unit, aggregated by <code>agent_type</code> and <code>ai_activity</code>.</p>
+<p><strong>Guardrails, stated explicitly because this is the part that could go wrong:</strong></p>
+<ul>
+<li>Single-operator scope means this is self-observation, not surveillance. <strong>If
+  and when this goes multi-user, frustration analysis must be opt-in and
+  reported only in aggregate.</strong> It must never become an input to anyone's
+  performance review. Write this into the tool's README before it can be
+  misread.</li>
+<li>Frustration is a <strong>property of the agent design, not the person.</strong> The report
+  headline is "the <code>test-writer</code> subagent produces 3× the frustration rate of
+  baseline," never anything about who was typing.</li>
+<li>Lexical scoring runs on user messages only, locally, and the raw text is never
+  persisted alongside the score — only the score and the fired signal set.</li>
+</ul>
+<hr />
+<h2 id="12-dashboard">12. Dashboard</h2>
+<p>Local-only, <code>localhost</code>, no auth (single operator, single machine).
+FastAPI + a single-page frontend, or Streamlit if speed of build matters more
+than polish. <strong>Do not build an SPA framework app for this.</strong></p>
+<p>Views:</p>
+<ol>
+<li><strong>Model Use Index</strong> — the reference table. Filterable on every dimension,
+   sortable, every row drills through to its constituent work units and from
+   there to the raw transcript excerpt.</li>
+<li><strong>Allowance over time</strong> — per pool, by model tier and by verdict, with
+   <code>limit_event</code> markers overlaid. A config change should show as a step in the
+   chart and, better, as limit-hit events stopping. This is how the system
+   proves it paid for itself.</li>
+<li><strong>Under-provisioning queue</strong> — A2, as a worklist.</li>
+<li><strong>Subagent candidates</strong> — A3, each card actionable.</li>
+<li><strong>Pool balance</strong> — A6. Each pool against its ceiling, side by side. The one
+   view where the Codex delegation question is answerable.</li>
+<li><strong>Data quality</strong> — coverage %, single-source records, reconciliation delta,
+   orphaned delegations, allowance-model fit quality,
+   parse-degraded rate, <code>other</code> label rate, classifier confidence distribution.
+   <em>This view exists so that trust in the numbers is itself observable.</em></li>
+</ol>
+<p>Plus a raw SQL console, because the interesting question is always the one the
+dashboard doesn't have a view for.</p>
+<hr />
+<h2 id="13-non-functional-requirements">13. Non-functional requirements</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Latency</strong></td>
+<td>Zero added latency to interactive turns. Hooks &lt; 50 ms, non-blocking, <code>exit 0</code> unconditionally.</td>
+</tr>
+<tr>
+<td><strong>Resource</strong></td>
+<td>Ingest + dashboard &lt; 200 MB RSS. Classifier batch may use up to 4 GB but only outside working hours.</td>
+</tr>
+<tr>
+<td><strong>Durability</strong></td>
+<td>SQLite WAL. Nightly backup of the DB file. Raw events reconstructible from transcripts on disk.</td>
+</tr>
+<tr>
+<td><strong>Privacy</strong></td>
+<td>No prompt content leaves the machine. Excerpts strip full bash commands and full file paths. No telemetry from this tool itself.</td>
+</tr>
+<tr>
+<td><strong>Security</strong></td>
+<td>Telemetry env vars set in shell profile, outside any repo. OTLP endpoint bound to <code>127.0.0.1</code>. If Source C is enabled: pinned Docker image, ≥ 1.83.0, never a bare <code>pip install</code>.</td>
+</tr>
+<tr>
+<td><strong>Failure isolation</strong></td>
+<td>Every component fails safe. If the classifier is down, rows stay unclassified and the report degrades. If the tailer is down, the transcript files are still on disk and can be backfilled. Nothing in this system may ever break Claude Code.</td>
+</tr>
+<tr>
+<td><strong>Reproducibility</strong></td>
+<td>Every derived number is reproducible from raw events plus the versioned model registry, allowance model, taxonomy, and rules config.</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="14-delivery-plan">14. Delivery plan</h2>
+<p>Sequenced so something useful exists after every phase, and so the riskiest
+unknowns are resolved before anything is built on them.</p>
+<h3>Phase 0 — Reconnaissance <em>(~1–2 days) — before writing any other code</em></h3>
+<p>Pure investigation. Its entire purpose is to replace six assumptions with facts.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Method</th>
+<th>Why it blocks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>What does a subagent run look like on disk — inlined with <code>isSidechain</code>, or a separate file?</td>
+<td>Spawn a known subagent, diff <code>~/.claude/projects/</code></td>
+<td>§5.4 — a wrong answer silently misattributes subagent consumption</td>
+</tr>
+<tr>
+<td><strong>Where does Codex write session logs, and do they carry token counts?</strong></td>
+<td>Run a Codex subagent, locate and inspect its records</td>
+<td>§5.1 Source E — the whole cross-provider story depends on it</td>
+</tr>
+<tr>
+<td><strong>Is allowance consumption exposed programmatically, or must it be modelled?</strong></td>
+<td>Inspect OTel output, <code>/usage</code> internals, API error payloads on a limit hit</td>
+<td>§6.2 — determines whether the primary measure is read or fitted</td>
+</tr>
+<tr>
+<td>Does <code>OTEL_LOG_RAW_API_BODIES=1</code> work, and what does it emit?</td>
+<td>Enable, run a session, inspect collector output</td>
+<td>Determines whether A4 is possible at all</td>
+</tr>
+<tr>
+<td>Do transcript token fields agree with OTel metrics?</td>
+<td>Known workload, reconcile</td>
+<td>§5.3 — which source is authoritative</td>
+</tr>
+<tr>
+<td>Which hooks fire on this version, with what payload?</td>
+<td>Register logging stubs for all candidates</td>
+<td>§5.1 Source C, especially <code>PreModelSwitch</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Exit criteria:</strong> a one-page findings memo with sample records for each, and a
+go/no-go on the allowance model vs. direct read.</p>
+<h3>Phase 1 — Capture and consumption <em>(~1–1.5 weeks)</em></h3>
+<p>Transcript tailer, OTel collector, hooks, the <code>codex</code> wrapper, and the Codex log
+tailer. Normalisation into <code>work_unit</code> / <code>api_call</code> / <code>delegated_call</code>. Model
+registry and allowance model. Backfill all existing history.</p>
+<p><strong>Ships:</strong> accurate consumption by model, repo, session and pool — including
+delegated work — with no classification yet. Already better than <code>/usage</code>.
+<strong>Acceptance:</strong> Anthropic token totals reconcile with <code>/usage</code> within 2% over 7
+days; ≥ 98% of Codex sessions join to a parent work unit.</p>
+<h3>Phase 2 — Classification and verdicts <em>(~1 week)</em></h3>
+<p>Ollama + <code>qwen3:4b</code>, excerpt builder, batch runner, gold set, calibration.
+Outcome-signal extractor. Verdict engine. The Model Use Index view.</p>
+<p><strong>Ships:</strong> the reference report, in headroom terms. G1, G2, G6 met.
+<strong>Acceptance:</strong> ≥ 80% gold-set agreement; <code>other</code> rate &lt; 10%; at least one
+over-provisioning finding the operator agrees with.</p>
+<h3>Phase 3 — Analyses <em>(~1 week)</em></h3>
+<p>Under-provisioning ledger bootstrapped from escalation events, subagent
+clustering, context efficiency, pool balance, full dashboard.</p>
+<p><strong>Ships:</strong> G3 met. At least three concrete right-sizing actions.
+<strong>Acceptance:</strong> one recommended action implemented, and the resulting change
+visible in the allowance time-series — ideally as limit-hit events stopping.</p>
+<h3>Phase 4 — Conditional extensions</h3>
+<ul>
+<li><strong>4a — OpenAI-side gateway</strong> — only if Phase 0 shows the Codex logs
+  insufficient. Far lower risk than an Anthropic-side proxy.</li>
+<li><strong>4b — Frustration analysis</strong> — §11.</li>
+<li><strong>4c — Multi-user</strong> — schema is ready; needs a central store, identity, and a
+  privacy policy. A separate decision, not a rollout of this.</li>
+<li><strong>Anthropic-side gateway</strong> — out of scope. §5.2.</li>
+</ul>
+<hr />
+<h2 id="15-risks">15. Risks</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Severity</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Delegated (Codex) consumption stays invisible or misjoins</strong></td>
+<td>High</td>
+<td>Phase 0 confirms the log format; the wrapper stamps the parent at the call site; orphaned delegations are surfaced, never dropped. If E1 fails, an OpenAI-side gateway is the fallback.</td>
+</tr>
+<tr>
+<td><strong>Allowance capacity can't be observed and the model is wrong</strong></td>
+<td>High</td>
+<td>Fall back to share-of-period-total rather than share-of-ceiling, and say so on the page. Calibrate against <code>limit_event</code> rows as they accumulate; publish the fit quality in the data-quality view.</td>
+</tr>
+<tr>
+<td><strong>Transcript schema drifts and ingestion silently degrades</strong></td>
+<td>High</td>
+<td>Defensive parser, 1% schema canary, version per record, OTel cross-check. Failure mode is graceful and re-ingestable.</td>
+</tr>
+<tr>
+<td><strong>Classifier is mediocre and nobody trusts the report</strong></td>
+<td>High</td>
+<td>Gold set, published confusion matrix, confidence gating, visible data-quality view. Budget the full calibration day; do not skip it.</td>
+</tr>
+<tr>
+<td><strong>Headroom estimates over-promise and credibility is lost</strong></td>
+<td>High</td>
+<td>Label as upper bound. Track predicted vs. realised after the first implemented action and publish the gap.</td>
+</tr>
+<tr>
+<td><strong>Subagent attribution is wrong</strong></td>
+<td>High</td>
+<td>Phase 0 resolves it; hooks confirm independently</td>
+</tr>
+<tr>
+<td><strong>Pools get summed somewhere</strong></td>
+<td>Medium</td>
+<td>Structural, not conventional: no query path in the dashboard can aggregate across <code>allowance_pool</code>.</td>
+</tr>
+<tr>
+<td><strong>8 GB is genuinely too tight even for batch</strong></td>
+<td>Medium</td>
+<td>Fall back to <code>qwen3:1.7b</code>; tighten excerpts before shrinking the model further</td>
+</tr>
+<tr>
+<td><strong>Built, then abandoned</strong></td>
+<td>Medium</td>
+<td>Phase 1 ships standalone value; each phase is independently useful. If it stalls after Phase 2, the report still exists.</td>
+</tr>
+<tr>
+<td><strong>Scope creep into a product</strong></td>
+<td>Medium</td>
+<td>Non-goals in §3 are load-bearing. Internal tooling, one machine.</td>
+</tr>
+<tr>
+<td>~~Gateway breaks prompt caching~~</td>
+<td>—</td>
+<td>Retired. No Anthropic-side gateway (§5.2).</td>
+</tr>
+<tr>
+<td>~~Subscription-auth ToS ambiguity~~</td>
+<td>—</td>
+<td>Retired as a build risk for the same reason. Remains a reason not to revisit.</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="16-open-questions">16. Open questions</h2>
+<ol>
+<li><strong>Where does Codex keep its session records, and do they carry token
+   accounting?</strong> The single highest-priority Phase 0 item — G6 rests on it.
+   <em>Blocks Phase 1.</em></li>
+<li><strong>Is allowance consumption readable, or must it be fitted?</strong> If Claude Code
+   exposes remaining allowance anywhere machine-readable, §6.2 collapses to a
+   read and the primary measure becomes exact rather than modelled.
+   <em>Blocks the headline number, not the build.</em></li>
+<li><strong>Is the tier matrix in §8.1 right?</strong> It is a hypothesis, recovered from the
+   reference report and reproducing it exactly, but not yet tested against our
+   own outcomes. After Phase 2 there will be enough history: do
+   <code>Acceptable (downgrade candidate)</code> rows actually show clean outcomes? If a
+   tier assignment consistently produces under-provisioning signals, the matrix
+   is wrong, not the run.</li>
+<li><strong>How should delegation appear in the Model Use Index?</strong> A delegated work
+   unit has one classification and consumption in two pools. Current plan is one
+   row with a <code>delegated_to</code> marker and per-pool consumption columns; the
+   alternative is splitting into two rows. Decide once there is real data to
+   look at.</li>
+<li><strong>Should <code>work_unit</code> split on topic change within a prompt?</strong> "Fix the tests
+   and then refactor the parser" is two activities. v1 classifies to the
+   dominant one; if the <code>other</code> rate or confidence suggests this is common,
+   multi-label may be needed.</li>
+<li><strong>Do we need per-repo tier matrices?</strong> A prototype and a production service
+   arguably warrant different defaults. Defer until there is evidence.</li>
+</ol>
+<hr />
+<h2 id="17-appendix-a-sources">17. Appendix A — Sources</h2>
+<p><strong>Claude Code interfaces</strong>
+- <a href="https://code.claude.com/docs/en/monitoring-usage">Monitoring &amp; OpenTelemetry</a>
+- <a href="https://code.claude.com/docs/en/hooks">Hooks reference</a>
+- <a href="https://code.claude.com/docs/en/sessions">Manage sessions / transcript storage</a>
+- <a href="https://code.claude.com/docs/en/llm-gateway">LLM gateway configuration</a>
+- <a href="https://code.claude.com/docs/en/llm-gateway-protocol">Gateway protocol reference</a> — the authoritative contract for any <code>ANTHROPIC_BASE_URL</code> proxy
+- <a href="https://code.claude.com/docs/en/costs">Manage costs</a>
+- <a href="https://code.claude.com/docs/en/headless">Headless / output formats</a></p>
+<p><strong>Gateway</strong>
+- <a href="https://docs.litellm.ai/docs/tutorials/claude_code_byok">LiteLLM Claude Code quickstart</a> · <a href="https://docs.litellm.ai/docs/observability/custom_callback">custom callbacks</a> · <a href="https://docs.litellm.ai/blog/claude-code-beta-headers-incident">beta-header incident</a> · <a href="https://docs.litellm.ai/blog/security-update-march-2026">March 2026 security update</a>
+- LiteLLM issues on unreliable body logging and zero-spend passthrough: <a href="https://github.com/BerriAI/litellm/issues/15641">#15641</a>, <a href="https://github.com/BerriAI/litellm/issues/24204">#24204</a>, <a href="https://github.com/BerriAI/litellm/issues/22398">#22398</a>
+- Supply-chain analysis: <a href="https://www.ox.security/blog/litellm-malware-malicious-pypi-versions-steal-cloud-and-crypto-credentials/">OX Security</a> · <a href="https://www.sonatype.com/blog/compromised-litellm-pypi-package-delivers-multi-stage-credential-stealer">Sonatype</a>
+- <a href="https://bloom.security/blog/welcome-to-otel-claudeifornia">OTel header-helper exfiltration technique</a></p>
+<p><strong>Delegated agents</strong>
+- Codex CLI session-record location and schema — <strong>to be confirmed empirically</strong>, Phase 0 item #2. No citation offered here on purpose: the research pass did not verify it.</p>
+<p><strong>Local models</strong>
+- <a href="https://docs.ollama.com/capabilities/structured-outputs">Ollama structured outputs</a> · <a href="https://blog.danielclayton.co.uk/posts/ollama-structured-outputs/">how the grammar constraint works</a>
+- <a href="https://ollama.com/library/qwen3">Qwen3</a> · <a href="https://ollama.com/library/qwen3.5">Qwen3.5</a>
+- <a href="https://arxiv.org/html/2603.11991">BTZSC zero-shot classification benchmark, arXiv 2603.11991</a> — basis for the Qwen3-4B recommendation
+- <a href="https://www.promptquorum.com/local-llms/mlx-vs-ollama-vs-llama-cpp-mac">MLX vs llama.cpp analysis</a></p>
+<hr />
+<h2 id="18-appendix-b-confidence-in-these-findings">18. Appendix B — Confidence in these findings</h2>
+<p>Written after a research pass, not after a build. Calibrating what to trust:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Claim</th>
+<th>Confidence</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Transcript path pattern and <code>message.usage</code> field names</td>
+<td>High</td>
+<td>Consistent across sources; schema <em>stability</em> is the risk, not existence</td>
+</tr>
+<tr>
+<td>OTel metric/event names and attributes</td>
+<td>High</td>
+<td>Documented interface</td>
+</tr>
+<tr>
+<td>Delegated Codex consumption is invisible to Sources A/B/C</td>
+<td>High</td>
+<td>Follows directly from those calls never reaching Anthropic's API</td>
+</tr>
+<tr>
+<td><code>qwen3:4b</code> is the right local classifier for 8 GB</td>
+<td>High</td>
+<td>Benchmark evidence is direct; size math unambiguous</td>
+</tr>
+<tr>
+<td>Ollama structured output is grammar-constrained but the schema is never shown to the model</td>
+<td>High</td>
+<td>Confirmed in Ollama's docs; the most actionable single finding in the research</td>
+</tr>
+<tr>
+<td>Seat plans make dollars notional and headroom the real currency</td>
+<td>High</td>
+<td>Follows from the billing model</td>
+</tr>
+<tr>
+<td>Anthropic-side gateway is not worth it</td>
+<td>High</td>
+<td>Four independent reasons compounding (§5.2)</td>
+</tr>
+<tr>
+<td><strong>Where Codex writes session logs, and what they contain</strong></td>
+<td><strong>Low</strong></td>
+<td>Not verified. Phase 0 item #2.</td>
+</tr>
+<tr>
+<td>Subagent on-disk representation</td>
+<td><strong>Low</strong></td>
+<td>Sources conflicted. Phase 0 resolves.</td>
+</tr>
+<tr>
+<td><code>OTEL_LOG_RAW_API_BODIES=1</code> behaviour</td>
+<td><strong>Low</strong></td>
+<td>Reported but undocumented; truncation/redaction unverified</td>
+</tr>
+<tr>
+<td><strong>Whether allowance consumption is machine-readable</strong></td>
+<td><strong>Low</strong></td>
+<td>Unverified either way. Determines read-vs-model.</td>
+</tr>
+<tr>
+<td><strong>Per-token allowance weights</strong></td>
+<td><strong>Low by design</strong></td>
+<td>Fitted, not published. May track list price closely — in which case the value of the reframe is the fixed denominator and the pool split, not the weighting.</td>
+</tr>
+<tr>
+<td>Throughput estimates on base M3 8 GB</td>
+<td>Medium</td>
+<td>Bandwidth-derived, cross-checked against M1 measurements; no direct benchmark for this config exists</td>
+</tr>
+<tr>
+<td>The tier matrix in §8.1</td>
+<td><strong>Reproduced, not validated</strong></td>
+<td>Recovered from the reference report and matching it 28/28 — but that proves fidelity to the source, not that the source was right</td>
+</tr>
+</tbody>
+</table></div>
+<hr /></main>
+<footer class="foot">
+  <span>Model Use Index — PRD v0.1</span>
+  <span>Not yet built. Phase 0 is reconnaissance.</span>
+</footer>
+</div>
+</body>
+</html>
