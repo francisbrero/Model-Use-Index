@@ -34,6 +34,7 @@ phase0/**
 !phase0/README.md
 !phase0/findings.md
 !phase0/w2-worklist.md
+!phase0/w2-haiku-runbook.md
 
 # The store contains prompt text. Keep it in a FileVault-covered location and
 # never in a synced folder (TRD §5.2) — and never in git.
