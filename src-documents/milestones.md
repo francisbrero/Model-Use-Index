@@ -468,7 +468,7 @@ the loader is right before trusting anything else it says.
 #### U9 · Is the tier matrix right? `open until Phase 3`
 - ~~**Partially testable now** — see W2.~~ **W2 is moot (2026-09-10);** its two-run pilot is in §5 as `W2-pilot`. U9 now owns the question outright.
 - **Fully resolved by:** outcome data. Do `Acceptable (downgrade candidate)` rows actually show clean outcomes? If a tier assignment consistently produces under-provisioning signals, the matrix is wrong, not the run.
-- **New sub-question from the pilot:** the matrix scores a *work unit*, but a routine's cost is **worker + reviewers**, and reviewer subagents take their model from the agent definition rather than the session. Measured once at **5.9× the worker** — so a per-unit tier verdict does not say what a downgrade saves. Tracked separately; **not** a slice blocker.
+- **New sub-question from the pilot:** the matrix scores a *work unit*, but a routine's cost is **worker + reviewers**, and reviewer subagents take their model from the agent definition rather than the session. Measured once at **5.9× the worker** — so a per-unit tier verdict does not say what a downgrade saves. Tracked as [#18](https://github.com/francisbrero/Model-Use-Index/issues/18), to be answered **after M1** (generalising it needs real work units); **not** a slice blocker.
 
 ---
 
