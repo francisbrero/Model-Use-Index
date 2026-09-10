@@ -1,6 +1,59 @@
 # W2 — Agentic/Medium hand-test worklist
 
-**Status: ready to run. Generated 2026-09-09. Issue [#4](https://github.com/francisbrero/Model-Use-Index/issues/4).**
+> **SUPERSEDED 2026-09-10 — W2 is moot; do not work this list.**
+> A two-run pilot (below) completed both tasks on Haiku with zero corrections,
+> but found the tier matrix's unit of account incomplete: reviewer subagents run
+> on **Opus** at **5.9× the worker's cost**, so a per-unit verdict cannot say
+> what a downgrade saves. The cell is settled by **M2′'s gold set + U9's outcome
+> data** instead. Kept for the method and the band analysis, both of which stand.
+
+**Generated 2026-09-09. Issue [#4](https://github.com/francisbrero/Model-Use-Index/issues/4).**
+
+---
+
+## Pilot results (2026-09-10) — `W2-pilot`, n=2, not the six
+
+Live tasks the operator needed anyway, run on Haiku in separate sessions.
+Both **completed with zero corrections** — the two operator messages were a
+workflow gate answer and scope he'd have given Opus too.
+
+| Run | Band | Tools / turns | Outcome | Haiku | If Opus |
+|---|---|---|---|---|---|
+| `/jira-to-github` on one ticket | in band | 53 / 79 | **completed** — issue filed, Jira linked | $0.49 | $7.36 |
+| `/fix-issue` on that issue | **out of band** | 107 / 182 | **completed** — PR opened, required CI green | $1.15 | $17.31 |
+
+All figures **notional list value**, deduped by `(message.id, requestId)`
+max-per-field, four token fields priced separately.
+
+**Two self-corrections in run 1**, both recovered without the operator: a wrong
+issue label (`documentation` → discovered `docs` via `gh label list`) and a wrong
+`jira comment` flag. That is the `Agentic` definition's error-recovery actually
+happening.
+
+### The finding that closed W2
+
+**Run 2's saving was not 15×.** Its three reviewer subagents — `plan-reviewer`,
+`pr-impact-reviewer`, `code-reviewer` — **all ran on Opus**, because a subagent's
+model comes from its agent definition, not the session's `--model`:
+
+| | Notional list value |
+|---|---|
+| Haiku worker | $1.15 |
+| **Opus reviewers** | **$6.80** |
+| **True total** | **$7.96** |
+
+Reviewers are **85.5% of run cost, 5.9× the worker**; the real saving against
+all-Opus is **2.2×**. The completion still belongs to Haiku — the reviewers
+reviewed, and Haiku made the fix commit itself — but **the tier matrix scores a
+work unit while a routine's cost is worker + reviewers**, and it has no way to
+express *worker `small`, reviewers `frontier`*. That gap survives whatever the
+cell's value turns out to be, which is why six more hand-runs were not the right
+next spend.
+
+**Open, unverified:** the runbook's task list named Codex plan/code reviews, but
+the transcript shows only Claude subagents. If Codex also reviewed, that is
+Source E1, invisible to this accounting, and a **second pool** — never summed
+(invariant 4).
 
 This is the input to W2, not its answer. The answer is six hand-run outcomes,
 recorded in §5 of `milestones.md`.
