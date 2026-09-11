@@ -7,6 +7,7 @@ out, a test fails rather than the headline quietly changing.
 
 import pytest
 
+from mui.enrich.classify import _is_high_stakes
 from mui.enrich.signals import (
     MIN_DISTINCT_FILES,
     MIN_TURNS,
@@ -177,3 +178,28 @@ def test_language_shares_ignores_empty_turns():
 
 def test_language_shares_of_nothing_is_zero_not_an_error():
     assert language_shares([]) == (0.0, 0.0)
+
+
+def test_high_stakes_matches_path_segments_not_substrings():
+    """`ci` must not fire on `src/precision.py`.
+
+    Over-firing here is not harmless: `stakes == high` bumps the expected tier
+    (PRD §8.1), which SUPPRESSES `Overprovisioned`. A sloppy match quietly
+    shrinks the headline rather than loudly breaking something.
+    """
+    assert not _is_high_stakes(None, ["src/precision.py"])
+    assert not _is_high_stakes(None, ["docs/specific.md"])
+    assert not _is_high_stakes(None, ["src/models.py"])
+
+
+def test_high_stakes_fires_on_real_infrastructure():
+    """PRD §7.4's seeds: deploy scripts, CI/CD, migrations, infra."""
+    assert _is_high_stakes(None, ["migrations/001.sql"])
+    assert _is_high_stakes(None, ["infra/main.tf"])
+    assert _is_high_stakes(None, ["workflows/deploy.yml"])
+    assert _is_high_stakes(None, ["scripts/deploy.sh"])
+
+
+def test_high_stakes_reads_the_anchor_skill_by_segment():
+    assert _is_high_stakes("release-prod", [])
+    assert not _is_high_stakes("fix-issue", [])

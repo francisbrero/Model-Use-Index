@@ -62,6 +62,14 @@ UNION ALL SELECT
   || 'with no natural breakpoint. 25% was chosen so neither signal dominates '
   || 'the other four, which is a defensible reason rather than a measured one.'
 UNION ALL SELECT
+  'unscored_arcs',
+  'Some arcs carry no prompt unit and are deliberately left unscored',
+  'One prompt can open several arcs — the user asks once and the assistant '
+  || 'invokes two skills — so an arc after the first may contain no prompt of '
+  || 'its own. Those rows read task_complexity = Unscored and get NO verdict. '
+  || 'Scoring them 0 would read as Agentic/Low, which against Opus produces '
+  || 'Overprovisioned out of missing evidence. See v_unscored_arcs.'
+UNION ALL SELECT
   'upper_bound',
   'Any reclaimable figure is an UPPER BOUND by construction',
   'It assumes the cheaper model finishes the work in the same number of tokens. '
@@ -192,8 +200,34 @@ SELECT
   (SELECT COUNT(*) FROM api_call)                         AS api_calls,
   (SELECT COUNT(*) FROM work_unit)                        AS work_units,
   (SELECT COUNT(*) FROM work_unit WHERE parse_degraded=1) AS degraded_work_units,
+  -- Invariant 7's canary: records that did not parse at all on the last run.
+  -- Alert if this crosses ~1% of raw_events — it means the transcript writer
+  -- changed, and `cc_version` on api_call bisects it to a release.
+  (SELECT parse_failures FROM normalize_run ORDER BY id DESC LIMIT 1)
+      AS parse_failures_last_run,
+  (SELECT unscored_arcs FROM normalize_run ORDER BY id DESC LIMIT 1)
+      AS unscored_arcs_last_run,
+  (SELECT ran_at FROM normalize_run ORDER BY id DESC LIMIT 1) AS last_normalize,
   (SELECT COUNT(*) FROM api_call WHERE work_unit_id IS NULL) AS orphaned_calls,
   (SELECT COUNT(*) FROM api_call WHERE error_kind IS NOT NULL) AS error_records,
   (SELECT COUNT(*) FROM api_call WHERE error_kind = 'rate_limit') AS limit_hits,
   (SELECT MAX(started_at) FROM api_call)                  AS last_api_call,
   (SELECT MAX(ingested_at) FROM raw_event)                AS last_ingest;
+
+-- Arcs with no prompt unit to score them. A labelled row rather than a silent
+-- absence: they hold real notional list value and must be visible in any
+-- denominator, but they carry no verdict and none should be inferred.
+CREATE VIEW IF NOT EXISTS v_unscored_arcs AS
+SELECT
+  w.id,
+  w.session_id,
+  w.anchor_skill,
+  w.project_family,
+  w.turns,
+  w.allowance_pool,
+  w.notional_list_value_usd,
+  'no prompt unit covers this arc' AS why
+FROM work_unit w
+JOIN classification c
+  ON c.unit_id = w.id AND c.unit_grain = 'work_unit'
+WHERE c.task_complexity = 'Unscored';

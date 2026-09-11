@@ -65,7 +65,8 @@ def enrich(conn: sqlite3.Connection, activity_map: dict | None = None) -> dict:
             )
 
         for row in conn.execute(
-            "SELECT id, anchor_skill, kind FROM work_unit"
+            "SELECT id, anchor_skill, kind, session_id, start_turn, end_turn "
+            "FROM work_unit"
         ).fetchall():
             _enrich_work_unit(
                 conn, row, prompt_signals, activity_map, stats, non_billable
@@ -124,17 +125,42 @@ def _enrich_work_unit(
 ) -> None:
     """An arc's complexity AGGREGATES its prompt units — it is not a re-run of
     prompt thresholds over the whole arc."""
+    # Resolved by TURN-RANGE OVERLAP, not by `prompt_unit.work_unit_id`.
+    #
+    # That FK records the arc a prompt unit STARTS in, and one prompt routinely
+    # spans several arcs: the user asks once, the assistant invokes two skills,
+    # and each invocation opens a new arc without a new prompt. Reading the FK
+    # therefore leaves every arc after the first with no prompt units at all —
+    # 34% of arcs on this corpus — which scored them 0, bucketed them `Low`,
+    # and made `Agentic/Low` against Opus read `Overprovisioned` on 140 arcs.
+    # Those verdicts were produced by the join, not by the work.
     prompt_rows = conn.execute(
-        "SELECT id FROM prompt_unit WHERE work_unit_id = ?", (row["id"],)
+        "SELECT id FROM prompt_unit WHERE session_id = ? "
+        "AND start_turn <= ? AND end_turn >= ?",
+        (row["session_id"], row["end_turn"], row["start_turn"]),
     ).fetchall()
 
     scores = [
         prompt_signals[p["id"]][0] for p in prompt_rows if p["id"] in prompt_signals
     ]
-    fired: set[str] = set()
-    for signal in scores:
-        fired.update(signal.fired)
-    aggregate = SignalResult(tuple(sorted(fired)), len(fired))
+
+    # An arc with no prompt unit is UNSCORED, not simple. Scoring it 0 would
+    # manufacture a finding out of missing data — the failure R2 warns rots
+    # credibility. It gets a classification so it stays visible in the ledger,
+    # and no verdict at all, the same way `_arc_tier` declines an arc it cannot
+    # assign a tier to.
+    if not scores:
+        _insert_unscored(conn, row, activity_map)
+        stats["unscored_work_units"] = stats.get("unscored_work_units", 0) + 1
+        return
+
+    # MAX of the per-unit scores, not the union of their fired signals. The
+    # union increases monotonically with arc length — three units scoring 1 on
+    # three different signals would make an arc `High` though no unit exceeded
+    # `Medium` — which is the same length-proxy defect the two-grain design
+    # exists to avoid, reintroduced one layer up.
+    best = max(scores, key=lambda s: s.score)
+    aggregate = SignalResult(best.fired, best.score)
 
     tools = conn.execute(
         "SELECT tool_name, target FROM tool_call WHERE work_unit_id = ?",
@@ -149,31 +175,21 @@ def _enrich_work_unit(
         activity_map,
     )
 
-    conn.execute(
-        "INSERT INTO classification (unit_id, unit_grain, classifier_version, "
-        "ai_activity, work_type, provenance, task_complexity, stakes, "
-        "complexity_score, signals, confidence, rationale, classified_at) "
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'))",
-        (
-            row["id"],
-            "work_unit",
-            CLASSIFIER_VERSION,
-            classification.ai_activity,
-            classification.work_type,
-            provenance_json(classification),
-            classification.task_complexity,
-            classification.stakes,
-            classification.complexity_score,
-            json.dumps(list(classification.signals)),
-            classification.confidence,
-            classification.rationale,
-        ),
-    )
+    _insert_classification(conn, row["id"], classification)
 
-    used, maximum, pool = _arc_tier(conn, row["id"], non_billable)
-    if used is None:
-        return
+    # One verdict PER POOL. A verdict means "scarce headroom in THIS pool was
+    # spent on work a cheaper tier in THIS pool would have handled" (PRD §8.5),
+    # so an arc spanning two pools has two of them and never one blended row.
+    for pool, (used, maximum) in _arc_tier(conn, row["id"], non_billable).items():
+        _write_verdict(
+            conn, row["id"], classification, used, maximum, pool, len(scores)
+        )
+        stats["work_units"] += 1
 
+
+def _write_verdict(
+    conn, work_unit_id, classification, used, maximum, pool, prompt_units
+) -> None:
     verdict = decide(
         classification.work_type,
         classification.task_complexity,
@@ -190,7 +206,7 @@ def _enrich_work_unit(
         "expected_tier, used_tier, max_tier, tier_delta, evidence, "
         "allowance_pool) VALUES (?,?,?,?,?,?,?,?,?)",
         (
-            row["id"],
+            work_unit_id,
             RULES_VERSION,
             verdict.justification,
             verdict.expected_tier,
@@ -201,13 +217,65 @@ def _enrich_work_unit(
                 {
                     "signals": list(classification.signals),
                     "score": classification.complexity_score,
+                    "prompt_units": prompt_units,
                     "underprovisioned_unreachable": True,
                 }
             ),
             pool,
         ),
     )
-    stats["work_units"] += 1
+
+
+def _insert_classification(conn, unit_id, classification) -> None:
+    conn.execute(
+        "INSERT INTO classification (unit_id, unit_grain, classifier_version, "
+        "ai_activity, work_type, provenance, task_complexity, stakes, "
+        "complexity_score, signals, confidence, rationale, classified_at) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'))",
+        (
+            unit_id,
+            "work_unit",
+            CLASSIFIER_VERSION,
+            classification.ai_activity,
+            classification.work_type,
+            provenance_json(classification),
+            classification.task_complexity,
+            classification.stakes,
+            classification.complexity_score,
+            json.dumps(list(classification.signals)),
+            classification.confidence,
+            classification.rationale,
+        ),
+    )
+
+
+def _insert_unscored(conn, row, activity_map) -> None:
+    """An arc no prompt unit covers: classified for visibility, never scored.
+
+    `task_complexity` is `Unscored` rather than `Low` so it cannot key
+    `TIER_MATRIX`, which is what keeps a verdict from being produced from an
+    absence of evidence.
+    """
+    conn.execute(
+        "INSERT INTO classification (unit_id, unit_grain, classifier_version, "
+        "ai_activity, work_type, provenance, task_complexity, stakes, "
+        "complexity_score, signals, confidence, rationale, classified_at) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'))",
+        (
+            row["id"],
+            "work_unit",
+            CLASSIFIER_VERSION,
+            activity_map.get(row["anchor_skill"] or "", "other"),
+            "Agentic",
+            json.dumps({"task_complexity": "unscored"}, sort_keys=True),
+            "Unscored",
+            "routine",
+            None,
+            "[]",
+            0.0,
+            "no prompt unit covers this arc — unscored, deliberately no verdict",
+        ),
+    )
 
 
 def _arc_tier(conn, work_unit_id, non_billable: frozenset[str]):
@@ -242,14 +310,13 @@ def _arc_tier(conn, work_unit_id, non_billable: frozenset[str]):
         if r["model"] not in non_billable and r["model_tier"] in TIER_ORDINAL
     ]
     if not billable:
-        return None, None, None
+        return {}
 
-    # Pools are counted SEPARATELY and never compared. Comparing value across
-    # pools to pick one winner is the shape invariant 4 forbids: Anthropic and
-    # OpenAI allowance are different ceilings, so "which is bigger" is not a
-    # question with a meaning. Today the slice is single-pool, so this loop has
-    # one iteration — it is written this way so that adding Codex does not
-    # silently turn one arc's verdict into a cross-pool dollar comparison.
+    # Pools are counted SEPARATELY and never compared. Anthropic and OpenAI
+    # allowance are different ceilings, so "which pool carries more value" is
+    # not a question with a meaning (invariant 4). Returning one winning pool
+    # would have been exactly that comparison, so this returns a vote PER POOL
+    # and the caller writes one verdict for each.
     by_pool: dict[str, dict[str, list[float]]] = {}
     for row in billable:
         tiers = by_pool.setdefault(row["allowance_pool"], {})
@@ -257,18 +324,16 @@ def _arc_tier(conn, work_unit_id, non_billable: frozenset[str]):
         totals[0] += row["value"] or 0.0
         totals[1] += row["calls"]
 
-    # Value is aggregated PER TIER, not per model: a tier's share is the sum of
-    # its models. Grouping by model would split `small` across `claude-haiku-5`
-    # and `claude-haiku-3` and let a single larger frontier model win a
-    # plurality it does not have.
-    pool = max(
-        by_pool,
-        key=lambda p: sum(v[0] for v in by_pool[p].values()),
-    )
-    tiers = by_pool[pool]
-    best = max(tiers, key=lambda t: (tiers[t][0], tiers[t][1]))
-    maximum = max(tiers, key=lambda t: TIER_ORDINAL[t])
-    return best, maximum, pool
+    # Within a pool, value is aggregated PER TIER, not per model: a tier's
+    # share is the sum of its models. Grouping by model would split `small`
+    # across `claude-haiku-5` and `claude-haiku-3` and let a single larger
+    # frontier model win a plurality it does not have.
+    out = {}
+    for pool, tiers in by_pool.items():
+        best = max(tiers, key=lambda t: (tiers[t][0], tiers[t][1]))
+        maximum = max(tiers, key=lambda t: TIER_ORDINAL[t])
+        out[pool] = (best, maximum)
+    return out
 
 
 def _non_billable_models(conn) -> frozenset[str]:

@@ -51,7 +51,11 @@ AI_ACTIVITIES = frozenset(
 # PRD §7.4's heuristic seeds. Matched against NORMALISED tool targets — verbs
 # and directory/extension classes only, never a command body or a full path
 # (invariant 6).
-HIGH_STAKES_MARKERS = frozenset(
+# Matched on whole PATH SEGMENTS, never as substrings. A substring match on
+# `ci` fires on `src/precision.py` and `docs/specific.md`, and over-firing here
+# is not harmless: `stakes == high` bumps the expected tier, which SUPPRESSES
+# `Overprovisioned`. A sloppy match would quietly shrink the headline.
+HIGH_STAKES_SEGMENTS = frozenset(
     {
         "deploy",
         "release",
@@ -60,17 +64,22 @@ HIGH_STAKES_MARKERS = frozenset(
         "helm",
         "argocd",
         "migrations",
-        ".tf",
-        ".plist",
         "secrets",
         "auth",
         "payments",
-        "Dockerfile",
-        ".github/workflows",
+        "billing",
+        "dockerfile",
+        "workflows",
         "ci",
         "cd",
+        "infra",
+        "k8s",
+        "charts",
     }
 )
+
+# Extensions that mark infrastructure wherever they sit.
+HIGH_STAKES_SUFFIXES = (".tf", ".plist")
 
 
 @dataclass(frozen=True)
@@ -155,10 +164,29 @@ def classify_arc(
 
 
 def _is_high_stakes(anchor_skill: str | None, tool_targets: list[str]) -> bool:
-    haystack = " ".join(tool_targets).lower()
+    """PRD §7.4 — orthogonal to complexity: a simple auth-config change is low
+    complexity and high stakes.
+
+    Segment-wise, so `src/precision.py` does not read as CI work.
+    """
+    for target in tool_targets:
+        if not target:
+            continue
+        lowered = target.lower()
+        if lowered.endswith(HIGH_STAKES_SUFFIXES):
+            return True
+        segments = {seg for part in lowered.split("/") for seg in (part,)}
+        # Strip an extension from the final segment so `deploy.sh` matches.
+        segments |= {seg.rsplit(".", 1)[0] for seg in segments if "." in seg}
+        if segments & HIGH_STAKES_SEGMENTS:
+            return True
+
     if anchor_skill:
-        haystack += " " + anchor_skill.lower()
-    return any(marker.lower() in haystack for marker in HIGH_STAKES_MARKERS)
+        parts = set(anchor_skill.lower().replace("_", "-").split("-"))
+        if parts & HIGH_STAKES_SEGMENTS:
+            return True
+
+    return False
 
 
 def provenance_json(classification: Classification) -> str:

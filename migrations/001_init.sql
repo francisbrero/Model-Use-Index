@@ -42,6 +42,22 @@ CREATE TABLE IF NOT EXISTS raw_event (
   content_hash  TEXT NOT NULL UNIQUE      -- makes backfill idempotent
 );
 
+-- Counters from the last derivation run. A canary that cannot fire must not
+-- ship as a row: `v_data_quality` reads these, and without them its
+-- parse-failure number would be a constant 0 reporting a permanently clean
+-- bill of health — the exact failure `mui doctor` exists to prevent (R3).
+CREATE TABLE IF NOT EXISTS normalize_run (
+  id             INTEGER PRIMARY KEY,
+  ran_at         TEXT NOT NULL,
+  raw_events     INTEGER NOT NULL,
+  parse_failures INTEGER NOT NULL,
+  api_calls      INTEGER NOT NULL,
+  work_units     INTEGER NOT NULL,
+  prompt_units   INTEGER NOT NULL,
+  unknown_models INTEGER NOT NULL,
+  unscored_arcs  INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE INDEX IF NOT EXISTS raw_event_session ON raw_event(session_id);
 CREATE INDEX IF NOT EXISTS raw_event_source  ON raw_event(source);
 
@@ -282,11 +298,16 @@ CREATE TABLE IF NOT EXISTS classification (
   -- small/small/frontier — so if most value lands there, the tier axis carried
   -- no information this round and the reader has to be able to see that.
   provenance         TEXT NOT NULL,   -- JSON: {axis: 'rule'|'observed'|'model'}
+  -- 'Unscored' is not a fourth complexity level; it is the ABSENCE of one.
+  -- An arc no prompt unit covers has no evidence to score, and calling that
+  -- `Low` would manufacture `Agentic/Low -> expects small -> Opus used ->
+  -- Overprovisioned` out of missing data. It cannot key TIER_MATRIX, so no
+  -- verdict is produced for such a row at all.
   task_complexity    TEXT NOT NULL
-      CHECK (task_complexity IN ('Low', 'Medium', 'High')),
+      CHECK (task_complexity IN ('Low', 'Medium', 'High', 'Unscored')),
   stakes             TEXT NOT NULL
       CHECK (stakes IN ('routine', 'high')),
-  complexity_score   INTEGER,         -- W1's six signals, 0-6
+  complexity_score   INTEGER,         -- W1's six signals, 0-6; NULL = unscored
   signals            TEXT,            -- JSON: which signals fired
   confidence         REAL NOT NULL,
   rationale          TEXT,
@@ -322,6 +343,11 @@ CREATE TABLE IF NOT EXISTS verdict (
   max_tier       TEXT CHECK (max_tier IN ('small','mid','frontier')),
   tier_delta     INTEGER NOT NULL,
   evidence       TEXT,            -- JSON: which signals fired
-  allowance_pool TEXT NOT NULL,   -- verdicts are per-pool (PRD §8.5)
-  PRIMARY KEY (work_unit_id, rules_version)
+  -- Verdicts are per-pool and the pool is PART OF THE KEY (PRD §8.5). A
+  -- verdict means "scarce headroom in THIS pool was spent on work a cheaper
+  -- tier in THIS pool would have handled", so an arc spanning two pools has
+  -- two verdicts and never one blended row. Keying without the pool would
+  -- silently keep whichever was written last.
+  allowance_pool TEXT NOT NULL,
+  PRIMARY KEY (work_unit_id, rules_version, allowance_pool)
 );

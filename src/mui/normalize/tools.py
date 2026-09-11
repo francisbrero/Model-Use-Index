@@ -12,6 +12,7 @@ thing that gets backed up, copied and opened in Datasette.
 
 from __future__ import annotations
 
+import hashlib
 import pathlib
 import re
 from typing import Any
@@ -78,19 +79,98 @@ def command_verb(command: str) -> str:
     return token if token in _KNOWN_VERBS else "other"
 
 
-def path_class(path: str) -> str:
-    """A path reduced to `<parent dir>/*<ext>`. Never an absolute path.
+# Directory names that describe a role rather than the operator's work, and
+# are therefore safe to keep verbatim. `_is_high_stakes` matches against these,
+# so they have to survive normalisation to be useful at all.
+_SAFE_DIRS = frozenset(
+    {
+        "src",
+        "tests",
+        "test",
+        "lib",
+        "app",
+        "docs",
+        "doc",
+        "scripts",
+        "bin",
+        "migrations",
+        "config",
+        "public",
+        "static",
+        "assets",
+        "components",
+        "services",
+        "models",
+        "views",
+        "utils",
+        "api",
+        "web",
+        "server",
+        "client",
+        "ci",
+        "cd",
+        "workflows",
+        "terraform",
+        "k8s",
+        "helm",
+        "charts",
+        "auth",
+        "secrets",
+        "payments",
+        "billing",
+        "deploy",
+        "release",
+        "infra",
+        "build",
+        "node_modules",
+        "vendor",
+        ".github",
+        ".ssh",
+        "dist",
+        "hooks",
+        "collect",
+        "normalize",
+        "enrich",
+        "analyses",
+        "fixtures",
+    }
+)
 
-    Keeps exactly what the signals need — how many distinct files a unit
-    touched, and roughly where — and discards the part that identifies the
-    operator's machine and the content of their work.
+
+def _opaque(text: str) -> str:
+    """A short stable digest. Preserves cardinality, reveals nothing.
+
+    `distinct_files` only needs to tell two files apart, never to know what
+    either is called. Eight hex characters make a collision irrelevant at this
+    scale while making the original unrecoverable.
+    """
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:8]
+
+
+def path_class(path: str) -> str:
+    """A path reduced to `<parent>/<opaque><ext>`. Never an identifying name.
+
+    A filename is the operator's WORK CONTENT, not just a location:
+    `acme-acquisition-memo.md` and `NDA-project-zeus/plan.md` name a client and
+    a deal. So the stem is hashed, and the parent directory is kept only when
+    it is a structural name (`src`, `migrations`, `.github`) rather than a
+    project or client name.
+
+    This column lands in `store.db`, which is backed up, copied and opened in
+    Datasette — so the normalisation happens HERE, at extraction. A value that
+    reaches the database has already leaked (invariant 6, PRD §13).
+
+    The extension survives because it is a type, not a name, and
+    `_is_high_stakes` matches on it (`.tf`, `.plist`).
     """
     if not path:
         return ""
     p = pathlib.PurePath(path)
-    parent = p.parent.name or ""
     suffix = p.suffix or ""
-    stem = p.stem[:24]
+    stem = _opaque(p.stem) if p.stem else ""
+    parent = p.parent.name or ""
+    if parent and parent.lower() not in _SAFE_DIRS:
+        parent = _opaque(parent)
     return f"{parent}/{stem}{suffix}" if parent else f"{stem}{suffix}"
 
 

@@ -46,19 +46,42 @@ def test_an_unknown_verb_never_passes_through():
 def test_file_paths_lose_everything_above_the_parent_directory():
     """`/Users/francis/...` identifies the operator; the signals only need to
     know how many distinct files were touched and roughly where."""
-    target = normalise_target(
-        "Edit", {"file_path": "/Users/francis/secret/app/auth.py"}
-    )
-    assert target == "app/auth.py"
+    target = normalise_target("Edit", {"file_path": "/Users/francis/app/auth.py"})
     assert "francis" not in target and "/Users" not in target
+    assert target.startswith("app/"), "a structural directory survives"
+    assert target.endswith(".py"), "the extension is a type, not a name"
+
+
+def test_a_filename_is_content_and_does_not_survive():
+    """A filename names the operator's WORK, not just a location.
+
+    `acme-acquisition-memo.md` names a client and a deal; `NDA-project-zeus`
+    names both. This column lands in `store.db`, which is backed up and opened
+    in Datasette, so the stem is hashed and a non-structural parent with it.
+    """
+    target = path_class("/Users/f/clients/NDA-project-zeus/acquisition-memo.md")
+    assert "acquisition" not in target
+    assert "memo" not in target
+    assert "zeus" not in target
+    assert "NDA" not in target
+    assert target.endswith(".md")
 
 
 def test_path_class_is_stable_for_the_distinct_files_signal():
     """Two edits to the same file must normalise identically, or the
-    '>=5 distinct files' signal would count one file as several."""
+    '>=5 distinct files' signal would count one file as several — and two
+    different files must not collide, or it would count several as one."""
     a = path_class("/a/b/project/src/models.py")
     b = path_class("/a/b/project/src/models.py")
-    assert a == b == "src/models.py"
+    assert a == b
+    assert path_class("/x/src/models.py") != path_class("/x/src/views.py")
+
+
+def test_structural_directories_survive_for_the_stakes_heuristic():
+    """`_is_high_stakes` matches directory-level markers, so `migrations` and
+    `.github` have to survive normalisation to be matchable at all."""
+    assert path_class("/r/migrations/001_init.sql").startswith("migrations/")
+    assert path_class("/r/.github/workflows/ci.yml").startswith("workflows/")
 
 
 def test_urls_keep_the_host_only():

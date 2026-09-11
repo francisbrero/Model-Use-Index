@@ -333,7 +333,7 @@ def test_used_tier_aggregates_value_per_tier_not_per_model(store):
             ("claude-opus-5", "frontier", 100.0, "anthropic-seat"),
         ],
     )
-    used, maximum, _ = _arc_tier(store, "W", frozenset())
+    used, maximum = _arc_tier(store, "W", frozenset())["anthropic-seat"]
     assert used == "small", "small carries $120 against frontier's $100"
     assert maximum == "frontier", "max_tier still shows the arc is mixed"
 
@@ -348,7 +348,7 @@ def test_non_billable_models_are_excluded_from_the_tier_vote(store):
             ("<synthetic>", "small", 0.0, "anthropic-seat"),
         ],
     )
-    used, _, _ = _arc_tier(store, "W", frozenset({"<synthetic>"}))
+    used, _ = _arc_tier(store, "W", frozenset({"<synthetic>"}))["anthropic-seat"]
     assert used == "frontier"
 
 
@@ -363,5 +363,94 @@ def test_the_tier_vote_counts_each_call_once(store):
             ("claude-opus-5", "frontier", 100.0, "anthropic-seat"),
         ],
     )
-    used, _, _ = _arc_tier(store, "W", frozenset())
+    used, _ = _arc_tier(store, "W", frozenset())["anthropic-seat"]
     assert used == "frontier", "$60 small must not be doubled to $120"
+
+
+def test_an_arc_without_its_own_prompt_is_still_scored(store):
+    """One prompt can open several arcs, and the later ones have no prompt.
+
+    The user asks once; the assistant invokes two skills; each invocation opens
+    an arc under `u10-next-anchor-v1`, but no new prompt is written. Resolving
+    an arc's prompt units through `prompt_unit.work_unit_id` — which records
+    only the arc a unit STARTS in — left 34% of arcs on the real corpus with no
+    prompt units, scored 0, bucketed `Low`, and `Agentic/Low` against Opus
+    reads `Overprovisioned`. 140 verdicts were produced by that join rather
+    than by the work.
+
+    Resolution is by turn-range overlap, so a prompt spanning two arcs scores
+    both.
+    """
+    store.execute(
+        "INSERT INTO work_unit (id, session_id, kind, rule_id, anchor_skill, "
+        "start_turn, end_turn, turns, allowance_pool, notional_list_value_usd) "
+        "VALUES ('A0','S','arc','r','skillA',0,0,1,'anthropic-seat',1.0),"
+        "       ('A1','S','arc','r','skillB',1,1,1,'anthropic-seat',1.0)"
+    )
+    store.execute(
+        "INSERT INTO prompt_unit (id, session_id, work_unit_id, rule_id, "
+        "start_turn, end_turn, turns, allowance_pool, has_debug_language, "
+        "has_self_correction) "
+        "VALUES ('P0','S','A0','prompt-unit-v1',0,1,2,'anthropic-seat',1,0)"
+    )
+    for i, unit in enumerate(("A0", "A1")):
+        store.execute(
+            "INSERT INTO api_call (id, session_id, work_unit_id, provider, "
+            "allowance_pool, model, model_tier, input_tokens, output_tokens, "
+            "notional_list_value_usd, registry_version, turn_index, started_at)"
+            " VALUES (?,'S',?,'anthropic','anthropic-seat','claude-opus-5',"
+            "'frontier',0,0,1.0,'v',?,'t')",
+            (f"k{i}", unit, i),
+        )
+    store.commit()
+
+    enrich(store, activity_map={})
+    scored = {
+        r[0]: r[1]
+        for r in store.execute(
+            "SELECT unit_id, complexity_score FROM classification "
+            "WHERE unit_id IN ('A0','A1') AND unit_grain = 'work_unit'"
+        )
+    }
+    assert scored["A1"] == scored["A0"], "the spanning prompt scores both arcs"
+    assert scored["A1"] is not None and scored["A1"] > 0
+
+
+def test_arc_complexity_is_the_max_of_its_units_not_the_union(store):
+    """Three units scoring 1 on three DIFFERENT signals is not a `High` arc.
+
+    Unioning the fired sets grows monotonically with arc length, so a long arc
+    saturates toward 6 — the same length-proxy defect the two-grain design
+    exists to avoid, reintroduced one layer up. `turn_count` already measures
+    length, and it is a separate signal.
+    """
+    from mui.enrich.signals import SignalResult, to_complexity
+
+    units = [
+        SignalResult(("distinct_files",), 1),
+        SignalResult(("turn_count",), 1),
+        SignalResult(("subagent_use",), 1),
+    ]
+    best = max(units, key=lambda s: s.score)
+    assert best.score == 1
+    assert to_complexity(best.score) == "Medium"
+    assert to_complexity(len({s for u in units for s in u.fired})) == "High", (
+        "the union would have said High — this is what the max avoids"
+    )
+
+
+def test_an_arc_spanning_two_pools_gets_a_verdict_for_each(store):
+    """Allowance pools never sum and never compare (invariant 4).
+
+    Picking one winning pool by "which carries more value" is that comparison:
+    Anthropic and OpenAI allowance are different ceilings, so the question has
+    no meaning. A verdict is scoped to the pool whose headroom was spent
+    (PRD §8.5), so an arc touching two pools has two verdicts.
+    """
+    _arc_with_calls(store, [
+        ("claude-opus-5", "frontier", 100.0, "anthropic-seat"),
+        ("gpt-5-codex", "frontier", 500.0, "openai-seat"),
+    ])
+    votes = _arc_tier(store, "W", frozenset())
+    assert set(votes) == {"anthropic-seat", "openai-seat"}
+    assert votes["anthropic-seat"][0] == "frontier"

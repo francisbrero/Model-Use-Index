@@ -31,6 +31,7 @@ from mui.normalize.work_unit import (
 )
 
 DERIVED_TABLES = (
+    "normalize_run",
     "verdict",
     "classification",
     "tool_call",
@@ -147,6 +148,20 @@ def rebuild(conn: sqlite3.Connection, registry: Registry | None = None) -> dict:
                 by_session_records.get(session_id, []),
                 stats,
             )
+
+        conn.execute(
+            "INSERT INTO normalize_run (ran_at, raw_events, parse_failures, "
+            "api_calls, work_units, prompt_units, unknown_models) "
+            "VALUES (datetime('now'),?,?,?,?,?,?)",
+            (
+                len(records) + stats["parse_failures"],
+                stats["parse_failures"],
+                stats["api_calls"],
+                stats["work_units"],
+                stats["prompt_units"],
+                stats["unknown_models"],
+            ),
+        )
 
     return stats
 
