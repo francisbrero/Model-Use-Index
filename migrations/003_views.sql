@@ -160,3 +160,24 @@ SELECT
 FROM work_unit w
 WHERE w.kind = 'arc'
 GROUP BY w.anchor_skill, w.allowance_pool;
+
+-- ---------------------------------------------------------------------------
+-- Data quality — invariant 7's canary and invariant 10's, in one place.
+--
+-- This ships WITH the first view, not after it (R3): a tool that stopped
+-- ingesting three weeks ago while still rendering a confident report is worse
+-- than no tool. `mui doctor` is a later milestone; these are the numbers it
+-- will read.
+-- ---------------------------------------------------------------------------
+CREATE VIEW IF NOT EXISTS v_data_quality AS
+SELECT
+  (SELECT COUNT(*) FROM raw_event)                        AS raw_events,
+  (SELECT COUNT(DISTINCT session_id) FROM raw_event)      AS sessions,
+  (SELECT COUNT(*) FROM api_call)                         AS api_calls,
+  (SELECT COUNT(*) FROM work_unit)                        AS work_units,
+  (SELECT COUNT(*) FROM work_unit WHERE parse_degraded=1) AS degraded_work_units,
+  (SELECT COUNT(*) FROM api_call WHERE work_unit_id IS NULL) AS orphaned_calls,
+  (SELECT COUNT(*) FROM api_call WHERE error_kind IS NOT NULL) AS error_records,
+  (SELECT COUNT(*) FROM api_call WHERE error_kind = 'rate_limit') AS limit_hits,
+  (SELECT MAX(started_at) FROM api_call)                  AS last_api_call,
+  (SELECT MAX(ingested_at) FROM raw_event)                AS last_ingest;

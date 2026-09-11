@@ -34,20 +34,25 @@ DERIVED_TABLES = (
 )
 
 
-def iter_raw(conn: sqlite3.Connection):
-    """Every captured record, parsed. A line that will not parse is skipped and
-    counted — it stays in `raw_event` for a later parser to pick up."""
-    bad = 0
+def iter_raw(conn: sqlite3.Connection, counter: dict | None = None):
+    """Every captured record, parsed.
+
+    A line that will not parse is skipped and COUNTED, never dropped from
+    `raw_event` — it stays there for a later parser to pick up (invariant 2b).
+    The count is invariant 7's schema-drift canary: the transcript format is
+    undocumented and unstable, so a rising parse-failure rate is the earliest
+    signal that the writer changed, and it must be a number rather than a
+    silent absence.
+    """
     for row in conn.execute("SELECT payload FROM raw_event ORDER BY id"):
         try:
             record = json.loads(row["payload"])
         except (ValueError, TypeError):
-            bad += 1
+            if counter is not None:
+                counter["parse_failures"] = counter.get("parse_failures", 0) + 1
             continue
         if isinstance(record, dict):
             yield record
-    if bad:
-        conn.execute("SELECT 1")  # no-op; count surfaced by caller via doctor
 
 
 def _repo_of(cwd: str | None) -> str | None:
@@ -103,7 +108,8 @@ def rebuild(conn: sqlite3.Connection, registry: Registry | None = None) -> dict:
     """Rebuild every derived table from `raw_event`. Idempotent by construction."""
     registry = registry or Registry.load(conn)
 
-    records = list(iter_raw(conn))
+    counter: dict[str, int] = {}
+    records = list(iter_raw(conn, counter))
     by_session_records: dict[str, list[dict[str, Any]]] = {}
     for record in records:
         session = record.get("sessionId") or record.get("session_id")
@@ -117,6 +123,7 @@ def rebuild(conn: sqlite3.Connection, registry: Registry | None = None) -> dict:
             conn.execute(f"DELETE FROM {table}")
 
         stats = {
+            "parse_failures": counter.get("parse_failures", 0),
             "sessions": 0,
             "api_calls": 0,
             "work_units": 0,

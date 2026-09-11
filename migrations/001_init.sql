@@ -159,7 +159,12 @@ CREATE TABLE IF NOT EXISTS work_unit (
   git_branch               TEXT,
   cc_version               TEXT,
   allowance_pool           TEXT NOT NULL,
-  notional_list_value_usd  REAL NOT NULL
+  notional_list_value_usd  REAL NOT NULL,
+  -- Invariant 7: the transcript schema is undocumented and unstable, so a
+  -- record that does not yield what the normaliser expects must be COUNTABLE
+  -- rather than either silently dropped or fatal. A rising rate here is the
+  -- schema-drift canary; `cc_version` on `api_call` bisects it to a release.
+  parse_degraded           INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS work_unit_session ON work_unit(session_id);
