@@ -32,6 +32,7 @@ def enrich(conn: sqlite3.Connection, activity_map: dict | None = None) -> dict:
     stats = {"prompt_units": 0, "work_units": 0, "score_zero": 0}
 
     prompt_signals = _score_prompt_units(conn, stats)
+    non_billable = _non_billable_models(conn)
 
     with conn:
         conn.execute("DELETE FROM verdict")
@@ -63,7 +64,9 @@ def enrich(conn: sqlite3.Connection, activity_map: dict | None = None) -> dict:
         for row in conn.execute(
             "SELECT id, anchor_skill, kind FROM work_unit"
         ).fetchall():
-            _enrich_work_unit(conn, row, prompt_signals, activity_map, stats)
+            _enrich_work_unit(
+                conn, row, prompt_signals, activity_map, stats, non_billable
+            )
 
     return stats
 
@@ -108,7 +111,9 @@ def _score_prompt_units(conn, stats) -> dict:
     return results
 
 
-def _enrich_work_unit(conn, row, prompt_signals, activity_map, stats) -> None:
+def _enrich_work_unit(
+    conn, row, prompt_signals, activity_map, stats, non_billable
+) -> None:
     """An arc's complexity AGGREGATES its prompt units — it is not a re-run of
     prompt thresholds over the whole arc."""
     prompt_rows = conn.execute(
@@ -157,7 +162,7 @@ def _enrich_work_unit(conn, row, prompt_signals, activity_map, stats) -> None:
         ),
     )
 
-    used, maximum, pool = _arc_tier(conn, row["id"])
+    used, maximum, pool = _arc_tier(conn, row["id"], non_billable)
     if used is None:
         return
 
@@ -197,7 +202,7 @@ def _enrich_work_unit(conn, row, prompt_signals, activity_map, stats) -> None:
     stats["work_units"] += 1
 
 
-def _arc_tier(conn, work_unit_id):
+def _arc_tier(conn, work_unit_id, non_billable: frozenset[str]):
     """`used_tier` is the tier carrying the PLURALITY OF NOTIONAL LIST VALUE.
 
     Not the max (one Opus call would outvote forty Haiku ones) and not the
@@ -206,23 +211,53 @@ def _arc_tier(conn, work_unit_id):
     visible rather than being flattened away.
 
     Non-billable models (`<synthetic>`, i.e. rate-limit and error records) are
-    excluded from the vote: they carry no tokens, and they have no ordinal.
+    excluded from the vote: they carry no tokens and have no ordinal.
+
+    Exclusion is done with a pre-resolved model set rather than by joining
+    `model_registry` in SQL. A glob join multiplies rows whenever a model
+    matches more than one pattern — `claude-haiku-4-5-20251001` matches both
+    `claude-haiku-4-5*` and `claude-haiku-4*`, which doubled its call count and
+    its weight in this vote. Resolution is longest-pattern-first and belongs in
+    exactly one place: `Registry.resolve`.
     """
     rows = conn.execute(
-        "SELECT a.model_tier, a.allowance_pool, "
-        "       SUM(a.notional_list_value_usd) AS value, COUNT(*) AS calls "
-        "FROM api_call a "
-        "JOIN model_registry m ON a.model = m.model_pattern OR "
-        "     a.model GLOB m.model_pattern "
-        "WHERE a.work_unit_id = ? AND m.is_billable = 1 "
-        "GROUP BY a.model_tier, a.allowance_pool",
+        "SELECT model, model_tier, allowance_pool, "
+        "       SUM(notional_list_value_usd) AS value, COUNT(*) AS calls "
+        "FROM api_call WHERE work_unit_id = ? "
+        "GROUP BY model, model_tier, allowance_pool",
         (work_unit_id,),
     ).fetchall()
 
-    if not rows:
+    billable = [
+        r for r in rows
+        if r["model"] not in non_billable and r["model_tier"] in TIER_ORDINAL
+    ]
+    if not billable:
         return None, None, None
 
-    best = max(rows, key=lambda r: (r["value"], r["calls"]))
-    tiers = [r["model_tier"] for r in rows if r["model_tier"] in TIER_ORDINAL]
-    maximum = max(tiers, key=lambda t: TIER_ORDINAL[t]) if tiers else None
+    best = max(billable, key=lambda r: (r["value"], r["calls"]))
+    maximum = max(
+        (r["model_tier"] for r in billable), key=lambda t: TIER_ORDINAL[t]
+    )
     return best["model_tier"], maximum, best["allowance_pool"]
+
+
+def _non_billable_models(conn) -> frozenset[str]:
+    """Exact model strings that must not reach the tier vote.
+
+    Resolved once per run through the same longest-pattern-first rule the
+    registry uses, so the vote and the pricing can never disagree about which
+    model a call belongs to.
+    """
+    from mui.normalize.pricing import Registry
+
+    registry = Registry.load(conn)
+    models = {r[0] for r in conn.execute("SELECT DISTINCT model FROM api_call")}
+    excluded = set()
+    for model in models:
+        try:
+            if not registry.resolve(model).is_billable:
+                excluded.add(model)
+        except LookupError:
+            continue
+    return frozenset(excluded)

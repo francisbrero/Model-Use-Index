@@ -269,3 +269,31 @@ def test_rebuild_is_idempotent(store):
     rebuild(store, Registry.load(store))
     after = store.execute("SELECT COUNT(*) FROM work_unit").fetchone()[0]
     assert before == after
+
+
+def test_a_model_matching_two_patterns_is_resolved_once(store):
+    """`claude-haiku-4-5-20251001` matches BOTH `claude-haiku-4-5*` and
+    `claude-haiku-4*`.
+
+    A SQL glob join against `model_registry` therefore returns two rows for
+    every such call, doubling its weight in the arc's tier vote — measured at
+    5,214 joined rows against 2,607 real calls. Resolution is
+    longest-pattern-first and lives in exactly one place, `Registry.resolve`.
+    """
+    registry = Registry.load(store)
+    rate = registry.resolve("claude-haiku-4-5-20251001")
+    assert rate.pattern == "claude-haiku-4-5*", "most specific pattern wins"
+    assert rate.tier == "small"
+
+
+def test_registry_prefers_the_longest_matching_pattern(store):
+    registry = Registry.load(store)
+    assert registry.resolve("claude-haiku-4-5-20251001").pattern == "claude-haiku-4-5*"
+    assert registry.resolve("claude-haiku-4-0").pattern == "claude-haiku-4*"
+
+
+def test_version_pinned_ids_resolve_like_their_unpinned_form(store):
+    """PRD §6.3 — `claude-opus-5@20250514` and `claude-opus-5` are one tier."""
+    registry = Registry.load(store)
+    assert registry.resolve("claude-opus-5").tier == "frontier"
+    assert registry.resolve("claude-opus-5-20260101").tier == "frontier"

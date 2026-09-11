@@ -38,6 +38,11 @@ class Rate:
     provider: str
     pattern: str
     tier: str
+    # `<synthetic>` (rate-limit and error records) is registered so that
+    # resolution does not fail and force the record-dropping filter invariant
+    # 10b forbids — but it is not a model, carries no tokens, and must never
+    # reach the ordinal tier arithmetic.
+    is_billable: bool
     allowance_pool: str
     usd_in: float
     usd_out: float
@@ -72,6 +77,7 @@ class Registry:
                     r["provider"],
                     r["model_pattern"],
                     r["tier"],
+                    bool(r["is_billable"]),
                     r["allowance_pool"],
                     r["usd_per_mtok_in"],
                     r["usd_per_mtok_out"],
