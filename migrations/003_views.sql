@@ -231,3 +231,35 @@ FROM work_unit w
 JOIN classification c
   ON c.unit_id = w.id AND c.unit_grain = 'work_unit'
 WHERE c.task_complexity = 'Unscored';
+
+-- Work units ranked by notional list value with their complexity score — the
+-- drill-down beneath `v_activity_ledger`, and the view the operator lands on
+-- after picking a category. Deliberately NOT the front page: a report that
+-- ranks individual units makes the reader do the grouping, which is the shape
+-- W1 rejected (PRD §7.0).
+CREATE VIEW IF NOT EXISTS v_work_unit_ledger AS
+SELECT
+  w.id,
+  c.ai_activity,
+  w.anchor_skill                  AS routine,
+  w.project_family,
+  w.kind,
+  w.turns,
+  c.task_complexity,
+  c.complexity_score,
+  c.signals,
+  v.justification,
+  v.expected_tier,
+  v.used_tier,
+  v.max_tier,
+  v.tier_delta,
+  w.allowance_pool,
+  w.notional_list_value_usd,
+  'provisional'                   AS classification_status,
+  'notional list value, not money billed' AS value_label
+FROM work_unit w
+JOIN classification c
+  ON c.unit_id = w.id AND c.unit_grain = 'work_unit'
+LEFT JOIN verdict v
+  ON v.work_unit_id = w.id AND v.allowance_pool = w.allowance_pool
+ORDER BY w.notional_list_value_usd DESC;
