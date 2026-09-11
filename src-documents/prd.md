@@ -621,36 +621,6 @@ Three orthogonal axes plus a stakes flag. Kept deliberately small — a small
 local model's accuracy degrades sharply as the label set grows, and every label
 we add has to earn its place by changing a decision.
 
-### 7.0 The top level is *kind of work* — and it is `ai_activity`
-
-W1's sharpest process finding: **the report's job is to surface categories, not
-individual fixes.** A named release routine is one instance of *agentic ops on
-Opus*, and the harness change — a different default model, a routing rule — is
-made at that level. A report that ranks individual work units makes the reader
-do the grouping.
-
-**So `ai_activity` is the top level for reporting, and `work_type` stays the
-tier axis.** These are different jobs and the distinction is deliberate:
-
-| Axis | Answers | Used by |
-|---|---|---|
-| `ai_activity` (§7.2) | *What kind of work is this?* — the level a default is set at | **Grouping in every analysis**; the top level of A1 |
-| `work_type` (§7.1) | *What cognitive shape does it have?* — the level a tier is chosen at | `TIER_MATRIX` (§8.1) and nothing else |
-
-**`work_type` does not move, and its four values do not change.** It feeds
-`TIER_MATRIX[work_type][task_complexity]`, whose rules reproduce the reference
-report on **28 of 28** rows (§8.2). Redefining it to mean "kind of work" would
-silently invalidate that verification and the whole verdict engine with it.
-This section changes **which axis leads a report**, not what either axis means.
-
-Two consequences for the build:
-
-- **A1 groups by `ai_activity` first**, then by work type × complexity × model
-  within it. "Agentic ops on Opus" is a row; a specific routine is a drill-down.
-- **`ai_activity`'s `other` bucket matters more than it looks.** If the top
-  level of every report is this axis, an over-used `other` degrades the whole
-  report, not one column. §7.2's 10% monthly review threshold is the guard.
-
 ### 7.1 `work_type` — 4 values
 
 The *cognitive shape* of the work. This is the axis that most determines which
@@ -974,43 +944,10 @@ not that it breaks, but that it works and nobody believes it.
 
 The dashboard is a means, not the end. Six analyses justify the build.
 
-### A1 — Over-provisioning ledger *(the reference report)* — **headline**
+### A1 — Over-provisioning ledger *(the reference report)*
 Consumption grouped by activity × work type × complexity × model, with verdict.
 Sorted by `headroom_reclaimable` descending, per pool.
-**Action:** change the default model for a **class** of work, or add a routing
-rule — not hand-pick individual units.
-
-**Aimed at high-ceremony, low-reasoning orchestration** — *not* at "trivial
-sessions." W1 (2026-09-09) tested the trivia framing and killed it:
-
-- Scored on **session shape**, triviality reads **0.03%**. The session is the
-  wrong grain, and tool histograms the wrong signal — an `Edit`-free session
-  looks trivial, but under bypass-mode instructions agents edit through `Bash`.
-  The naive "no `Edit`" cut reads 11.6% and is a false positive.
-- Re-grained to **work units**, **43.4% of Phoenix Opus notional list value
-  ($7,361 of $16,950) carries no complexity signal.** A hand-read of the twelve
-  most expensive found **release orchestration and CI shepherding** — expensive,
-  mechanical, and nothing like trivia.
-
-The cost is **ceremony, not reasoning**: long tool-driven arcs that wait on CI,
-shepherd a deploy, or drive a release, on a frontier model, because that is the
-session default and nothing ever reconsidered it.
-
-**So the unit of action is the routine, not the unit.** W1's worked example: a
-single unconfigured release routine ran **$1,511 notional list value across 10
-runs, $302 at the Sonnet tier — a $1,209 upper-bound saving from 7.1% of Phoenix
-Opus consumption, from one harness change.** The deliverable is a ranked list of
-harness changes of that shape.
-
-Two cautions this analysis carries by construction:
-
-- **Reclaimable headroom is an upper bound** (R2). It assumes the cheaper model
-  finishes in the same tokens, and it will not. Label it so *in the UI*.
-- **A per-unit tier verdict does not price a routine.** A routine's cost is
-  worker **plus reviewers**, and reviewer subagents take their tier from their
-  agent definition rather than the session — measured once at **5.9× the
-  worker** (#18). A1 must not imply that downgrading the worker banks the whole
-  gap.
+**Action:** change the default model for a class of work, or add a routing rule.
 
 ### A2 — Under-provisioning ledger
 Work units flagged `Underprovisioned`, with the fired signals and estimated
@@ -1039,32 +976,16 @@ subagent candidate. Output per candidate: proposed name, observed tool
 allowlist, recommended tier, historical consumption, and 5 example prompts to
 seed the description.
 
-### A4 — Context efficiency — **second headline**
+### A4 — Context efficiency
 Independent of model choice and often the larger lever. Cache hit rate by repo
 and session shape; consumption of loaded-but-unused skills and MCP tool schemas
 (needs `OTEL_LOG_RAW_API_BODIES`); compaction frequency; ratio of
 `cache_creation` to `cache_read`.
 **Action:** trim CLAUDE.md, lazy-load skills, restructure sessions.
 
-**Prompt-cache efficiency is pure headroom.** A cache miss consumes full input
-allowance for context that was already paid for once — which on a seat plan is
-directly the reason someone hits the wall on Thursday.
-
-**This is a headline, not a supporting analysis.** W1 measured **92.7% of Opus
-notional list value as cache traffic** — 57.9% read, 34.8% write — against 7.2%
-output. Two properties make it load-bearing rather than incidental:
-
-- **It is robust to the accounting correction.** W1's first two passes
-  overstated cost by 91% (invariant 10). The dedup fix halved the *levels* and
-  the cache ratio **barely moved**, so A4 rests on evidence independent of the
-  bug that nearly sank the headline figure.
-- **It is not model-specific.** Re-measured 2026-09-10 on Haiku: **71.8%
-  cache-read share of value.** Long tool-driven arcs re-read a growing context
-  at every tier, so A4 survives any model-choice change A1 recommends.
-
-A1 and A4 are therefore complementary rather than competing: **A1 changes which
-model does a class of work; A4 changes how much context that work drags behind
-it.** A4 applies even where A1's verdict is `Justified`.
+*Note:* prompt-cache efficiency is pure headroom. A cache miss consumes full
+input allowance for context that was already paid for once — which on a seat
+plan is directly the reason someone hits the wall on Thursday.
 
 ### A5 — Frustration map *(Phase 3, see §11)*
 Frustration rate by `agent_type` and `ai_activity`.
@@ -1318,7 +1239,6 @@ Written after a research pass, not after a build. Calibrating what to trust:
 | **Whether allowance consumption is machine-readable** | **Low** | Unverified either way. Determines read-vs-model. |
 | **Per-token allowance weights** | **Low by design** | Fitted, not published. May track list price closely — in which case the value of the reframe is the fixed denominator and the pool split, not the weighting. |
 | Throughput estimates on base M3 8 GB | Medium | Bandwidth-derived, cross-checked against M1 measurements; no direct benchmark for this config exists |
-| The tier matrix in §8.1 | **Reproduced, not validated** | Recovered from the reference report and matching it 28/28 — but that proves fidelity to the source, not that the source was right. A hand-test (W2) was tried and **closed moot 2026-09-10**: no history existed to sample, and an Opus→Haiku substitute could not distinguish `small` from `mid` in either direction. Validation now runs through **M2′'s gold set** (taxonomy) and **U9's outcome data** (the matrix's output), against a working system |
-| **That a per-unit tier verdict prices a routine** | **Known incomplete** | It does not. A routine's cost is worker **plus reviewers**, and reviewer subagents take their tier from their agent definition, not the session — measured once at **5.9× the worker**, making a nominal 15× saving a real 2.2× (#18). §8.1 has no way to express *worker `small`, reviewers `frontier`*. Answer after M1, when there are work units to generalise from |
+| The tier matrix in §8.1 | **Reproduced, not validated** | Recovered from the reference report and matching it 28/28 — but that proves fidelity to the source, not that the source was right |
 
 ---
