@@ -25,6 +25,9 @@ from mui.verdict import TIER_ORDINAL, decide
 
 RULES_VERSION = "provisional-rules-v1"
 
+# Tools whose target is a hostname rather than a path.
+_URL_TOOLS = frozenset({"WebFetch", "WebSearch"})
+
 
 def enrich(conn: sqlite3.Connection, activity_map: dict | None = None) -> dict:
     """Classify every work unit and write its verdict. Idempotent."""
@@ -81,7 +84,8 @@ def _score_prompt_units(conn, stats) -> dict:
     """Evaluate the six signals over each prompt unit."""
     results = {}
     rows = conn.execute(
-        "SELECT id, turns, session_id, start_turn, end_turn FROM prompt_unit"
+        "SELECT id, turns, session_id, start_turn, end_turn, "
+        "has_debug_language, has_self_correction FROM prompt_unit"
     ).fetchall()
 
     for row in rows:
@@ -89,10 +93,13 @@ def _score_prompt_units(conn, stats) -> dict:
             "SELECT tool_name, target FROM tool_call WHERE prompt_unit_id = ?",
             (row["id"],),
         ).fetchall()
-        text = " ".join(t["target"] or "" for t in tools)
         targets = [t["target"] for t in tools if t["target"]]
         names = [t["tool_name"] for t in tools]
-        distinct_files = len({t for t in targets if "/" in t or "." in t})
+        # Path classes only. A path class always contains "/" (`src/auth.py`),
+        # a Bash verb never does, and a WebFetch host is excluded explicitly so
+        # `internal.example.com` is not counted as a file it never was.
+        hosts = {t["target"] for t in tools if t["tool_name"] in _URL_TOOLS}
+        distinct_files = len({t for t in targets if "/" in t and t not in hosts})
 
         signal = evaluate(
             SignalInput(
@@ -100,7 +107,8 @@ def _score_prompt_units(conn, stats) -> dict:
                 distinct_files=distinct_files,
                 tool_names=names,
                 tool_targets=targets,
-                text=text,
+                has_debug_language=bool(row["has_debug_language"]),
+                has_self_correction=bool(row["has_self_correction"]),
             )
         )
         results[row["id"]] = (signal, row)
@@ -229,17 +237,38 @@ def _arc_tier(conn, work_unit_id, non_billable: frozenset[str]):
     ).fetchall()
 
     billable = [
-        r for r in rows
+        r
+        for r in rows
         if r["model"] not in non_billable and r["model_tier"] in TIER_ORDINAL
     ]
     if not billable:
         return None, None, None
 
-    best = max(billable, key=lambda r: (r["value"], r["calls"]))
-    maximum = max(
-        (r["model_tier"] for r in billable), key=lambda t: TIER_ORDINAL[t]
+    # Pools are counted SEPARATELY and never compared. Comparing value across
+    # pools to pick one winner is the shape invariant 4 forbids: Anthropic and
+    # OpenAI allowance are different ceilings, so "which is bigger" is not a
+    # question with a meaning. Today the slice is single-pool, so this loop has
+    # one iteration — it is written this way so that adding Codex does not
+    # silently turn one arc's verdict into a cross-pool dollar comparison.
+    by_pool: dict[str, dict[str, list[float]]] = {}
+    for row in billable:
+        tiers = by_pool.setdefault(row["allowance_pool"], {})
+        totals = tiers.setdefault(row["model_tier"], [0.0, 0])
+        totals[0] += row["value"] or 0.0
+        totals[1] += row["calls"]
+
+    # Value is aggregated PER TIER, not per model: a tier's share is the sum of
+    # its models. Grouping by model would split `small` across `claude-haiku-5`
+    # and `claude-haiku-3` and let a single larger frontier model win a
+    # plurality it does not have.
+    pool = max(
+        by_pool,
+        key=lambda p: sum(v[0] for v in by_pool[p].values()),
     )
-    return best["model_tier"], maximum, best["allowance_pool"]
+    tiers = by_pool[pool]
+    best = max(tiers, key=lambda t: (tiers[t][0], tiers[t][1]))
+    maximum = max(tiers, key=lambda t: TIER_ORDINAL[t])
+    return best, maximum, pool
 
 
 def _non_billable_models(conn) -> frozenset[str]:

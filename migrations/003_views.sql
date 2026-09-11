@@ -46,6 +46,14 @@ UNION ALL SELECT
   || 'no information this round — check v_work_type_distribution before reading '
   || 'any verdict.'
 UNION ALL SELECT
+  'score_zero_gap',
+  'The score-0 share does not reproduce W1''s 43.4% — it lands near 22%',
+  'W1 read its six signals by hand; this is a coded reimplementation over a '
+  || 'grown corpus and a privacy-scrubbed text reduction. The gap is REPORTED '
+  || 'and the thresholds were NOT adjusted to close it — tuning until the '
+  || 'headline reappears would fabricate it. Resolving the gap is what the '
+  || 'gold set (M2-prime, R1) is for.'
+UNION ALL SELECT
   'upper_bound',
   'Any reclaimable figure is an UPPER BOUND by construction',
   'It assumes the cheaper model finishes the work in the same number of tokens. '

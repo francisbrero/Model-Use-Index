@@ -19,27 +19,12 @@ every arc. Score prompt units; aggregate to arcs.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 
 # Signal thresholds — W1's, fixed. See the module docstring before touching.
 MIN_DISTINCT_FILES = 5
 MIN_TURNS = 40
 MIN_TEST_RUNS = 2
-
-_DEBUG_LANGUAGE = re.compile(
-    r"\b(?:bug|broken|fail(?:s|ed|ing|ure)?|error|traceback|exception|"
-    r"crash(?:ed|ing)?|regress(?:ion)?|root cause|reproduce|debug(?:ging)?|"
-    r"stack trace|why (?:is|does|isn't|doesn't))\b",
-    re.IGNORECASE,
-)
-
-_SELF_CORRECTION = re.compile(
-    r"\b(?:actually|wait|i was wrong|that's wrong|my mistake|correction|"
-    r"let me fix|on reflection|i mis(?:read|understood|took)|scratch that|"
-    r"that didn't work|revert)\b",
-    re.IGNORECASE,
-)
 
 _TEST_VERBS = frozenset({"pytest", "test", "jest", "vitest", "go", "cargo", "npm"})
 _WRITE_TOOLS = frozenset({"Edit", "Write", "NotebookEdit", "MultiEdit"})
@@ -55,7 +40,13 @@ class SignalInput:
     distinct_files: int = 0
     tool_names: list[str] = field(default_factory=list)
     tool_targets: list[str] = field(default_factory=list)
-    text: str = ""
+    # The two language signals arrive as BOOLEANS, already reduced in
+    # `normalize/`. They are not computed here from text, because the text they
+    # would need is prompt content and must never reach this layer or the store
+    # (invariant 6). Passing the prose down would also have been the quiet way
+    # to leak it into `store.db`.
+    has_debug_language: bool = False
+    has_self_correction: bool = False
 
 
 @dataclass(frozen=True)
@@ -78,15 +69,18 @@ def evaluate(data: SignalInput) -> SignalResult:
     if data.turns >= MIN_TURNS:
         fired.append("turn_count")
 
-    if _DEBUG_LANGUAGE.search(data.text):
+    if data.has_debug_language:
         fired.append("debugging_language")
 
-    if _SELF_CORRECTION.search(data.text):
+    if data.has_self_correction:
         fired.append("self_correction")
 
     if any(name in _SUBAGENT_TOOLS for name in data.tool_names):
         fired.append("subagent_use")
 
+    # Known over-count, named rather than hidden: only the command VERB
+    # survives privacy normalisation, so `npm run build` and `go build` count
+    # here alongside `npm test` and `go test`. Unavoidable under invariant 6.
     test_runs = sum(1 for verb in data.tool_targets if verb in _TEST_VERBS)
     if test_runs >= MIN_TEST_RUNS:
         fired.append("repeated_test_runs")

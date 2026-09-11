@@ -49,6 +49,7 @@ def run_checks(conn: sqlite3.Connection, repo_filter: str, echo) -> int:
     checks.append(_conservation(conn))
     checks.append(_prompt_unit_count(conn, repo_filter))
     checks.append(_duplicate_ratio(conn))
+    checks.append(_score_zero_share(conn, repo_filter))
     checks.extend(_reported(conn, repo_filter))
 
     echo(f"{'target':<40} {'expected':>16} {'actual':>16}  status")
@@ -184,6 +185,52 @@ def _assistant_record_count(conn) -> int:
         if isinstance(record, dict) and record.get("type") == "assistant":
             total += 1
     return total
+
+
+def _score_zero_share(conn, repo_filter) -> Check:
+    """W1's 43.4% — share of Phoenix Opus notional list value in score-0
+    prompt units. REPORTED, not asserted, and deliberately so.
+
+    W1 read its six signals by hand over 1,823 units. This is a code
+    reimplementation of those signals over a grown corpus, and it does not
+    reproduce the figure: it lands near 22%.
+
+    THE THRESHOLDS DO NOT MOVE TO CLOSE THAT GAP. Adjusting a cutoff until
+    43.4% reappears would fabricate the headline, and the number would then be
+    believed — which is the single most likely way this slice goes wrong. The
+    gap is the finding, and the gold set (M2', R1) is what resolves it: W1
+    itself demonstrated two defensible heuristics over the same data
+    disagreeing by three orders of magnitude, so a hand-read and a coded read
+    disagreeing by 2x is precisely the outcome that motivated M2'.
+
+    Two known contributors, neither of which justifies a retune:
+      - The two language signals are PROPORTIONAL here (>=25% of a unit's turns
+        carry the vocabulary). The existential form fires on 78% of units
+        because a unit spans a median 10 turns at ~15% each — it would measure
+        unit length, which `turn_count` already does.
+      - W1's hand-read had the prose in front of it; this reads a scrubbed
+        reduction (invariant 6 forbids storing the text).
+    """
+    row = conn.execute(
+        "SELECT COALESCE(SUM(CASE WHEN c.complexity_score = 0 "
+        "       THEN v.notional_list_value_usd ELSE 0 END), 0) AS zero, "
+        "       COALESCE(SUM(v.notional_list_value_usd), 0) AS total "
+        "FROM v_prompt_unit_value v "
+        "JOIN classification c ON c.unit_id = v.prompt_unit_id "
+        "  AND c.unit_grain = 'prompt_unit' "
+        "JOIN prompt_unit p ON p.id = v.prompt_unit_id "
+        "WHERE p.project_family LIKE ?",
+        (f"%{repo_filter}%",),
+    ).fetchone()
+    share = 100 * row["zero"] / row["total"] if row["total"] else 0.0
+    return Check(
+        "score-0 share of value",
+        "43.4% (W1)",
+        f"{share:.1f}%",
+        None,
+        "REPORTED, never asserted — the gap is a finding for the gold set "
+        "(M2'), not a threshold to tune",
+    )
 
 
 def _reported(conn, repo_filter) -> list[Check]:

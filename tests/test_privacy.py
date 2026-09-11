@@ -18,10 +18,19 @@ from mui.normalize.tools import (
 def test_bash_stores_the_verb_and_never_the_arguments():
     """A command body can carry secrets, hostnames, ticket numbers and the
     content of the operator's work. Only the verb survives."""
+    target = normalise_target("Bash", {"command": "pytest tests/auth --token hunter2"})
+    assert target == "pytest"
+    assert "hunter2" not in target and "auth" not in target
+
+
+def test_an_unrecognised_verb_collapses_to_other():
+    """The verb list is an ALLOWLIST. A first token outside it is still
+    operator-specific — a local script, an internal tool — and this column
+    lands in `store.db`, which gets backed up and opened in Datasette."""
     target = normalise_target(
         "Bash", {"command": "psql postgres://user:hunter2@prod/db -c 'select *'"}
     )
-    assert target == "psql"
+    assert target == "other"
     assert "hunter2" not in target and "prod" not in target
 
 
@@ -29,10 +38,9 @@ def test_bash_verb_strips_a_leading_path():
     assert command_verb("/opt/homebrew/bin/pytest tests/ -k auth") == "pytest"
 
 
-def test_an_unknown_verb_is_truncated_not_passed_through():
-    """An unrecognised first token is still a token from the operator's
-    machine, so it is length-capped rather than trusted."""
-    assert len(command_verb("x" * 200)) <= 32
+def test_an_unknown_verb_never_passes_through():
+    assert command_verb("x" * 200) == "other"
+    assert command_verb("./scripts/deploy-internal-thing.sh") == "other"
 
 
 def test_file_paths_lose_everything_above_the_parent_directory():

@@ -8,13 +8,19 @@ never by editing captured data.
 
 from __future__ import annotations
 
+import bisect
 import contextlib
 import json
 import sqlite3
 from typing import Any
 
 from mui.normalize.pricing import Registry
-from mui.normalize.tools import iter_tool_calls
+from mui.normalize.tools import (
+    LANGUAGE_SHARE_THRESHOLD,
+    iter_tool_calls,
+    language_shares,
+    record_text,
+)
 from mui.normalize.work_unit import (
     ARC_RULE_ID,
     PROMPT_RULE_ID,
@@ -250,14 +256,15 @@ def _write_tool_calls(
 
 
 def _turn_at(turn_times, timestamp):
-    """Index of the last turn at or before `timestamp`."""
-    found = None
-    for ts, index in turn_times:
-        if ts <= timestamp:
-            found = index
-        else:
-            break
-    return found
+    """Index of the last turn at or before `timestamp`.
+
+    Binary search rather than a scan: this runs once per tool_use block, and
+    the biggest sessions here carry thousands of turns and tens of thousands of
+    blocks, which makes the linear version quadratic in the session that needs
+    it most.
+    """
+    position = bisect.bisect_right(turn_times, (timestamp, float("inf")))
+    return turn_times[position - 1][1] if position else None
 
 
 def _write_prompt_units(conn, session_id, turns, raw_records, turn_owner, stats):
@@ -277,6 +284,10 @@ def _write_prompt_units(conn, session_id, turns, raw_records, turn_owner, stats)
     if not boundaries:
         return prompt_owner
 
+    # Prose per prompt unit, for the two language signals. Held only long
+    # enough to reduce to two booleans; never written anywhere (invariant 6).
+    prose = _prose_by_prompt(raw_records, boundaries)
+
     # Walk turns in order, advancing the prompt pointer as timestamps pass it.
     pointer = -1
     members: dict[int, list[int]] = {}
@@ -292,10 +303,14 @@ def _write_prompt_units(conn, session_id, turns, raw_records, turn_owner, stats)
     for pointer_index, turn_indexes in members.items():
         unit_id = f"{session_id}:prompt:{pointer_index}"
         first, last = turn_indexes[0], turn_indexes[-1]
+        debug_share, correction_share = language_shares(prose.get(pointer_index, []))
+        debug = debug_share >= LANGUAGE_SHARE_THRESHOLD
+        correction = correction_share >= LANGUAGE_SHARE_THRESHOLD
         conn.execute(
             "INSERT INTO prompt_unit (id, session_id, work_unit_id, rule_id, "
             "start_turn, end_turn, turns, started_at, ended_at, repo, "
-            "project_family, allowance_pool) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            "project_family, allowance_pool, has_debug_language, "
+            "has_self_correction) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 unit_id,
                 session_id,
@@ -309,11 +324,48 @@ def _write_prompt_units(conn, session_id, turns, raw_records, turn_owner, stats)
                 _repo_of(turns[first].get("cwd")),
                 _project_family(turns[first].get("cwd")),
                 "anthropic-seat",
+                int(debug),
+                int(correction),
             ),
         )
         stats["prompt_units"] += 1
 
     return prompt_owner
+
+
+def _prose_by_prompt(raw_records, boundaries) -> dict[int, list[str]]:
+    """Gather each prompt unit's prose PER TURN, keyed by boundary index.
+
+    Per turn rather than concatenated, because the language signals are
+    proportional — what share of a unit's turns carry the vocabulary — and a
+    single concatenated blob can only answer "did any".
+
+    The text is held only long enough to reduce to two booleans and is never
+    returned to a caller that writes it (invariant 6). Both the user's prompt
+    and the assistant's replies count: W1 read self-correction off the
+    assistant's own output as much as off the user's.
+    """
+    if not boundaries:
+        return {}
+
+    ordered = sorted(
+        (r for r in raw_records if r.get("type") in {"user", "assistant"}),
+        key=lambda r: r.get("timestamp") or "",
+    )
+
+    prose: dict[int, list[str]] = {}
+    pointer = -1
+    for record in ordered:
+        ts = record.get("timestamp") or ""
+        while pointer + 1 < len(boundaries) and boundaries[pointer + 1] <= ts:
+            pointer += 1
+        if pointer < 0:
+            continue
+        text = record_text(record)
+        if text:
+            prose.setdefault(pointer, []).append(text)
+
+    return prose
 
 
 def _insert_work_unit(

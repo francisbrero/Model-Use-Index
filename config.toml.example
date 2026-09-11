@@ -9,23 +9,21 @@
 projects_dir = "~/.claude/projects"
 store = "~/.model-use-index/store.db"
 
-[rules]
-# Bumped whenever anything below changes, because every verdict is keyed on it
-# and a silent rule change would re-value history without a trace.
-version = "provisional-rules-v1"
-
-# W1's six signals, at the PROMPT grain. These thresholds are W1's and are
-# FIXED. If the 43.4% target does not reproduce, that is a finding to report,
-# not a threshold to adjust — tuning until the target falls out fabricates the
-# headline. See `enrich/signals.py`.
-min_distinct_files = 5
-min_turns = 40
-min_test_runs = 2
-
-# PRD §7.3 — three buckets, not ten. Small models are meaningfully worse at
-# ordinal regression than at categorical labelling.
-complexity_low_max = 0
-complexity_medium_max = 2
+# NOTE — the signal thresholds are deliberately NOT configurable here.
+#
+# W1's six signals (>=5 distinct files, >=40 turns, debugging language,
+# self-correction, subagent use, repeated test runs) and the three complexity
+# buckets live in `src/mui/enrich/signals.py`, versioned by `RULES_VERSION` and
+# pinned by tests.
+#
+# That is a decision, not an oversight. The standing risk on this slice is that
+# somebody adjusts a cutoff until W1's 43.4% figure reproduces — which would
+# fabricate the headline, and the number would then be believed. A config knob
+# makes that a one-line edit with no diff and no test failure. In code, it is a
+# reviewed change that breaks a pinned test.
+#
+# If a threshold genuinely needs to move, move it in code, bump RULES_VERSION,
+# and re-run `mui verify` so the effect on every asserted figure is visible.
 
 [ai_activity]
 # PRD §7.0 makes `ai_activity` the REPORTING top level: the report's job is to

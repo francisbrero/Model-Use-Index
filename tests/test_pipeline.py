@@ -12,7 +12,7 @@ import pytest
 
 from mui.collect.transcript import backfill
 from mui.db import connect, migrate
-from mui.enrich.pipeline import enrich
+from mui.enrich.pipeline import _arc_tier, enrich
 from mui.normalize.pipeline import rebuild
 from mui.normalize.pricing import Registry, UnknownModelError
 
@@ -297,3 +297,71 @@ def test_version_pinned_ids_resolve_like_their_unpinned_form(store):
     registry = Registry.load(store)
     assert registry.resolve("claude-opus-5").tier == "frontier"
     assert registry.resolve("claude-opus-5-20260101").tier == "frontier"
+
+
+def _arc_with_calls(store, calls):
+    store.execute(
+        "INSERT INTO work_unit (id, session_id, kind, rule_id, start_turn, "
+        "end_turn, turns, allowance_pool, notional_list_value_usd) "
+        "VALUES ('W','S','arc','r',0,9,10,'anthropic-seat',0)"
+    )
+    for i, (model, tier, value, pool) in enumerate(calls):
+        store.execute(
+            "INSERT INTO api_call (id, session_id, work_unit_id, provider, "
+            "allowance_pool, model, model_tier, input_tokens, output_tokens, "
+            "notional_list_value_usd, registry_version, turn_index, started_at) "
+            "VALUES (?,'S','W','anthropic',?,?,?,0,0,?, 'v', ?, 't')",
+            (f"c{i}", pool, model, tier, value, i),
+        )
+    store.commit()
+
+
+def test_used_tier_aggregates_value_per_tier_not_per_model(store):
+    """`used_tier` is the tier carrying the plurality of notional list value.
+
+    Grouping the vote by MODEL splits a tier's value across its models: two
+    small models at $60 each lose to one frontier model at $100, even though
+    `small` carries $120 of the arc. The corpus is genuinely mixed-model
+    (Haiku sidechains under Opus main threads), so this is reachable, and a
+    wrong `used_tier` changes `tier_delta` and so the verdict.
+    """
+    _arc_with_calls(
+        store,
+        [
+            ("claude-haiku-4-5", "small", 60.0, "anthropic-seat"),
+            ("claude-haiku-3", "small", 60.0, "anthropic-seat"),
+            ("claude-opus-5", "frontier", 100.0, "anthropic-seat"),
+        ],
+    )
+    used, maximum, _ = _arc_tier(store, "W", frozenset())
+    assert used == "small", "small carries $120 against frontier's $100"
+    assert maximum == "frontier", "max_tier still shows the arc is mixed"
+
+
+def test_non_billable_models_are_excluded_from_the_tier_vote(store):
+    """`<synthetic>` rate-limit records carry no tokens and have no ordinal —
+    they are kept in `api_call` (invariant 10b) but must not vote."""
+    _arc_with_calls(
+        store,
+        [
+            ("claude-opus-5", "frontier", 100.0, "anthropic-seat"),
+            ("<synthetic>", "small", 0.0, "anthropic-seat"),
+        ],
+    )
+    used, _, _ = _arc_tier(store, "W", frozenset({"<synthetic>"}))
+    assert used == "frontier"
+
+
+def test_the_tier_vote_counts_each_call_once(store):
+    """Regression on the glob-join double-count: `claude-haiku-4-5-20251001`
+    matches two registry patterns, and joining on a glob returned two rows per
+    call — doubling that tier's weight in this vote."""
+    _arc_with_calls(
+        store,
+        [
+            ("claude-haiku-4-5-20251001", "small", 60.0, "anthropic-seat"),
+            ("claude-opus-5", "frontier", 100.0, "anthropic-seat"),
+        ],
+    )
+    used, _, _ = _arc_tier(store, "W", frozenset())
+    assert used == "frontier", "$60 small must not be doubled to $120"

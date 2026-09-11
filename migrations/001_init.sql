@@ -200,7 +200,12 @@ CREATE INDEX IF NOT EXISTS work_unit_skill   ON work_unit(anchor_skill);
 CREATE TABLE IF NOT EXISTS prompt_unit (
   id             TEXT PRIMARY KEY,
   session_id     TEXT NOT NULL,
-  work_unit_id   TEXT REFERENCES work_unit(id),   -- arc it falls inside
+  -- The arc this unit STARTS in, for grouping only — not containment. A
+  -- prompt unit can straddle an arc boundary, and when it does it is recorded
+  -- against the arc of its first turn. That is harmless because cost lives on
+  -- arcs and on `api_call`, never here; this FK exists so a reader can drill
+  -- from a routine to the prompts inside it.
+  work_unit_id   TEXT REFERENCES work_unit(id),
   rule_id        TEXT NOT NULL,                   -- 'prompt-unit-v1'
   start_turn     INTEGER NOT NULL,
   end_turn       INTEGER NOT NULL,
@@ -209,7 +214,13 @@ CREATE TABLE IF NOT EXISTS prompt_unit (
   ended_at       TEXT,
   repo           TEXT,
   project_family TEXT,
-  allowance_pool TEXT NOT NULL
+  allowance_pool TEXT NOT NULL,
+  -- Two of W1's six complexity signals read the PROSE of a unit. The prose
+  -- itself is never stored (invariant 6) — only the boolean outcome of
+  -- matching a fixed vocabulary against it, from which no content can be
+  -- reconstructed. Computed in `normalize/` and discarded there.
+  has_debug_language     INTEGER NOT NULL DEFAULT 0,
+  has_self_correction    INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS prompt_unit_session   ON prompt_unit(session_id);
