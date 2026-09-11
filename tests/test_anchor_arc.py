@@ -10,9 +10,11 @@ load-bearing claim is comparative — the W1 baseline double-counts $13,118 of
 Opus notional list value while this rule double-counts nothing — and a claim
 that only one rule is in the module is a claim no test can check.
 
-There is no `src/mui` yet (nothing is built — MS §1), so this is the reference
-implementation the normaliser must reproduce. When `normalize/work_unit.py`
-lands, import from it here and delete the local copies.
+The accepted rule now lives in `mui.normalize.work_unit` and is imported here
+(issue #14, M1). The REJECTED candidates stay local to this module on purpose:
+the register's load-bearing claim is comparative — the W1 baseline double-counts
+$13,118 of Opus notional list value while this rule double-counts nothing — and
+a claim that only one rule is in the module is a claim no test can check.
 
 Every dollar figure in this module and its fixture is NOTIONAL LIST VALUE
 (invariant 5).
@@ -23,6 +25,15 @@ import pathlib
 from collections import Counter
 
 import pytest
+
+from mui.normalize.work_unit import (
+    anchor_runs,
+    arcs,
+    claimed_counts,
+    dedup,
+    to_sessions,
+    unattributable,
+)
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures" / "anchor_shapes"
 
@@ -39,89 +50,6 @@ SESSION_IDS = [
     "SYNTH-adjacent-anchors",
     "SYNTH-dup-and-tie",
 ]
-
-
-# --------------------------------------------------------------------------
-# Dedup — invariant 10. One turn per unique API response.
-# --------------------------------------------------------------------------
-
-
-def dedup(records):
-    """Collapse content-block records to unique API responses, keyed by
-    (message.id, requestId), taking max per usage field.
-
-    Claude Code writes one assistant record per content block, each repeating
-    the same `usage` object, and within a group `output_tokens` may differ — a
-    partial streaming snapshot is written before the final count. So max per
-    field, never first-seen (undercounts output) and never last-by-file-order.
-
-    Fields that are *not* usage counts are reconciled across the group rather
-    than taken from whichever block happened to land first: `attributionSkill`
-    and `isSidechain` may be present on some blocks of a response and absent
-    from others, and first-seen would make the result depend on file order.
-    """
-    groups, order = {}, []
-    for position, record in enumerate(records):
-        message = record["message"]
-        usage = message["usage"]
-        key = (message["id"], record.get("requestId"))
-        fields = {
-            "input": usage.get("input_tokens") or 0,
-            "output": usage.get("output_tokens") or 0,
-            "cache_write": usage.get("cache_creation_input_tokens") or 0,
-            "cache_read": usage.get("cache_read_input_tokens") or 0,
-        }
-        if key not in groups:
-            groups[key] = {
-                "message_key": key,
-                "session": record["sessionId"],
-                "skill": record.get("attributionSkill") or None,
-                "sidechain": bool(record.get("isSidechain")),
-                "timestamp": record.get("timestamp"),
-                "position": position,
-                "usage": fields,
-            }
-            order.append(key)
-            continue
-        group = groups[key]
-        for field, value in fields.items():
-            if value > group["usage"][field]:
-                group["usage"][field] = value
-        # any-of, not first-seen: a group is a sidechain turn if any block says so
-        group["sidechain"] = group["sidechain"] or bool(record.get("isSidechain"))
-        if group["skill"] is None and record.get("attributionSkill"):
-            group["skill"] = record["attributionSkill"]
-    return [groups[key] for key in order]
-
-
-def to_sessions(records):
-    """Group deduplicated turns by session, ordered by `(timestamp, message.id)`.
-
-    Order is part of the rule, not an accident of file layout: the arc boundary
-    is "the next anchor", which is only meaningful in time.
-
-    The tie-break is `message.id` rather than file position deliberately: file
-    position is a property of *how the records were read*, not of the records,
-    so ordering on it makes the arc boundary depend on read order — and a
-    normaliser doing `ORDER BY timestamp` in SQL would resolve the same ties
-    differently again. Both keys here come from the record, so every derived
-    number is reproducible from `raw_event` alone (invariant 2b).
-
-    Ties are rare rather than routine: 1 group of 2 turns in 42,528 measured
-    (0.005%), both untagged sidechains, so none can move a boundary today. This
-    is insurance against an irreproducible number, not a fix for a live bug.
-
-    The `or ""` fallbacks are defensive only and deliberately untested: U4REF
-    found `timestamp` present on 80,037/80,037 assistant records, so a fixture
-    for a missing one would assert a shape the transcript writer never produces
-    (same reasoning as the `not skill` guard in `anchor_runs`).
-    """
-    by_session = {}
-    for turn in dedup(records):
-        by_session.setdefault(turn["session"], []).append(turn)
-    for turns in by_session.values():
-        turns.sort(key=lambda t: (t["timestamp"] or "", t["message_key"][0] or ""))
-    return by_session
 
 
 # --------------------------------------------------------------------------
@@ -147,46 +75,8 @@ def arc_value(turns, arc, rates):
 
 
 # --------------------------------------------------------------------------
-# Arc bounding — the U10 rule and the candidates it beat.
+# Rejected candidates. Kept local so the comparison stays executable.
 # --------------------------------------------------------------------------
-
-
-def anchor_runs(turns):
-    """Contiguous runs of the same attributionSkill -> (start, tag_end, skill).
-
-    A tag run with a hole (`a, None, a`) splits into two runs, so it is
-    indistinguishable from a genuine re-invocation. Accepted: the register
-    treats re-invocation as a boundary anyway, so both readings agree.
-    """
-    runs, i, n = [], 0, len(turns)
-    while i < n:
-        skill = turns[i]["skill"]
-        # `not skill` rather than `is None`: an empty tag is not an anchor.
-        # Defensive only — over 81,982 assistant records the field is either
-        # absent or a real value; "" and null never occur (checked 2026-09-09).
-        # Deliberately untested: a fixture for it would assert a shape the
-        # transcript writer does not produce (invariant 7 — parse defensively,
-        # but don't pretend to have evidence you lack).
-        if not skill:
-            i += 1
-            continue
-        j = i
-        while j + 1 < n and turns[j + 1]["skill"] == skill:
-            j += 1
-        runs.append((i, j, skill))
-        i = j + 1
-    return runs
-
-
-def arcs(turns):
-    """`u10-next-anchor-v1`. Anchor -> next anchor of any skill, else session
-    end. Returns [{skill, start, end}] with `end` inclusive."""
-    runs = anchor_runs(turns)
-    out = []
-    for k, (start, _tag_end, skill) in enumerate(runs):
-        end = runs[k + 1][0] - 1 if k + 1 < len(runs) else len(turns) - 1
-        out.append({"skill": skill, "start": start, "end": end})
-    return out
 
 
 def arcs_w1_baseline(turns):
@@ -205,22 +95,6 @@ def arcs_tagged_only(turns):
         {"skill": skill, "start": start, "end": tag_end}
         for start, tag_end, skill in anchor_runs(turns)
     ]
-
-
-def unattributable(turns):
-    """Turn indices in no arc: work before a session's first anchor, or every
-    turn when the session has no anchor at all."""
-    runs = anchor_runs(turns)
-    return list(range(runs[0][0])) if runs else list(range(len(turns)))
-
-
-def claimed_counts(turns, rule):
-    """How many arcs claim each turn index. 1 everywhere is correct; >1 is a
-    double-count; 0 means the turn is in the remainder."""
-    counts = Counter()
-    for arc in rule(turns):
-        counts.update(range(arc["start"], arc["end"] + 1))
-    return counts
 
 
 # --------------------------------------------------------------------------
