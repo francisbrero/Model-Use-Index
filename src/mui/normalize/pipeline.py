@@ -170,6 +170,11 @@ def rebuild(conn: sqlite3.Connection, registry: Registry | None = None) -> dict:
     # time limit.
     conn.execute("ANALYZE")
 
+    # Fold the WAL back into the main file so a reader opening the store
+    # straight after a run is not reading across a large journal. Cheap, and it
+    # keeps `mui open` predictable.
+    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+
     return stats
 
 

@@ -60,6 +60,12 @@ CREATE TABLE IF NOT EXISTS normalize_run (
 
 CREATE INDEX IF NOT EXISTS raw_event_session ON raw_event(session_id);
 CREATE INDEX IF NOT EXISTS raw_event_source  ON raw_event(source);
+-- `v_data_quality` reads MAX(ingested_at) to answer "when did ingestion last
+-- run", which is the staleness check R3 exists for. Without this index that is
+-- a full scan of every payload — 249ms over a real 832MB store, enough on its
+-- own to trip Datasette's 1s SQL time limit and leave the data-quality view as
+-- the one page that never renders.
+CREATE INDEX IF NOT EXISTS raw_event_ingested ON raw_event(ingested_at);
 
 -- ---------------------------------------------------------------------------
 -- Registry. Rates are versioned data, never inline constants in an analysis
