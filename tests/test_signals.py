@@ -14,7 +14,11 @@ from mui.enrich.signals import (
     evaluate,
     to_complexity,
 )
-from mui.normalize.tools import language_flags
+from mui.normalize.tools import (
+    LANGUAGE_SHARE_THRESHOLD,
+    language_flags,
+    language_shares,
+)
 
 
 def test_no_signals_is_score_zero():
@@ -131,3 +135,45 @@ def test_complexity_bucketing(score, expected):
     """PRD §7.3 — three buckets, not ten. Part of `rules_version`: change this
     and every verdict changes."""
     assert to_complexity(score) == expected
+
+
+def test_the_language_share_threshold_is_pinned():
+    """0.25, and it is a JUDGEMENT CALL rather than a measured breakpoint.
+
+    W1 read its units by hand and left no threshold to inherit. Over 2,674 real
+    prompt units the fire rate moves smoothly from 72% (any turn) to 7% (half
+    the turns) with nothing to discover in between.
+
+    0.25 puts both language signals in the same range as the other four
+    (subagent use 24.9%, turn count 11.3%, distinct files 9.8%) so that no one
+    signal dominates the score. Pinned here so that moving it is a visible,
+    reviewed change — the standing risk on this slice is somebody nudging a
+    cutoff until W1's 43.4% reappears, which would fabricate the headline.
+    """
+    assert LANGUAGE_SHARE_THRESHOLD == 0.25
+
+
+def test_a_unit_is_scored_by_shape_not_by_length():
+    """One debugging turn in twenty does not make a debugging unit.
+
+    The existential form ("did any turn match") fires on 72% of real units,
+    because units are long — so it measures length, and `turn_count` is already
+    a separate signal. Two signals counting the same property would double-count
+    it under different names.
+    """
+    one_in_twenty = ["the build failed"] + ["routine progress"] * 19
+    debug_share, _ = language_shares(one_in_twenty)
+    assert debug_share < LANGUAGE_SHARE_THRESHOLD
+
+    half = ["the build failed"] * 10 + ["routine progress"] * 10
+    debug_share, _ = language_shares(half)
+    assert debug_share >= LANGUAGE_SHARE_THRESHOLD
+
+
+def test_language_shares_ignores_empty_turns():
+    """A tool-only turn has no prose and must not dilute the denominator."""
+    assert language_shares(["the build failed", "", "   "])[0] == 1.0
+
+
+def test_language_shares_of_nothing_is_zero_not_an_error():
+    assert language_shares([]) == (0.0, 0.0)

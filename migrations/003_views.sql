@@ -54,6 +54,14 @@ UNION ALL SELECT
   || 'headline reappears would fabricate it. Resolving the gap is what the '
   || 'gold set (M2-prime, R1) is for.'
 UNION ALL SELECT
+  'language_threshold_is_judgement',
+  'Two of the six signals depend on a threshold nobody measured',
+  'The debugging and self-correction signals fire when at least 25% of a '
+  || 'unit turns carry the vocabulary. W1 read its units by hand and left no '
+  || 'threshold to inherit, and the fire rate moves smoothly from 72% to 7% '
+  || 'with no natural breakpoint. 25% was chosen so neither signal dominates '
+  || 'the other four, which is a defensible reason rather than a measured one.'
+UNION ALL SELECT
   'upper_bound',
   'Any reclaimable figure is an UPPER BOUND by construction',
   'It assumes the cheaper model finishes the work in the same number of tokens. '

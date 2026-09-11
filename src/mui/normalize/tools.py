@@ -167,9 +167,37 @@ _SELF_CORRECTION = re.compile(
 
 # A unit spans many turns (median 10, p90 43), and each of W1's regexes fires
 # on ~15% of turns in isolation. Asking "did ANY turn match" therefore fires on
-# ~78% of units — the signal stops describing the unit and starts describing
-# its length. So a unit must be debugging-SHAPED: at least this share of its
-# turns has to carry the language.
+# ~72% of units — the signal stops describing the unit and starts describing
+# its length, which `turn_count` already measures. So a unit must be
+# debugging-SHAPED: at least this share of its turns has to carry the language.
+#
+# THIS NUMBER IS A JUDGEMENT CALL, AND IT IS THE WEAKEST PART OF THE SLICE'S
+# SCORING. It is stated plainly rather than defended, because W1 gave no
+# threshold to inherit — it read the units by hand.
+#
+# Measured over 2,674 real prompt units, the fire rate moves smoothly with no
+# natural breakpoint to discover:
+#
+#   threshold   debug%   self-correction%
+#     any        72.4       69.7
+#     0.10       62.8       56.1
+#     0.15       51.9       42.1
+#     0.20       43.7       33.5
+#     0.25       34.3       25.4      <- chosen
+#     0.33       22.6       15.9
+#     0.40       13.9        9.3
+#     0.50       10.2        7.0
+#
+# 0.25 was chosen because it puts both signals in the same range as the other
+# four (subagent use 24.9%, turn count 11.3%, distinct files 9.8%), so no
+# single signal dominates the six-signal score. That is a defensible reason,
+# not a measured one.
+#
+# It was NOT chosen to make the score-0 share reproduce W1's 43.4%. It does not
+# — the result is 21.8%, and the gap is reported as a finding (`v_caveats`
+# row `score_zero_gap`). Choosing this threshold by whether the headline
+# reappeared is precisely the failure mode that would fabricate it; the gold
+# set (M2-prime, R1) is what replaces this judgement with evidence.
 LANGUAGE_SHARE_THRESHOLD = 0.25
 
 
