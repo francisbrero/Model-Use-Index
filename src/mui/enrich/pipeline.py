@@ -127,6 +127,15 @@ def _enrich_work_unit(
     prompt thresholds over the whole arc."""
     # Resolved by TURN-RANGE OVERLAP, not by `prompt_unit.work_unit_id`.
     #
+    # A prompt unit may therefore inform several arcs, which is correct: the
+    # same request drove all of them, so its evidence describes each. Note that
+    # only the SCORE is shared this way — cost is never shared, because it
+    # lives on `api_call`, each row of which belongs to exactly one arc. So
+    # this cannot double-count value (invariant 10).
+    #
+    # Measured: 2,078 of 2,189 prompt units overlap exactly one arc, and the
+    # multi-arc tail is a long prompt driving repeated skill invocations.
+    #
     # That FK records the arc a prompt unit STARTS in, and one prompt routinely
     # spans several arcs: the user asks once, the assistant invokes two skills,
     # and each invocation opens a new arc without a new prompt. Reading the FK

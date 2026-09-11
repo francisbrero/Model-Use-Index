@@ -141,8 +141,14 @@ def _opaque(text: str) -> str:
     """A short stable digest. Preserves cardinality, reveals nothing.
 
     `distinct_files` only needs to tell two files apart, never to know what
-    either is called. Eight hex characters make a collision irrelevant at this
-    scale while making the original unrecoverable.
+    either is called.
+
+    Eight hex characters is 2^32. Measured on this corpus there are 1,657
+    distinct targets, which puts the expected number of collisions at 0.0003 —
+    a collision would merge two files into one and nudge `distinct_files` down
+    by one on a single unit, so the consequence is negligible even in the
+    unlikely case. The digest is one-way, so the original name is not
+    recoverable from the store.
     """
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:8]
 
