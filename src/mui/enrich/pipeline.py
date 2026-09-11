@@ -32,7 +32,13 @@ _URL_TOOLS = frozenset({"WebFetch", "WebSearch"})
 def enrich(conn: sqlite3.Connection, activity_map: dict | None = None) -> dict:
     """Classify every work unit and write its verdict. Idempotent."""
     activity_map = activity_map if activity_map is not None else load_activity_map()
-    stats = {"prompt_units": 0, "work_units": 0, "score_zero": 0}
+    stats = {
+        "prompt_units": 0,
+        "work_units": 0,
+        "verdicts": 0,
+        "unscored_work_units": 0,
+        "score_zero": 0,
+    }
 
     prompt_signals = _score_prompt_units(conn, stats)
     non_billable = _non_billable_models(conn)
@@ -71,6 +77,16 @@ def enrich(conn: sqlite3.Connection, activity_map: dict | None = None) -> dict:
             _enrich_work_unit(
                 conn, row, prompt_signals, activity_map, stats, non_billable
             )
+
+        # Write the unscored count back to the run row `normalize/` opened.
+        # It is discovered here, one phase later, and a counter that stays at
+        # its schema default is a canary that cannot fire — the exact defect
+        # `parse_degraded` had (invariant 7, R3).
+        conn.execute(
+            "UPDATE normalize_run SET unscored_arcs = ? "
+            "WHERE id = (SELECT MAX(id) FROM normalize_run)",
+            (stats["unscored_work_units"],),
+        )
 
     return stats
 
@@ -160,7 +176,7 @@ def _enrich_work_unit(
     # assign a tier to.
     if not scores:
         _insert_unscored(conn, row, activity_map)
-        stats["unscored_work_units"] = stats.get("unscored_work_units", 0) + 1
+        stats["unscored_work_units"] += 1
         return
 
     # MAX of the per-unit scores, not the union of their fired signals. The
@@ -189,10 +205,18 @@ def _enrich_work_unit(
     # One verdict PER POOL. A verdict means "scarce headroom in THIS pool was
     # spent on work a cheaper tier in THIS pool would have handled" (PRD §8.5),
     # so an arc spanning two pools has two of them and never one blended row.
-    for pool, (used, maximum) in _arc_tier(conn, row["id"], non_billable).items():
+    votes = _arc_tier(conn, row["id"], non_billable)
+    for pool, (used, maximum) in votes.items():
         _write_verdict(
             conn, row["id"], classification, used, maximum, pool, len(scores)
         )
+        # Verdicts are per pool; work units are not. Counting them together
+        # would make one arc spanning two pools read as two work units — a
+        # figure that mixes grains across pools, which is the shape invariant 4
+        # exists to prevent. Inert on a single-pool corpus, wrong the moment
+        # Codex lands.
+        stats["verdicts"] += 1
+    if votes:
         stats["work_units"] += 1
 
 
@@ -339,7 +363,13 @@ def _arc_tier(conn, work_unit_id, non_billable: frozenset[str]):
     # frontier model win a plurality it does not have.
     out = {}
     for pool, tiers in by_pool.items():
-        best = max(tiers, key=lambda t: (tiers[t][0], tiers[t][1]))
+        # Third key is the tier ordinal, so an exact tie on both value and
+        # call count resolves to the higher tier rather than to dict insertion
+        # order. Vanishingly unlikely with float sums, but a derived number
+        # whose value depends on read order is not reproducible from
+        # `raw_event` alone (invariant 2b) — the same reasoning that makes
+        # `(timestamp, message.id)` the turn order.
+        best = max(tiers, key=lambda t: (tiers[t][0], tiers[t][1], TIER_ORDINAL[t]))
         maximum = max(tiers, key=lambda t: TIER_ORDINAL[t])
         out[pool] = (best, maximum)
     return out

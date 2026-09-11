@@ -447,10 +447,113 @@ def test_an_arc_spanning_two_pools_gets_a_verdict_for_each(store):
     no meaning. A verdict is scoped to the pool whose headroom was spent
     (PRD §8.5), so an arc touching two pools has two verdicts.
     """
-    _arc_with_calls(store, [
-        ("claude-opus-5", "frontier", 100.0, "anthropic-seat"),
-        ("gpt-5-codex", "frontier", 500.0, "openai-seat"),
-    ])
+    _arc_with_calls(
+        store,
+        [
+            ("claude-opus-5", "frontier", 100.0, "anthropic-seat"),
+            ("gpt-5-codex", "frontier", 500.0, "openai-seat"),
+        ],
+    )
     votes = _arc_tier(store, "W", frozenset())
     assert set(votes) == {"anthropic-seat", "openai-seat"}
     assert votes["anthropic-seat"][0] == "frontier"
+
+
+def test_an_arc_no_prompt_covers_gets_no_verdict(store):
+    """The load-bearing property of the round-2 fix, pinned.
+
+    An arc with no covering prompt unit has NO EVIDENCE to score. Scoring it 0
+    reads as `Low`, and `Agentic/Low` against Opus reads `Overprovisioned` —
+    which is how 140 verdicts on the real corpus were manufactured out of
+    missing data rather than out of the work. That is R2's failure shape: a
+    confident finding that dissolves the moment anyone checks it.
+
+    So the arc is classified `Unscored` for visibility and gets no verdict at
+    all. A refactor that quietly restored `complexity_score = 0` here would
+    regress straight back to fabricated verdicts with a green suite, which is
+    what this test exists to prevent.
+    """
+    store.execute(
+        "INSERT INTO work_unit (id, session_id, kind, rule_id, anchor_skill, "
+        "start_turn, end_turn, turns, allowance_pool, notional_list_value_usd) "
+        "VALUES ('ORPHAN','S2','arc','r','skillX',0,5,6,'anthropic-seat',9.0)"
+    )
+    store.execute(
+        "INSERT INTO api_call (id, session_id, work_unit_id, provider, "
+        "allowance_pool, model, model_tier, input_tokens, output_tokens, "
+        "notional_list_value_usd, registry_version, turn_index, started_at) "
+        "VALUES ('ok1','S2','ORPHAN','anthropic','anthropic-seat',"
+        "'claude-opus-5','frontier',0,0,9.0,'v',0,'t')"
+    )
+    store.commit()
+
+    enrich(store, activity_map={})
+
+    row = store.execute(
+        "SELECT task_complexity, complexity_score FROM classification "
+        "WHERE unit_id = 'ORPHAN' AND unit_grain = 'work_unit'"
+    ).fetchone()
+    assert row["task_complexity"] == "Unscored", "absence is not simplicity"
+    assert row["complexity_score"] is None, "no score, not a score of zero"
+
+    verdicts = store.execute(
+        "SELECT COUNT(*) FROM verdict WHERE work_unit_id = 'ORPHAN'"
+    ).fetchone()[0]
+    assert verdicts == 0, "no verdict may be produced from missing evidence"
+
+
+def test_unscored_arcs_are_a_labelled_row_not_a_silent_absence(store):
+    """They hold real notional list value and must stay visible in any
+    denominator — but carry no verdict, and none should be inferred."""
+    store.execute(
+        "INSERT INTO work_unit (id, session_id, kind, rule_id, anchor_skill, "
+        "start_turn, end_turn, turns, allowance_pool, notional_list_value_usd) "
+        "VALUES ('ORPHAN','S2','arc','r','skillX',0,5,6,'anthropic-seat',9.0)"
+    )
+    store.execute(
+        "INSERT INTO api_call (id, session_id, work_unit_id, provider, "
+        "allowance_pool, model, model_tier, input_tokens, output_tokens, "
+        "notional_list_value_usd, registry_version, turn_index, started_at) "
+        "VALUES ('ok1','S2','ORPHAN','anthropic','anthropic-seat',"
+        "'claude-opus-5','frontier',0,0,9.0,'v',0,'t')"
+    )
+    store.commit()
+    enrich(store, activity_map={})
+
+    listed = store.execute(
+        "SELECT id, notional_list_value_usd FROM v_unscored_arcs"
+    ).fetchall()
+    assert [r["id"] for r in listed] == ["ORPHAN"]
+    assert listed[0]["notional_list_value_usd"] == 9.0
+
+
+def test_the_unscored_counter_can_actually_fire(store):
+    """A canary reporting a permanently clean bill of health is worse than no
+    canary — it is indistinguishable from a healthy system (R3).
+
+    `normalize_run.unscored_arcs` is written by `normalize/` and filled in by
+    `enrich/` one phase later, so it is exactly the kind of counter that ends
+    up stuck at its schema default.
+    """
+    store.execute(
+        "INSERT INTO work_unit (id, session_id, kind, rule_id, anchor_skill, "
+        "start_turn, end_turn, turns, allowance_pool, notional_list_value_usd) "
+        "VALUES ('ORPHAN','S2','arc','r','skillX',0,5,6,'anthropic-seat',9.0)"
+    )
+    store.execute(
+        "INSERT INTO api_call (id, session_id, work_unit_id, provider, "
+        "allowance_pool, model, model_tier, input_tokens, output_tokens, "
+        "notional_list_value_usd, registry_version, turn_index, started_at) "
+        "VALUES ('ok1','S2','ORPHAN','anthropic','anthropic-seat',"
+        "'claude-opus-5','frontier',0,0,9.0,'v',0,'t')"
+    )
+    store.commit()
+    stats = enrich(store, activity_map={})
+    assert stats["unscored_work_units"] >= 1
+
+    reported = store.execute(
+        "SELECT unscored_arcs_last_run FROM v_data_quality"
+    ).fetchone()[0]
+    assert reported == stats["unscored_work_units"], (
+        "the view must report what the run actually found"
+    )
