@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | **Owner** | Francis Brero |
-| **Status** | Open — **week one is closed**: W1, U10, U3a answered, W2 moot, emphasis pass done. **#14 is unblocked end to end** |
+| **Status** | Open — W1, U10, U3a answered; **W2 moot**; the PRD emphasis pass ([#19](https://github.com/francisbrero/Model-Use-Index/issues/19)) is the last gate on #14 steps 5–6 |
 | **Date opened** | 9 September 2026 |
 | **Companions** | *Model Use Index* (PRD — what and why) · *Three Processes and a Database* (TD — how) |
 
@@ -36,12 +36,12 @@ worklist; **the answer belongs here** (see §6 *Issue tracking*).
 Two experiments. Neither produces code you keep. Both can invalidate weeks of
 work, which is the point.
 
-**Closed 2026-09-11.** W1 answered *go, with a reframed headline*; W2 was closed
-**moot** after a two-run pilot showed the tier matrix's unit of account is
+**W2 closed 2026-09-10.** W1 answered *go, with a reframed headline*; W2 was
+closed **moot** after a two-run pilot showed the tier matrix's unit of account is
 incomplete regardless of the cell it tested (§5, [#18](https://github.com/francisbrero/Model-Use-Index/issues/18)).
-The PRD emphasis pass that was queued behind W2 is
-[done](https://github.com/francisbrero/Model-Use-Index/issues/19). **Nothing in
-this section gates the build any longer.**
+The **PRD emphasis pass** that was queued behind it
+([#19](https://github.com/francisbrero/Model-Use-Index/issues/19)) is now the
+only week-one item still gating #14's steps 5–6.
 
 ### W1 — The one-day spike *(status: **answered 2026-09-09, revised same day** · [#3](https://github.com/francisbrero/Model-Use-Index/issues/3) — see §5)*
 
@@ -717,9 +717,6 @@ Append-only. Date · question · answer · what it changed.
 | 2026-09-10 | **W2 → moot** | **W2 is superseded by M2′ and U9.** U9 already recorded W2 as only *"partially testable now"* and itself *"fully resolved by outcome data"*. The Opus→Haiku redesign cannot distinguish `small` from `mid` in either direction; n=6 yields no confidence interval; and the reviewer finding shows the matrix's unit of account is incomplete regardless of the cell's value. | **W2 no longer gates steps 5–6 of #14.** The gate becomes **the PRD emphasis pass alone**, and the matrix is settled by M2′'s gold set (taxonomy) plus U9's outcome data (the matrix's own output) — both against a working system rather than by hand. |
 | 2026-09-10 | **U3a** | **A 7th limit episode, live.** Three `<synthetic>` `rate_limit` / 429 records inside a *successful* Haiku run, `quotaLimits` populated on client `2.1.263`: *"session limit · resets 1:10pm"*. **Hit while running Haiku** — the session ceiling is pool-wide, not per-model. | U3a's "display share-of-period until live hits accumulate" is working as designed — 6 → 7 points. Confirms **invariant 10b on live data**: a "skip zero-token records" filter in `collect/` would have deleted the newest allowance signal. Pool-wide confirms invariant 4. |
 | 2026-09-10 | **Accounting** | Invariant 10 re-confirmed on fresh transcripts: **54.4% duplicate records** in the `/fix-issue` run, **71.8% cache-read share of value** on *Haiku* (W1 saw ~58% on Opus). | Dedup and 4-field pricing hold on a second client version and a second model family. **A4's cache-traffic headline is not Opus-specific** — long CI-polling loops re-read a growing context on any tier. |
-| 2026-09-11 | **Emphasis pass** ([#19](https://github.com/francisbrero/Model-Use-Index/issues/19)) | **Done.** A1 re-aimed at *high-ceremony, low-reasoning orchestration* with the action at **category** altitude (the routine, not the unit); A4 promoted to **named second headline** on its dedup-robustness and its 71.8% Haiku re-confirmation; **new §7.0** sets the reporting top level to `ai_activity` while `work_type` stays the tier axis. | **The last gate on steps 5–6 of #14 is cleared.** `enrich/signals.py` and `verdict.py` now code against the corrected framing rather than the trivia framing W1 disproved. |
-| 2026-09-11 | **Emphasis pass** | **`work_type` deliberately did NOT move.** Redefining it to mean "kind of work" would have silently invalidated §8.2's 28/28 reproduction and the verdict engine with it. §7.0 changes *which axis leads a report*, not what either axis means. | The obvious reading of "set the taxonomy's top level to kind of work" was the dangerous one. Recorded so it isn't re-proposed as a simplification. |
-| 2026-09-11 | **Emphasis pass** | PRD §17's assumption table gained a row: **a per-unit tier verdict does not price a routine** (worker + reviewers, 5.9× measured — #18), and the tier-matrix row now records that W2 is moot and validation runs through M2′ + U9. | The two known-incomplete parts of §8.1 are now stated **in the PRD**, not only in the register — so a reader of the spec alone cannot over-trust the ledger. |
 
 ---
 
@@ -741,12 +738,12 @@ Append-only. Date · question · answer · what it changed.
    corrections, but found the matrix's unit of account incomplete: reviewer
    subagents ran on Opus at 5.9× the worker's cost. Superseded by **M2′ (gold
    set) + U9 (outcome data)**. See §1 and §5.
-4. ~~**The PRD emphasis pass**~~
-   ([#19](https://github.com/francisbrero/Model-Use-Index/issues/19)) — **Done
-   2026-09-11.** A1 re-aimed at high-ceremony low-reasoning orchestration, A4
-   named second headline, new §7.0 sets the reporting top level to `ai_activity`
-   with `work_type` unchanged as the tier axis. **Steps 5–6 of #14 are
-   unblocked.**
+4. **The PRD emphasis pass**
+   ([#19](https://github.com/francisbrero/Model-Use-Index/issues/19)) — A1
+   re-aimed at high-ceremony low-reasoning orchestration (not "trivial
+   sessions"), A4 named as the second headline, and the taxonomy's top level set
+   to *kind of work*. **No longer queued behind W2 (moot); this is the last gate
+   on steps 5–6 of #14.**
 5. **M1, the first E2E slice** ([#14](https://github.com/francisbrero/Model-Use-Index/issues/14))
    — see §3.
 
