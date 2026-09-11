@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | **Owner** | Francis Brero |
-| **Status** | Open — W1, U10 and U3a answered; **W2 is the last week-one gate**; slice scoped (#14) |
+| **Status** | Open — **week one is closed**: W1, U10, U3a answered, W2 moot, emphasis pass done. **#14 is unblocked end to end** |
 | **Date opened** | 9 September 2026 |
 | **Companions** | *Model Use Index* (PRD — what and why) · *Three Processes and a Database* (TD — how) |
 
@@ -35,6 +35,13 @@ worklist; **the answer belongs here** (see §6 *Issue tracking*).
 
 Two experiments. Neither produces code you keep. Both can invalidate weeks of
 work, which is the point.
+
+**Closed 2026-09-11.** W1 answered *go, with a reframed headline*; W2 was closed
+**moot** after a two-run pilot showed the tier matrix's unit of account is
+incomplete regardless of the cell it tested (§5, [#18](https://github.com/francisbrero/Model-Use-Index/issues/18)).
+The PRD emphasis pass that was queued behind W2 is
+[done](https://github.com/francisbrero/Model-Use-Index/issues/19). **Nothing in
+this section gates the build any longer.**
 
 ### W1 — The one-day spike *(status: **answered 2026-09-09, revised same day** · [#3](https://github.com/francisbrero/Model-Use-Index/issues/3) — see §5)*
 
@@ -175,7 +182,7 @@ holds $3,844 across 573 sessions, separate from any repo directory.
 
 The spike script was deleted, per the issue.
 
-### W2 — Test the central hypothesis by hand *(status: open · [#4](https://github.com/francisbrero/Model-Use-Index/issues/4))*
+### W2 — Test the central hypothesis by hand *(status: **moot 2026-09-10** — superseded by M2′ + U9 after a 2-run pilot · [#4](https://github.com/francisbrero/Model-Use-Index/issues/4) — see §5)*
 
 **The tier matrix came from a screenshot of somebody else's report.** It
 reproduces that report 28/28 — which proves fidelity to the source, not that the
@@ -189,6 +196,25 @@ Haiku by hand. Do they land?
 Half a day, and it validates or kills the central hypothesis before a line of the
 tool is written. **The finding you are most excited about is the one with the
 least evidence behind it.** Correct that now rather than in Phase 3.
+
+**Closed moot 2026-09-10 after a two-run pilot.** Both runs completed on Haiku
+with zero corrections — but the pilot also found that the `/fix-issue` reviewer
+subagents ran on **Opus**, at 5.9× the Haiku worker's cost, making the real
+saving 2.2× rather than 15×. **The tier matrix scores a work unit; a routine's
+cost is worker + reviewers.** Since the matrix's unit of account is incomplete
+regardless of what the cell says, and U9 already recorded W2 as only *partially
+testable* and itself *fully resolved by outcome data*, the cell is settled by
+**M2′'s gold set and U9** against a working system rather than by six hand-runs.
+**W2 no longer gates steps 5–6 of #14; the PRD emphasis pass alone does.**
+
+**Redesigned 2026-09-09 — the Sonnet pool does not exist.** 97.9% of Sonnet
+records are subagent turns; only 78 main-agent records survive, across two
+one-shot Q&A sessions. The control is therefore **Opus, not Sonnet**, which
+weakens the possible conclusion: Haiku failing means *Haiku cannot do this*, not
+*Haiku is worse than Sonnet*. Candidate selection is done — 227 work units in
+band, six selected, verdict rule fixed in advance in
+[`phase0/w2-worklist.md`](../phase0/w2-worklist.md). **What remains is the six
+hand-runs, which is the half-day and cannot be automated.**
 
 ---
 
@@ -447,8 +473,9 @@ the loader is right before trusting anything else it says.
 - **Cannot be shortcut.** No amount of prompt work substitutes for 200 hand-labelled rows.
 
 #### U9 · Is the tier matrix right? `open until Phase 3`
-- **Partially testable now** — see W2.
+- ~~**Partially testable now** — see W2.~~ **W2 is moot (2026-09-10);** its two-run pilot is in §5 as `W2-pilot`. U9 now owns the question outright.
 - **Fully resolved by:** outcome data. Do `Acceptable (downgrade candidate)` rows actually show clean outcomes? If a tier assignment consistently produces under-provisioning signals, the matrix is wrong, not the run.
+- **New sub-question from the pilot:** the matrix scores a *work unit*, but a routine's cost is **worker + reviewers**, and reviewer subagents take their model from the agent definition rather than the session. Measured once at **5.9× the worker** — so a per-unit tier verdict does not say what a downgrade saves. Tracked as [#18](https://github.com/francisbrero/Model-Use-Index/issues/18), to be answered **after M1** (generalising it needs real work units); **not** a slice blocker.
 
 ---
 
@@ -677,6 +704,22 @@ Append-only. Date · question · answer · what it changed.
 | 2026-09-09 | **U3a** | **A structured `quotaLimits` object exists — but only on client `2.1.245` (1 of 29).** `{status, resetsAt (unix epoch), rateLimitType: "seven_day", unifiedRateLimitFallbackAvailable, overageStatus, overageDisabledReason, isUsingOverage}`. The other 28 (`2.1.220`) carry the reset only as UI display text — local wall-clock, tz-named, no date on the 5-hour form. | **Key the allowance model on `quotaLimits`; parse text only as fallback.** Invariant 7 in miniature — the good field arrived in a point release, so record `version` on every limit-hit row. |
 | 2026-09-09 | **U3a** | **Go/no-go: qualified go — backfill for the *shape*, live capture for the *fit*.** 6 boundary points, with 75–2,097 deduped assistant records in the 5h preceding each, is enough to build and sanity-check `enrich/allowance.py`; it is not enough to fit a ceiling with a usable interval (4 of 6 fall inside one 42-hour stretch, 1 is a spend limit — a different mechanism). | **Build the fit against backfill; display share-of-period until live hits accumulate** — `U3`'s stated fallback stands, and M1's no-headroom constraint is unchanged. The compression lands on *development*, not on calibration convergence. |
 | 2026-09-09 | **U3a** | `rate_limit` (29) is at parity with `server_error` (28); also `authentication_failed` (4), `oauth_org_not_allowed` (1), `invalid_request` (1). **3 of 29 limit hits are `isSidechain: true`.** | The normaliser must not read "an error record" as "a limit hit" — capture `error` as an enum. Subagents hit the ceiling too, so limit accounting is **per-pool, not per-session** (invariant 4 · `U2`/`U8`). |
+| 2026-09-09 | **W2** | **W2 cannot run as written — the Sonnet pool does not exist.** 3,730 Sonnet assistant records, but **3,652 (97.9%) are `isSidechain: true`** (subagent turns, one `subagents` directory). Only **78 main-agent records across 2 sessions**, both one-shot Q&A (`Retrieval / Low`), neither agentic. | **Method redesigned to Opus→Haiku** (operator call). Consequence carried forward: a Haiku failure means *"Haiku cannot do this"*, not *"Haiku is worse than Sonnet"* — so the cell may move to `mid` only after a confirming Sonnet run the history cannot supply. |
+| 2026-09-09 | **W2** | **The `Agentic / Medium` band is 227 of 750 Phoenix work units, $3,887.59 notional list value**; median unit $12.55 / 18 tool calls / 32 turns. 150 have self-describing prompts; 77 are continuations (`ok`, `approved`) — real work, not restatable, kept in the denominator. | Pool is ample. Worklist of 20 candidates and 6 selected runs in [`phase0/w2-worklist.md`](../phase0/w2-worklist.md), with a **verdict rule fixed in advance** so the result isn't read to taste. |
+| 2026-09-09 | **W2** | The band is dominated by `gh`, `git`, `argocd`, `kubectl`, `pnpm` — release orchestration and CI shepherding, often triggered by a one-word approval. | **Independent corroboration of W1's reframed headline** from a different filter over the same corpus: the volume in the cell under test *is* high-ceremony low-reasoning orchestration. |
+| 2026-09-09 | **W2** | Mutating work had to be detected via **`Bash` verbs**, not `Edit`/`Write` — bypass-mode agents edit through `sed`/heredocs. An `Edit`-only filter would have mis-sized the band. | W1's false-positive trap recurred immediately in a second, unrelated analysis. Any taxonomy rule must classify `Bash` verbs; this is now twice-observed, not a one-off. |
+| 2026-09-09 | **W2** | **The Opus control limits *both* verdict branches, not just failure.** Success shows Haiku handled tasks *selected from Opus-run history*, which may be Opus-shaped; failure shows Haiku is insufficient but never that `mid` is right. | Verdict table rewritten: a ≤2 result makes the cell **contested, not `mid`**, and **any PRD §8.1 edit is a separate PR** once evidence exists. An earlier draft told you to revise §8.1 *and* treat the result as unsettled — a contradiction, now removed. |
+| 2026-09-09 | **W2** | All six selected tasks are release/CI orchestration. Representative of the band as it occurs, but narrower than the cell. | The result will speak to **agentic orchestration**, not to `Agentic / Medium` in full. Scope must be stated in the outcome row, or the test will be over-read. |
+| 2026-09-09 | **W2** | Read-only partial runs (where no live equivalent exists) **cannot score `completed`** and are not on the same scale as full runs. | Scored separately as `assembled-correct`/`assembled-wrong` and reported apart from the completion tally; which tasks are read-only is decided **before** running, so the denominator isn't picked after seeing results. |
+| 2026-09-09 | **Process** | The repo is **public**; the first worklist draft carried internal Jira ids, a release version and a service name. | De-identified to shapes; rows stay resolvable locally by date + cost + tool count. **Invariant 6 applies to analysis deliverables, not just fixtures and transcripts** — outcome rows must stay de-identified too. |
+| 2026-09-10 | **W2-pilot** | **Two live Haiku runs, both completed, zero corrections.** `/jira-to-github` (53 tool calls, 79 turns, in band) filed a clean issue; `/fix-issue` (107 calls, 182 turns, **out of band**) shipped a PR with all required CI green. Operator confirmed both interventions were a gate answer and scope he'd have given Opus too — **not** corrections. | Real evidence for `small`, **but not a cell change**: n=2, self-selected rather than drawn from the band, one out of band. Recorded as `W2-pilot` per the worklist's pre-fixed verdict rule. |
+| 2026-09-10 | **W2-pilot** | **The cost claim was wrong by 7×, and the error is structural.** `/fix-issue` on Haiku cost $1.15 notional list value, but spawned **three reviewer subagents that all ran on Opus** ($6.80) — subagent model comes from the agent definition, not the session's `--model`. True total **$7.96**; reviewers are **85.5% of run cost, 5.9× the worker**. Saving vs all-Opus is **2.2×, not the 15× first reported**. | **`TIER_MATRIX[work_type][task_complexity]` scores a work unit, but a routine's cost is worker + reviewers**, and the matrix cannot express "worker `small`, reviewers `frontier`". A clean W2 verdict still would not say what a downgrade saves. Follow-up issue, **not** a slice blocker. |
+| 2026-09-10 | **W2 → moot** | **W2 is superseded by M2′ and U9.** U9 already recorded W2 as only *"partially testable now"* and itself *"fully resolved by outcome data"*. The Opus→Haiku redesign cannot distinguish `small` from `mid` in either direction; n=6 yields no confidence interval; and the reviewer finding shows the matrix's unit of account is incomplete regardless of the cell's value. | **W2 no longer gates steps 5–6 of #14.** The gate becomes **the PRD emphasis pass alone**, and the matrix is settled by M2′'s gold set (taxonomy) plus U9's outcome data (the matrix's own output) — both against a working system rather than by hand. |
+| 2026-09-10 | **U3a** | **A 7th limit episode, live.** Three `<synthetic>` `rate_limit` / 429 records inside a *successful* Haiku run, `quotaLimits` populated on client `2.1.263`: *"session limit · resets 1:10pm"*. **Hit while running Haiku** — the session ceiling is pool-wide, not per-model. | U3a's "display share-of-period until live hits accumulate" is working as designed — 6 → 7 points. Confirms **invariant 10b on live data**: a "skip zero-token records" filter in `collect/` would have deleted the newest allowance signal. Pool-wide confirms invariant 4. |
+| 2026-09-10 | **Accounting** | Invariant 10 re-confirmed on fresh transcripts: **54.4% duplicate records** in the `/fix-issue` run, **71.8% cache-read share of value** on *Haiku* (W1 saw ~58% on Opus). | Dedup and 4-field pricing hold on a second client version and a second model family. **A4's cache-traffic headline is not Opus-specific** — long CI-polling loops re-read a growing context on any tier. |
+| 2026-09-11 | **Emphasis pass** ([#19](https://github.com/francisbrero/Model-Use-Index/issues/19)) | **Done.** A1 re-aimed at *high-ceremony, low-reasoning orchestration* with the action at **category** altitude (the routine, not the unit); A4 promoted to **named second headline** on its dedup-robustness and its 71.8% Haiku re-confirmation; **new §7.0** sets the reporting top level to `ai_activity` while `work_type` stays the tier axis. | **The last gate on steps 5–6 of #14 is cleared.** `enrich/signals.py` and `verdict.py` now code against the corrected framing rather than the trivia framing W1 disproved. |
+| 2026-09-11 | **Emphasis pass** | **`work_type` deliberately did NOT move.** Redefining it to mean "kind of work" would have silently invalidated §8.2's 28/28 reproduction and the verdict engine with it. §7.0 changes *which axis leads a report*, not what either axis means. | The obvious reading of "set the taxonomy's top level to kind of work" was the dangerous one. Recorded so it isn't re-proposed as a simplification. |
+| 2026-09-11 | **Emphasis pass** | PRD §17's assumption table gained a row: **a per-unit tier verdict does not price a routine** (worker + reviewers, 5.9× measured — #18), and the tier-matrix row now records that W2 is moot and validation runs through M2′ + U9. | The two known-incomplete parts of §8.1 are now stated **in the PRD**, not only in the register — so a reader of the spec alone cannot over-trust the ledger. |
 
 ---
 
@@ -693,14 +736,17 @@ Append-only. Date · question · answer · what it changed.
    allowance model now; **not** enough to fit a ceiling, so the displayed number
    stays share-of-period until live hits accumulate. M1's no-headroom constraint
    is unchanged. See §2.
-3. **W2** ([#4](https://github.com/francisbrero/Model-Use-Index/issues/4)) —
-   hand-test the `Agentic / Medium` hypothesis on Haiku. W1 lowered the stakes
-   here — the 25% misallocation figure it defends is now a secondary analysis,
-   not the headline — but it is still the cheapest way to find out whether the
-   tier matrix is trustworthy at all, so it still runs before the build.
-4. **The PRD emphasis pass** — A1 re-aimed at high-ceremony low-reasoning
-   orchestration (not "trivial sessions"), A4 named as the second headline, and
-   the taxonomy's top level set to *kind of work*. Queued behind W2.
+3. ~~**W2**~~ ([#4](https://github.com/francisbrero/Model-Use-Index/issues/4))
+   — **moot 2026-09-10.** A two-run Haiku pilot completed both tasks with zero
+   corrections, but found the matrix's unit of account incomplete: reviewer
+   subagents ran on Opus at 5.9× the worker's cost. Superseded by **M2′ (gold
+   set) + U9 (outcome data)**. See §1 and §5.
+4. ~~**The PRD emphasis pass**~~
+   ([#19](https://github.com/francisbrero/Model-Use-Index/issues/19)) — **Done
+   2026-09-11.** A1 re-aimed at high-ceremony low-reasoning orchestration, A4
+   named second headline, new §7.0 sets the reporting top level to `ai_activity`
+   with `work_type` unchanged as the tier axis. **Steps 5–6 of #14 are
+   unblocked.**
 5. **M1, the first E2E slice** ([#14](https://github.com/francisbrero/Model-Use-Index/issues/14))
    — see §3.
 
