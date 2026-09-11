@@ -557,3 +557,47 @@ def test_the_unscored_counter_can_actually_fire(store):
     assert reported == stats["unscored_work_units"], (
         "the view must report what the run actually found"
     )
+
+
+def test_an_unregistered_model_is_unknown_not_small(store):
+    """A registry gap must not manufacture findings.
+
+    Defaulting an unresolvable model to `small` puts it at the bottom of the
+    ordinal scale, which inflates `tier_delta` toward `Overprovisioned` — the
+    same shape as scoring an unscored arc `Low`. `unknown` sits outside
+    TIER_ORDINAL, so the row keeps its tokens and takes no part in the tier
+    vote, and the count surfaces in `v_data_quality` to be fixed by adding
+    the model.
+    """
+    store.execute(
+        "INSERT INTO raw_event (source, ingested_at, session_id, payload, "
+        "content_hash) VALUES ('transcript','t','S3',?,'h-unknown')",
+        (
+            json.dumps({
+                "type": "assistant",
+                "sessionId": "S3",
+                "requestId": "r-unknown",
+                "timestamp": "2026-02-01T00:00:00.000Z",
+                "message": {
+                    "id": "m-unknown",
+                    "model": "some-model-nobody-registered",
+                    "usage": {"input_tokens": 10, "output_tokens": 10},
+                },
+            }),
+        ),
+    )
+    store.commit()
+    stats = rebuild(store, Registry.load(store))
+    assert stats["unknown_models"] >= 1
+
+    tier = store.execute(
+        "SELECT model_tier FROM api_call WHERE message_id = 'm-unknown'"
+    ).fetchone()[0]
+    assert tier == "unknown", "never silently `small`"
+
+    reported = store.execute(
+        "SELECT unknown_models_last_run, calls_with_unknown_tier "
+        "FROM v_data_quality"
+    ).fetchone()
+    assert reported["unknown_models_last_run"] >= 1
+    assert reported["calls_with_unknown_tier"] >= 1

@@ -207,6 +207,13 @@ SELECT
       AS parse_failures_last_run,
   (SELECT unscored_arcs FROM normalize_run ORDER BY id DESC LIMIT 1)
       AS unscored_arcs_last_run,
+  -- A registry gap. These rows keep their tokens but take no part in tier
+  -- arithmetic, so the effect is a missing verdict rather than a wrong one —
+  -- but it should be fixed by adding the model, not left to accumulate.
+  (SELECT unknown_models FROM normalize_run ORDER BY id DESC LIMIT 1)
+      AS unknown_models_last_run,
+  (SELECT COUNT(*) FROM api_call WHERE model_tier = 'unknown')
+      AS calls_with_unknown_tier,
   (SELECT ran_at FROM normalize_run ORDER BY id DESC LIMIT 1) AS last_normalize,
   (SELECT COUNT(*) FROM api_call WHERE work_unit_id IS NULL) AS orphaned_calls,
   (SELECT COUNT(*) FROM api_call WHERE error_kind IS NOT NULL) AS error_records,

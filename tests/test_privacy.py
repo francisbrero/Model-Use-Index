@@ -7,7 +7,10 @@ therefore happens at EXTRACTION, not at display, and these tests pin it there.
 Excerpts strip full bash commands (verbs only) and full file paths (PRD §13).
 """
 
+import tempfile
+
 from mui.normalize.tools import (
+    branch_kind,
     command_verb,
     iter_tool_calls,
     normalise_target,
@@ -117,3 +120,51 @@ def test_tool_use_blocks_are_normalised_on_the_way_out():
 
 def test_records_without_tool_use_yield_nothing():
     assert list(iter_tool_calls({"message": {"content": "plain text"}})) == []
+
+
+def test_branch_names_are_reduced_to_a_kind():
+    """A branch name carries ticket numbers, client names and descriptive
+    slugs — the same class of work content as a filename.
+
+    Observed on this operator's history: `fix/superadmin-org-seeds-integrations`,
+    `security/issue-2237`, `docs/cronjob-monitors-2151`. 75 distinct names
+    were landing in `store.db` verbatim while filenames were being hashed.
+    """
+    assert branch_kind("fix/superadmin-org-seeds-integrations") == "fix"
+    assert branch_kind("security/issue-2237") == "security"
+    assert branch_kind("feature/issue-14-m1-e2e-slice") == "feature"
+    for branch in (
+        "fix/superadmin-org-seeds-integrations",
+        "docs/cronjob-monitors-2151",
+    ):
+        kind = branch_kind(branch)
+        assert "issue" not in kind and "-" not in kind
+
+
+def test_bare_branches_keep_their_name_because_it_is_a_kind():
+    assert branch_kind("master") == "master"
+    assert branch_kind("main") == "main"
+
+
+def test_an_unconventional_branch_collapses_to_other():
+    """Fail closed, like the Bash verb allowlist: an unrecognised prefix is
+    itself operator-specific."""
+    assert branch_kind("acme-migration-q3") == "other"
+    assert branch_kind("") is None
+    assert branch_kind(None) is None
+
+
+def test_the_schema_has_no_column_for_a_working_directory():
+    """A `cwd` is a full path, and a nullable path column with no writer is how
+    one lands in the store after a single well-meaning edit."""
+    import pathlib
+    import sqlite3
+
+    from mui.db import connect, migrate
+
+    conn = connect(pathlib.Path(tempfile.mkdtemp()) / "s.db")
+    migrate(conn)
+    for table in ("work_unit", "prompt_unit", "api_call", "tool_call"):
+        columns = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+        assert "cwd" not in columns, f"{table} must not carry a working directory"
+    assert isinstance(conn, sqlite3.Connection)

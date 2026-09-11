@@ -17,6 +17,7 @@ from typing import Any
 from mui.normalize.pricing import Registry
 from mui.normalize.tools import (
     LANGUAGE_SHARE_THRESHOLD,
+    branch_kind,
     iter_tool_calls,
     language_shares,
     record_text,
@@ -403,10 +404,10 @@ def _insert_work_unit(
     last = span[-1] if span else None
     conn.execute(
         "INSERT INTO work_unit (id, session_id, kind, rule_id, anchor_skill, "
-        "start_turn, end_turn, turns, started_at, ended_at, cwd, repo, "
-        "project_family, git_branch, cc_version, allowance_pool, "
+        "start_turn, end_turn, turns, started_at, ended_at, repo, "
+        "project_family, git_branch_kind, cc_version, allowance_pool, "
         "notional_list_value_usd) "
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (
             unit_id,
             session_id,
@@ -418,10 +419,9 @@ def _insert_work_unit(
             len(span),
             first["timestamp"] if first else None,
             last["timestamp"] if last else None,
-            None,  # cwd omitted: a full path is captured data (invariant 6)
             _repo_of(first.get("cwd")) if first else None,
             _project_family(first.get("cwd")) if first else None,
-            first.get("git_branch") if first else None,
+            branch_kind(first.get("git_branch")) if first else None,
             first.get("cc_version") if first else None,
             "anthropic-seat",
             total,
@@ -438,11 +438,17 @@ def _insert_api_call(
         tier, pool = rate.tier, rate.allowance_pool
         value = registry.notional_list_value_usd(model, turn["usage"])
     except LookupError:
-        # Loud in `mui doctor`, but never a reason to drop the record: an
-        # unregistered model is a registry gap, and losing the row would lose
-        # the evidence of it.
+        # An unregistered model is a registry gap, and dropping the row would
+        # lose the evidence of it — so the row is written with tier `unknown`.
+        #
+        # NOT `small`. A silent `small` default would put the row at the bottom
+        # of the ordinal scale, inflating `tier_delta` toward `Overprovisioned`
+        # — a registry gap would manufacture findings, which is the same shape
+        # as scoring an unscored arc `Low`. `unknown` is outside TIER_ORDINAL,
+        # so `_arc_tier` excludes it from the vote the way it excludes
+        # `<synthetic>`, and the count surfaces in `v_data_quality`.
         stats["unknown_models"] += 1
-        tier, pool, value = "small", "anthropic-seat", 0.0
+        tier, pool, value = "unknown", "anthropic-seat", 0.0
 
     usage = turn["usage"]
     conn.execute(

@@ -339,3 +339,28 @@ def record_text(record: dict) -> str:
         if isinstance(block, dict) and block.get("type") == "text":
             parts.append(str(block.get("text") or ""))
     return " ".join(parts)
+
+
+# Conventional branch prefixes. Anything else collapses to `other`, for the
+# same reason the Bash verb list is an allowlist: a branch name carries ticket
+# numbers, client names and descriptive slugs — `fix/superadmin-org-seeds-
+# integrations`, `security/issue-2237` — which is work content, not a label.
+_BRANCH_KINDS = frozenset({
+    "feature", "feat", "fix", "bugfix", "hotfix", "chore", "docs", "doc",
+    "refactor", "test", "tests", "perf", "security", "ci", "build", "style",
+    "release", "revert", "experiment", "spike", "main", "master", "develop",
+    "dev", "staging", "production", "head",
+})
+
+
+def branch_kind(branch: str | None) -> str | None:
+    """The KIND of a branch, never its name.
+
+    `feature/issue-14-m1-e2e-slice` -> `feature`; `master` -> `master`;
+    anything unconventional -> `other`. Enough to tell release work from
+    feature work, which is all any analysis here asks of it.
+    """
+    if not branch:
+        return None
+    head = branch.strip().split("/", 1)[0].lower()
+    return head if head in _BRANCH_KINDS else "other"

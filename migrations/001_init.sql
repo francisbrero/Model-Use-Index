@@ -168,8 +168,12 @@ CREATE TABLE IF NOT EXISTS work_unit (
   turns                    INTEGER NOT NULL,
   started_at               TEXT,
   ended_at                 TEXT,
-  cwd                      TEXT,
-  -- Leaf directory name only — never a full path (invariant 6).
+  -- NOTE: there is deliberately no `cwd` column. A working directory is a full
+  -- path, and a nullable path column with no writer is how one lands in
+  -- `store.db` after a single well-meaning edit (invariant 6). `repo` and
+  -- `project_family` carry everything the analyses need.
+  --
+  -- Leaf directory name only — never a full path.
   repo                     TEXT,
   -- The worktree FAMILY: `Phoenix` covers Phoenix and every worktree cut from
   -- it (`phoenix1`, `website`, `webapp/worktrees/bug1`, ...). W1's "Phoenix and
@@ -177,7 +181,12 @@ CREATE TABLE IF NOT EXISTS work_unit (
   -- not about `repo` — matching on the leaf name alone fragments the family
   -- across a dozen directory names and undercounts it badly.
   project_family           TEXT,
-  git_branch               TEXT,
+  -- Branch PREFIX only (`feature`, `bugfix`, `docs`), never the full name.
+  -- Real branches read `fix/superadmin-org-seeds-integrations` and
+  -- `security/issue-2237` — ticket numbers and descriptive slugs are the same
+  -- class of work content as the filenames this schema hashes, and a branch
+  -- name is not something the analyses need beyond its kind.
+  git_branch_kind          TEXT,
   cc_version               TEXT,
   allowance_pool           TEXT NOT NULL,
   notional_list_value_usd  REAL NOT NULL,
