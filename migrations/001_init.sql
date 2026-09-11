@@ -137,6 +137,11 @@ CREATE INDEX IF NOT EXISTS api_call_session   ON api_call(session_id);
 CREATE INDEX IF NOT EXISTS api_call_work_unit ON api_call(work_unit_id);
 CREATE INDEX IF NOT EXISTS api_call_prompt    ON api_call(prompt_unit_id);
 CREATE INDEX IF NOT EXISTS api_call_pool      ON api_call(allowance_pool);
+-- `v_data_quality` counts error and rate-limit records on every load. Without
+-- this the view takes ~1.9s over a real corpus and Datasette's 1s SQL time
+-- limit kills it — which would make the data-quality view the one page that
+-- never renders, exactly the R3 failure it exists to catch.
+CREATE INDEX IF NOT EXISTS api_call_error     ON api_call(error_kind);
 
 -- ---------------------------------------------------------------------------
 -- work_unit — the ARC grain, `u10-next-anchor-v1` (#13).

@@ -163,6 +163,12 @@ def rebuild(conn: sqlite3.Connection, registry: Registry | None = None) -> dict:
             ),
         )
 
+    # Give SQLite statistics to plan with. `v_data_quality` runs a dozen
+    # aggregate subqueries and drops from ~1.9s to ~0.3s with them — the
+    # difference between rendering in Datasette and being killed by its SQL
+    # time limit.
+    conn.execute("ANALYZE")
+
     return stats
 
 
