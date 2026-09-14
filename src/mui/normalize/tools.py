@@ -345,12 +345,37 @@ def record_text(record: dict) -> str:
 # same reason the Bash verb list is an allowlist: a branch name carries ticket
 # numbers, client names and descriptive slugs — `fix/superadmin-org-seeds-
 # integrations`, `security/issue-2237` — which is work content, not a label.
-_BRANCH_KINDS = frozenset({
-    "feature", "feat", "fix", "bugfix", "hotfix", "chore", "docs", "doc",
-    "refactor", "test", "tests", "perf", "security", "ci", "build", "style",
-    "release", "revert", "experiment", "spike", "main", "master", "develop",
-    "dev", "staging", "production", "head",
-})
+_BRANCH_KINDS = frozenset(
+    {
+        "feature",
+        "feat",
+        "fix",
+        "bugfix",
+        "hotfix",
+        "chore",
+        "docs",
+        "doc",
+        "refactor",
+        "test",
+        "tests",
+        "perf",
+        "security",
+        "ci",
+        "build",
+        "style",
+        "release",
+        "revert",
+        "experiment",
+        "spike",
+        "main",
+        "master",
+        "develop",
+        "dev",
+        "staging",
+        "production",
+        "head",
+    }
+)
 
 
 def branch_kind(branch: str | None) -> str | None:

@@ -573,17 +573,19 @@ def test_an_unregistered_model_is_unknown_not_small(store):
         "INSERT INTO raw_event (source, ingested_at, session_id, payload, "
         "content_hash) VALUES ('transcript','t','S3',?,'h-unknown')",
         (
-            json.dumps({
-                "type": "assistant",
-                "sessionId": "S3",
-                "requestId": "r-unknown",
-                "timestamp": "2026-02-01T00:00:00.000Z",
-                "message": {
-                    "id": "m-unknown",
-                    "model": "some-model-nobody-registered",
-                    "usage": {"input_tokens": 10, "output_tokens": 10},
-                },
-            }),
+            json.dumps(
+                {
+                    "type": "assistant",
+                    "sessionId": "S3",
+                    "requestId": "r-unknown",
+                    "timestamp": "2026-02-01T00:00:00.000Z",
+                    "message": {
+                        "id": "m-unknown",
+                        "model": "some-model-nobody-registered",
+                        "usage": {"input_tokens": 10, "output_tokens": 10},
+                    },
+                }
+            ),
         ),
     )
     store.commit()
@@ -596,8 +598,7 @@ def test_an_unregistered_model_is_unknown_not_small(store):
     assert tier == "unknown", "never silently `small`"
 
     reported = store.execute(
-        "SELECT unknown_models_last_run, calls_with_unknown_tier "
-        "FROM v_data_quality"
+        "SELECT unknown_models_last_run, calls_with_unknown_tier FROM v_data_quality"
     ).fetchone()
     assert reported["unknown_models_last_run"] >= 1
     assert reported["calls_with_unknown_tier"] >= 1

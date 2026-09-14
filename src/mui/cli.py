@@ -60,11 +60,54 @@ def status(store: str = typer.Option(str(db.DEFAULT_DB_PATH))) -> None:
     ):
         typer.echo(f"  {table:<16} {count(table):>10,}")
 
-    total = conn.execute(
-        "SELECT COALESCE(SUM(notional_list_value_usd), 0) FROM work_unit"
-    ).fetchone()[0]
-    typer.echo(f"\n  ${total:,.0f} {NOTIONAL} (not money billed)")
+    typer.echo("")
+    _echo_summary(conn)
+    typer.echo(
+        "\n  Read a single unit with `select * from v_work_unit_summary`, "
+        "\n  or a verdict with `select * from v_verdict_readable`."
+    )
     typer.echo("  classifications are PROVISIONAL — see `select * from v_caveats`")
+
+
+def _echo_summary(conn) -> None:
+    """The one-screen answer, grouped by pool because pools never sum."""
+    rows = conn.execute(
+        "SELECT allowance_pool, ai_activity, work_units, "
+        "notional_list_value_usd, pct_of_pool, overprovisioned_units, "
+        "overprovisioned_notional_usd FROM v_summary"
+    ).fetchall()
+    if not rows:
+        typer.echo("  nothing classified yet — run `mui classify`")
+        return
+
+    for pool in dict.fromkeys(r["allowance_pool"] for r in rows):
+        typer.echo(f"  pool: {pool}   (pools are separate ceilings, never summed)")
+        typer.echo(
+            f"    {'activity':<24}{'units':>6}{'notional':>11}{'%pool':>7}"
+            f"{'over':>6}{'over $':>10}"
+        )
+        for row in (r for r in rows if r["allowance_pool"] == pool):
+            typer.echo(
+                f"    {(row['ai_activity'] or '(unclassified)'):<24}"
+                f"{row['work_units']:>6}"
+                f"{row['notional_list_value_usd']:>11,.0f}"
+                f"{row['pct_of_pool']:>6.1f}%"
+                f"{row['overprovisioned_units']:>6}"
+                f"{row['overprovisioned_notional_usd']:>10,.0f}"
+            )
+        flagged = sum(
+            r["overprovisioned_notional_usd"]
+            for r in rows
+            if r["allowance_pool"] == pool
+        )
+        typer.echo(
+            f"\n    ${flagged:,.0f} {NOTIONAL} flagged over-provisioned — "
+            "an UPPER BOUND (R2):"
+        )
+        typer.echo(
+            "    it assumes the cheaper tier finishes in the same tokens, "
+            "and it will not."
+        )
 
 
 @app.command()
