@@ -593,7 +593,7 @@ and reconciliation alone would not catch it if both sides share a convention.
 Picks up `U5`, `U6`, `U7`, and the invariant-1 hook-safety work the slice skipped.
 This is where schema-drift and live-capture risk actually land.
 
-### M2′ · Gold set and the real classifier
+### M2′ · Gold set and the real classifier `in progress` · [#24](https://github.com/francisbrero/Model-Use-Index/issues/24)
 The named calendar day (R1), then `qwen3:4b` via Ollama replacing the crude
 heuristic. Schema restated in the prompt text, concurrency 1 (invariant 7b).
 
@@ -813,7 +813,8 @@ Append-only. Date · question · answer · what it changed.
    over the real corpus. Five of six acceptance figures reproduce; the sixth
    (step 5's 43.4% score-0 share) lands at **21.7%** and is **reported, not
    tuned** — see the new standing risk `R6` in §4.
-6. **Next: M2′ (gold set) — and it is now the critical path.** Three separate
+6. **Next: M2′ (gold set)** ([#24](https://github.com/francisbrero/Model-Use-Index/issues/24))
+   — **and it is now the critical path.** Three separate
    findings point at it: #14's score-0 gap, W2's moot verdict, and the
    subagent-tier question (#18) the corpus has now confirmed at scale. All
    three are "which reading of this data is right", and hand-labelling is the
@@ -873,6 +874,7 @@ become the register.
 | `M1` | [#14](https://github.com/francisbrero/Model-Use-Index/issues/14) | Milestone — the E2E slice | **merged, closed 2026-09-14** |
 | `M0` | [#10](https://github.com/francisbrero/Model-Use-Index/issues/10) | Milestone | **closed 2026-09-14** |
 | `R6` | [#22](https://github.com/francisbrero/Model-Use-Index/issues/22) | Standing risk — new | open by design (never resolves) |
+| `M2′` | [#24](https://github.com/francisbrero/Model-Use-Index/issues/24) | Milestone — **the critical path** | open |
 
 Tier 2 (`U5`–`U7`) is tracked on the M0 checklist rather than as separate issues;
 Tier 3 (`U8`, `U9`) gets an issue when its phase opens. **W1 rehearsed `U8`** —
