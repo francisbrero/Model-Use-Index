@@ -1,0 +1,29 @@
+{
+  "source": "U1 \u2014 Codex rollout log, ~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl",
+  "note": "Hand-written and obviously synthetic (invariant 6). Shapes copied from real records; every value replaced. No real id, path, prompt or timestamp appears here.",
+  "dedup_rule": "codex-final-total-v1",
+  "dedup_rule_english": "Take the FINAL total_token_usage per session. Do not sum total_token_usage across records (cumulative \u2014 overstates 26x on real data) and do not sum last_token_usage either (duplicate events \u2014 overstates 20%).",
+  "token_count_events": 4,
+  "distinct_turns": 2,
+  "correct_totals": {
+    "input_tokens": 3000,
+    "cached_input_tokens": 1400,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 250,
+    "reasoning_output_tokens": 90,
+    "total_tokens": 3250
+  },
+  "wrong_if_summing_total": {
+    "input_tokens": 7000
+  },
+  "wrong_if_summing_last": {
+    "input_tokens": 5000
+  },
+  "allowance_is_readable": true,
+  "final_rate_limits": {
+    "primary_used_percent": 9.0,
+    "primary_window_minutes": 300,
+    "secondary_used_percent": 2.0,
+    "secondary_window_minutes": 10080
+  }
+}

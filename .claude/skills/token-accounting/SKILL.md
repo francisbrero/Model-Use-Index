@@ -88,11 +88,53 @@ misses almost all of it.
 Rates live in the **versioned model registry**, never inline in an analysis.
 `cache_read` at the input rate is a 10× error on the largest line item.
 
+## 2b. Codex has its own trap, and it is not the same one
+
+**Answered by U1, 2026-09-14.** Codex rollout logs
+(`~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`) carry four-field token counts
+on `payload.type == "token_count"` — so the registry needs new rows, not a new
+shape. The counting rule is completely different from §1's:
+
+```python
+# codex-final-total-v1 -- take the FINAL cumulative snapshot per session.
+events = [r for r in records if r["payload"].get("type") == "token_count"
+          and (r["payload"].get("info") or {}).get("total_token_usage")]
+usage = events[-1]["payload"]["info"]["total_token_usage"]
+```
+
+| Approach | Result over 119 real sessions |
+|---|---|
+| Sum `total_token_usage` | **26x overstatement** — it is cumulative |
+| Sum `last_token_usage` | **20% overstatement** — duplicate events |
+| **Final `total_token_usage`** | **correct** (136,500,627 input tokens) |
+
+**Why the second one is the dangerous one.** `last_token_usage` really is
+per-turn — it equals `delta(total_token_usage)` exactly on every non-duplicate
+row — so a careful reader who avoids the cumulative trap lands on it and is
+still wrong by 20%, because Codex re-emits the same turn with `total` unchanged.
+
+Two more notes before pricing any of it:
+
+- **`reasoning_output_tokens` has no Anthropic analogue.** Check against a rate
+  card whether it is additive to `output_tokens` or a subset before pricing it.
+  Getting it wrong is a per-turn error on the most expensive field.
+- **`info` can be `null`** on a real `token_count` event. Skip, don't crash.
+
+Fixture and 9 tests: `tests/fixtures/codex_session/`, `tests/test_codex_fixture.py`.
+
 ## 3. Never sum across allowance pools
 
 Anthropic and OpenAI/Codex are separate ceilings (invariant 4). Always group by
 `allowance_pool`. A combined total is not a smaller finding — it is a
 meaningless number that hides the pool-balance question (A6).
+
+**The pools are also asymmetric, as of U1/U3 (2026-09-14).** Codex logs carry
+`rate_limits.used_percent` for both windows, so the OpenAI pool's allowance is
+**read directly**; the Anthropic pool has no equivalent and must be **modelled**
+from limit-hit observations. One can report true share-of-ceiling and the other
+only share-of-period. Rendering them in the same column without distinguishing
+them would make two incomparable numbers look comparable — a subtler failure
+than summing them, and not one invariant 4 catches on its own.
 
 ## 4. Headroom is the unit; dollars are for ranking only
 
