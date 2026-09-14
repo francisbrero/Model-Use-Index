@@ -183,9 +183,22 @@ def open_ui(store: str = typer.Option(str(db.DEFAULT_DB_PATH))) -> None:
     if shutil.which("datasette") is None:
         typer.echo("datasette not installed — `uv sync --extra ui`", err=True)
         raise typer.Exit(1)
+
     path = str(pathlib.Path(store).expanduser())
-    typer.echo("Start at `v_caveats` — it states what this slice does NOT show.")
-    subprocess.run(["datasette", path], check=False)
+    command = ["datasette", path]
+
+    # Without this, Datasette lists nine raw tables above fifteen views and the
+    # landing page is `work_unit`: 458 rows of UUIDs and floats, with nothing
+    # saying which view answers the question you have. The metadata puts the
+    # four readable views up front and repeats the notional-list-value and
+    # provisional labels, which are easiest to lose in a UI.
+    metadata = pathlib.Path(__file__).resolve().parents[2] / "datasette.yaml"
+    if metadata.exists():
+        command += ["--metadata", str(metadata)]
+
+    typer.echo("Start at v_summary · v_verdict_readable · v_work_unit_summary")
+    typer.echo("v_caveats states what this slice does NOT show. Read it first.")
+    subprocess.run(command, check=False)
 
 
 @app.command()

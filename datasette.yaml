@@ -1,0 +1,182 @@
+# Datasette presentation metadata (TD §8.1 — Datasette IS the Phase 1 UI).
+#
+# This file exists because the data being correct is not the same as the data
+# being findable. Datasette lists 9 tables before 15 views on its homepage, so
+# the default landing experience is a raw `work_unit` table: 458 rows of UUIDs
+# and float columns, with nothing saying which of the fifteen views answers the
+# question you actually have.
+#
+# Descriptions carry the labels too. Invariant 5 and R2 are easiest to lose in
+# a UI, where a label looks obvious enough to omit — so every view that shows a
+# dollar figure repeats *notional list value* here as well as in its columns.
+
+title: Model Use Index
+description_html: |-
+  <p><strong>Start here →</strong>
+  <a href="/store/v_summary"><strong>v_summary</strong></a> (where the pool went) ·
+  <a href="/store/v_verdict_readable"><strong>v_verdict_readable</strong></a> (verdicts in English) ·
+  <a href="/store/v_work_unit_summary"><strong>v_work_unit_summary</strong></a> (what each unit did) ·
+  <a href="/store/v_caveats"><strong>v_caveats</strong></a> (what this does <em>not</em> show)</p>
+  <p>Every dollar figure is <strong>notional list value</strong> — we are on seat
+  subscriptions, so none of it is money anyone was billed. Every classification is
+  <strong>provisional</strong> until the gold set lands and must not be acted on.
+  <strong>No headroom figure is emitted.</strong></p>
+  <p>The tables further down are the audit trail, not the report. Read the views.</p>
+
+databases:
+  store:
+    tables:
+      # --- the readable layer ------------------------------------------------
+      v_summary:
+        title: "① Where the pool went"
+        description: >-
+          One row per activity, per allowance pool. Pools are separate ceilings
+          and never sum. The over-provisioned column is an UPPER BOUND: it
+          assumes the cheaper tier finishes in the same tokens, and it will not.
+          All figures notional list value; all classifications provisional.
+        sort_desc: notional_list_value_usd
+
+      v_verdict_readable:
+        title: "② Verdicts, in English"
+        description: >-
+          What happened, why this verdict in the rule's own terms, and what the
+          complexity score was built from — so a row is defensible without the
+          PRD open. Underprovisioned is never emitted by this slice; its absence
+          is by construction, not because it is rare. Notional list value.
+        sort_desc: notional_list_value_usd
+
+      v_work_unit_summary:
+        title: "③ What each work unit actually did"
+        description: >-
+          One scannable line per unit — span, turns, tool mix, top command
+          verbs, files touched, subagents, and whether it hit an allowance
+          limit. Shape only: no prompt text, no file names, no command bodies.
+          Notional list value; provisional.
+        sort_desc: notional_list_value_usd
+
+      v_caveats:
+        title: "④ What this report does NOT show"
+        description: >-
+          Read before acting on anything else. Eight known gaps, including the
+          missing headroom figure, the unreachable Underprovisioned verdict, and
+          the score-0 share that does not reproduce W1's hand-read.
+
+      # --- drill-downs -------------------------------------------------------
+      v_activity_ledger:
+        title: "Activity ledger (A1)"
+        description: >-
+          The PRD §7.0 reporting top level — categories, not named offenders,
+          because a harness default is set at the category level. Notional list
+          value; provisional.
+        sort_desc: notional_list_value_usd
+
+      v_routine_ledger:
+        title: "Routine ledger"
+        description: >-
+          Per anchor skill. attributionSkill is an ANCHOR, not a cost
+          attributor — these figures span each anchor's whole arc, not its
+          tagged turns. Notional list value.
+        sort_desc: notional_list_value_usd
+
+      v_work_unit_shape:
+        title: "Work unit shape (structured)"
+        description: >-
+          The sortable columns behind ③ — duration, tool counts, distinct files,
+          subagent calls, limit hits.
+
+      v_work_unit_ledger:
+        title: "Work unit ledger"
+        description: >-
+          Units ranked by notional list value with their complexity score. The
+          drill-down beneath the activity ledger, never the front page.
+
+      v_unattributable:
+        title: "Unattributable remainder"
+        description: >-
+          Work before a session's first anchor, or sessions with no anchor at
+          all — 6-7% of value. A labelled row, never silently dropped.
+
+      v_unscored_arcs:
+        title: "Unscored arcs"
+        description: >-
+          Arcs no prompt unit covers. Deliberately carry NO verdict: scoring
+          absence as simplicity would manufacture Overprovisioned findings out
+          of missing evidence.
+
+      v_work_type_distribution:
+        title: "work_type distribution"
+        description: >-
+          Check this before reading any verdict. If most value is Agentic, the
+          tier axis carried no information and TIER_MATRIX had one row in play.
+
+      v_activity_other_share:
+        title: "`other` share"
+        description: >-
+          With ai_activity as the reporting top level, an over-used `other`
+          degrades the whole report. Above 10% the taxonomy needs a new label.
+
+      v_data_quality:
+        title: "Data quality (R3)"
+        description: >-
+          Staleness, parse failures, orphaned rows, unknown models, limit hits.
+          A tool that stopped ingesting three weeks ago while still rendering a
+          confident report is worse than no tool.
+
+      v_prompt_unit_value:
+        title: "Prompt unit value"
+        description: >-
+          Value grouped by prompt unit. Computed here rather than stored,
+          because two tables each summing to the corpus is a 2x double-count
+          waiting for an ad-hoc join.
+
+      # --- raw capture and derivation ---------------------------------------
+      raw_event:
+        title: "raw_event (append-only capture)"
+        description: >-
+          Verbatim payloads. Never updated, never deleted — re-derivation from
+          here is the entire recovery story. Contains prompt content: do not
+          share this file.
+
+      api_call:
+        title: "api_call (one row per unique API response)"
+        description: >-
+          After dedup on (message.id, requestId) with max per usage field.
+          Summing the raw records instead overstates cost by ~91%.
+
+      work_unit:
+        title: "work_unit (arc grain)"
+        description: >-
+          u10-next-anchor-v1 — anchor to next anchor, else session end. The sole
+          cost-bearing grain. For a readable version see v_work_unit_summary.
+
+      prompt_unit:
+        title: "prompt_unit (scoring grain)"
+        description: >-
+          One real user prompt and the work it caused. Carries NO dollar column
+          by design — cost lives on the arc.
+
+      verdict:
+        title: "verdict (raw)"
+        description: "For a readable version see v_verdict_readable."
+
+      classification:
+        title: "classification (provisional)"
+        description: >-
+          Versioned labels. The taxonomy will change; enrichment re-runs over
+          history rather than losing it.
+
+      tool_call:
+        title: "tool_call (normalised targets)"
+        description: >-
+          Targets are command verbs or hashed path classes — never a command
+          body, never a file name (invariant 6).
+
+      model_registry:
+        title: "model_registry (versioned rates)"
+        description: >-
+          List prices for the notional column. Tier resolved longest-pattern
+          first; unregistered models fail loudly rather than defaulting.
+
+      normalize_run:
+        title: "normalize_run (run counters)"
+        description: "Per-run canary counts read by v_data_quality."
