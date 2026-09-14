@@ -1,0 +1,62 @@
+# Model Use Index — local configuration.
+#
+# Copy to `config.toml`. The example is committed because its hash becomes part
+# of `rules_version`; the live copy is gitignored because it carries local
+# paths (invariant 6).
+
+[paths]
+# Claude Code's transcript directory. Read-only — this tool never writes here.
+projects_dir = "~/.claude/projects"
+store = "~/.model-use-index/store.db"
+
+# NOTE — the signal thresholds are deliberately NOT configurable here.
+#
+# W1's six signals (>=5 distinct files, >=40 turns, debugging language,
+# self-correction, subagent use, repeated test runs) and the three complexity
+# buckets live in `src/mui/enrich/signals.py`, versioned by `RULES_VERSION` and
+# pinned by tests.
+#
+# That is a decision, not an oversight. The standing risk on this slice is that
+# somebody adjusts a cutoff until W1's 43.4% figure reproduces — which would
+# fabricate the headline, and the number would then be believed. A config knob
+# makes that a one-line edit with no diff and no test failure. In code, it is a
+# reviewed change that breaks a pinned test.
+#
+# If a threshold genuinely needs to move, move it in code, bump RULES_VERSION,
+# and re-run `mui verify` so the effect on every asserted figure is visible.
+
+[ai_activity]
+# PRD §7.0 makes `ai_activity` the REPORTING top level: the report's job is to
+# surface categories ("agentic ops on Opus"), not individual fixes, because the
+# harness change is made at the category level.
+#
+# Extend this as routines are added. An unmapped anchor falls to `other`, and
+# the `other` share is reported — above 10% the taxonomy needs a new label
+# (PRD §7.2), which is a monthly review item, not an auto-expansion.
+[ai_activity.by_anchor_skill]
+"release-prod" = "automation"
+"hg-ops-deploy-pr" = "automation"
+"loop" = "automation"
+"schedule" = "automation"
+"fix-issue" = "feature-development"
+"create-pr" = "code-review"
+"code-review" = "code-review"
+"security-review" = "security-review"
+"jira-to-github-issue" = "requirements-gathering"
+"token-accounting" = "data-analysis"
+"claude-api" = "research"
+"init" = "onboarding"
+"humanizer" = "documentation"
+"newsletter" = "documentation"
+"artifact-design" = "feature-development"
+"design" = "architecture-design"
+"dataviz" = "data-analysis"
+"simplify" = "refactoring"
+
+[report]
+# This slice emits NO headroom figure. U3/U3a are deferred, so share-of-pool
+# cannot be computed; every figure is notional list value, a documented
+# temporary deviation from invariant 5 (not a redefinition).
+emit_headroom = false
+# Every classification is provisional until the gold set clears (M2', R1).
+classification_status = "provisional"
