@@ -41,51 +41,52 @@ rejected and why. Read that table before proposing any stack change; most
 target.** Its §5 answer log is append-only. When an unknown gets resolved, fill
 the answer inline and append a dated row; don't restructure the document.
 
-**Status: week one — still before committing to the build** (MS §1). Nothing is
-built yet. **`milestones.md` §3/§6 is the live sequencing authority — read it
-before starting any work, and if an issue disagrees with it, the register wins.**
+**Status: M1 is merged (2026-09-14). A working pipeline exists.**
+`mui run` goes transcripts → dedup → work units → signals → verdicts →
+Datasette over the real corpus, read-only. **`milestones.md` §3/§6 is the live
+sequencing authority — read it before starting any work, and if an issue
+disagrees with it, the register wins.**
+
+**Next: M2′, the gold set.** It is the critical path, because three separate
+findings all resolve there and nowhere else (MS §3 M2′). **M1′ (live capture —
+hooks, `launchd`, tailer, OTel) is NOT urgent**: backfill already reads the
+whole corpus on demand, so hooks buy freshness that nothing currently needs.
+Don't let it jump the queue for being more fun to build.
 
 **Answered so far.** W1 — go, with a **reframed headline**: over-provisioning is
 real but it is *high-ceremony, low-reasoning orchestration on Opus*, not "trivial
-sessions" (43.4% of Phoenix Opus value carries no complexity signal). It also
-produced invariants 10 and 11. `U10` — the work-unit grain is
-`u10-next-anchor-v1`. `U4` — `message.usage` is on 80,037/80,037 messages.
-`U3a` — past rate-limit hits **are** on disk (29 records, but only **6 distinct
-episodes**), and client `2.1.245` carries a structured `quotaLimits` object.
-Qualified go: build the allowance fit against backfill, but **display
-share-of-period until live hits accumulate** — 6 points don't fit a ceiling.
+sessions". It produced invariants 10 and 11. `U10` — the work-unit grain is
+`u10-next-anchor-v1`. `U4` — `message.usage` is on **87,354/87,354** messages
+(closed). `U3a` — past rate-limit hits **are** on disk. `U1` — **Codex rollout
+logs carry four-field token counts**, but `total_token_usage` is *cumulative per
+session*, so summing it across records double-counts far worse than invariant 10
+does. `U3` — **split answer: the OpenAI pool's allowance is directly readable**
+(`rate_limits.used_percent`, both windows); the Anthropic pool must still be
+modelled. The pools are therefore asymmetric, and rendering them identically
+would be the most misleading thing the dashboard could do. `U2`/#18 — **96.1% of
+subagent notional value runs on frontier.**
 
-**Still open before the build commits:**
+**What M1 shipped, and the two things about it that matter most:**
 
-- **W2 — hand-test the central hypothesis.** The tier matrix came from a
-  screenshot of somebody else's report. Reproducing it 28/28 proves fidelity to
-  the source, not that the source was right. W1 demoted the 25% figure to a
-  secondary analysis, but the matrix stays load-bearing for *verdicts*. Re-run
-  five or six `Agentic / Medium` tasks on Haiku by hand.
-- **The PRD emphasis pass** — re-aim A1, name A4 second, set the taxonomy's top
-  level to *kind of work*. Queued behind W2.
+- **Five of six acceptance figures reproduce.** `/release-prod` at $1,418
+  against $1,447 ±5%, arc overlap 0, duplicate ratio 48.1%.
+- **The sixth does not, and was not made to.** W1's score-0 share of 43.4%
+  lands at **21.7%** in code. The thresholds were deliberately not moved. The
+  *qualitative* finding survives exactly — the top score-0 units are still
+  `create-pr`/`release-prod`, near-total `Bash` — so the headline stands and only
+  its magnitude is in dispute. **This is standing risk R6 (#22): closing that gap
+  by nudging a threshold would fabricate the headline, and it is a one-line edit
+  that looks like progress.** Don't. M2′ adjudicates.
 
-**The plan is now: get to a working end-to-end slice, then improve it** — not
-resolve every unknown first. M1 (#14) is backfill → dedup → work units → crude
-classifier → verdicts → Datasette, with **no hooks, OTel, `launchd`, web app,
-Codex or allowance model**. Six of eight unknowns were deferred to *after*
-something works; only `U10` ever blocked it.
+**Two grains, and only one carries cost.** `work_unit` is the arc grain and is
+the sole cost-bearing table; `prompt_unit` is the grain W1's signals were
+calibrated on and deliberately has **no dollar column** — two tables each summing
+to the corpus is a 2× double-count waiting for an ad-hoc Datasette join.
 
-**If asked to start building, state the gate first, then take the user's call.**
-The gate falls **between step 4 and step 5 of #14**: steps 1–4 (skeleton, schema,
-backfill, dedup, work units) carry no taxonomy or verdict logic, so W2 and the
-emphasis pass cannot invalidate them; steps 5–6 depend on both. Treating it as a
-blanket gate on all six steps is stricter than the evidence supports; treating it
-as no gate builds the analysis W1 showed was mis-aimed.
-
-**Two constraints on the slice that must not drift.** It emits **no headroom
-figure** — `U3`/`U3a` are deferred, so every figure reads *notional list value*
-(a documented temporary deviation from invariant 5, not a redefinition). And
-every classification ships **labelled provisional**; no slice number is acted on
-until the gold set clears (M2′, R1).
-
-Phase 0's deferred questions return as M1′ (live capture) and M2′ (gold set). Do
-not build Phase 1–3 machinery on an assumption they haven't settled.
+**Every number the slice emits is labelled `notional list value` and
+`provisional`, and no headroom figure is emitted at all** (a documented temporary
+deviation from invariant 5, not a redefinition). `v_caveats` carries all eight
+known gaps as rows rather than prose, because Datasette renders tables.
 
 ## Project Invariants
 
@@ -353,7 +354,7 @@ arc is an open Phase 0 question, not a solved one.
 
 ## Repository Layout
 
-Current:
+Current — M1 is built into the TD §12 shape:
 
 ```text
 CLAUDE.md              # single source of truth
@@ -361,29 +362,26 @@ AGENTS.md -> CLAUDE.md # symlink (Codex CLI)
 GEMINI.md -> CLAUDE.md # symlink (Gemini CLI)
 src-documents/         # prd.md · trd.md · milestones.md · ui.html (mockups)
 phase0/findings.md     # the six blocking questions (after W1/W2)
-.claude/               # settings.json, agents/, commands/, hooks/, skills/
-```
-
-Target for Phase 1 (TD §12) — build into this shape, don't invent another:
-
-```text
 pyproject.toml         # uv, ruff, pytest
-config.toml.example
-migrations/            # 001_init.sql, 002_allowance.sql, …
-launchd/               # two .plist templates
-hooks/spool.sh         # TD §4 — one-line sh, not Python
-wrappers/codex         # PRD §5.1 E2 — call-site attribution
+config.toml.example    # NOTE: signal thresholds are deliberately NOT here (R6)
+datasette.yaml         # Datasette metadata — puts the readable views first
+migrations/            # 001_init · 002_model_registry_seed · 003_views
+                       # · 004_readable_views
 src/mui/
-  models.py            # Pydantic — one definition of every record
-  collect/             # transcript.py otel.py hooks.py codex.py
-  normalize/           # work_unit.py reconcile.py delegation.py
-  enrich/              # excerpt.py classify.py signals.py allowance.py
-  verdict.py           # pure functions
-  analyses/            # a1_over.py a2_under.py a3_cluster.py …
-  web/                 # FastAPI + Jinja + HTMX
+  db.py                # connection + migration runner (no ORM, no Alembic)
   cli.py               # typer
-tests/fixtures/        # golden records from Phase 0
+  verdict.py           # pure functions — keep it that way (TD §11)
+  collect/transcript.py    # parses NOTHING beyond a session id (invariant 2)
+  normalize/           # work_unit.py pricing.py tools.py pipeline.py
+  enrich/              # signals.py classify.py pipeline.py
+  verify.py            # the acceptance gate
+tests/                 # 315 tests · fixtures/anchor_shapes (scrubbed, synthetic)
 ```
+
+Not built yet, and each deliberately deferred: `hooks/`, `launchd/`,
+`wrappers/codex`, `src/mui/web/`, `src/mui/analyses/`, `enrich/allowance.py`,
+`normalize/reconcile.py`, `normalize/delegation.py`, `collect/otel.py`,
+`collect/hooks.py`, `collect/codex.py`.
 
 Client-side configuration (hook registrations, plists, the wrapper) stays in
 **one place**. The eventual multi-user phase would package this half as a Claude
@@ -411,15 +409,19 @@ next wake (TD §9).
 
 ## Development
 
-Nothing is built yet. Phase 1's build order is TD §14 — eight steps, each with
-its own verification, sequenced so something is checkable at every step instead
-of integrating everything at the end. **Datasette lands at step 4, early on
-purpose**, because being able to look at real data before any enrichment exists
-is what catches capture bugs while they're still cheap.
+M1 is built (#14, merged 2026-09-14). `uv run mui run` executes the whole
+pipeline; `uv run mui verify` is the acceptance gate and **exits non-zero if any
+asserted figure stops reproducing** — run it after touching anything in
+`normalize/` or `enrich/`. `uv run mui open` starts Datasette with the metadata
+that puts the readable views first.
+
+Remaining Phase 1 work follows TD §14, sequenced so something is checkable at
+every step rather than integrating at the end.
 
 Stack: Python 3.12+ with `uv`, `ruff` (lint + format), `pytest`. `mui` is a
-`typer` CLI and the front door: `mui status`, `mui backfill`,
-`mui reclassify --since`, `mui doctor`, `mui open`.
+`typer` CLI and the front door. Built: `mui status` (now prints the
+per-pool summary), `mui backfill`, `mui normalize`, `mui classify`, `mui run`,
+`mui verify`, `mui open`. Planned: `mui doctor`, `mui reclassify --since`.
 
 **`mui doctor` is a first-class deliverable, not a nice-to-have** (TD §13). This
 runs unattended, and a tool that stopped ingesting three weeks ago while still

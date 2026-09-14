@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | **Owner** | Francis Brero |
-| **Status** | Open — **week one is closed**: W1, U10, U3a answered, W2 moot, emphasis pass done. **#14 is unblocked end to end** |
+| **Status** | Open — **M1 is merged (2026-09-14)**. A working pipeline exists: transcripts → verdicts → Datasette. **M2′ (gold set) is now the critical path** — three separate findings converge on it |
 | **Date opened** | 9 September 2026 |
 | **Companions** | *Model Use Index* (PRD — what and why) · *Three Processes and a Database* (TD — how) |
 
@@ -347,11 +347,13 @@ untagged sidechain turns, so today no tie can move an arc boundary. But
 *do* diverge on real data, and the cost of getting determinism is one sort key.
 Cheap insurance against an irreproducible number, not a live bug.
 
-Fixture `tests/fixtures/anchor_shapes/` + reference implementation
-`tests/test_anchor_arc.py` (100 tests over 11 synthetic sessions). It implements the **rejected** candidates
-alongside the chosen rule, so the double-count comparison above is executable
-rather than merely asserted. It sits in `tests/` because nothing is built yet
-(MS §1); `normalize/work_unit.py` should import it and drop the local copy.
+Fixture `tests/fixtures/anchor_shapes/` + `tests/test_anchor_arc.py` (100 tests
+over 11 synthetic sessions). **Done 2026-09-14 (M1):** the accepted rule now
+lives in `normalize/work_unit.py` and the test imports it. The **rejected**
+candidates (`arcs_w1_baseline`, `arcs_tagged_only`) stay local to the test
+module on purpose, so the double-count comparison above remains executable
+rather than merely asserted — a claim that only one rule is in the module is a
+claim no test can check.
 
 **What is and isn't reproducible from the repo.** The tests verify the *rule* —
 boundary arithmetic, four-field pricing, conservation, dedup — at fixture scale.
@@ -591,7 +593,7 @@ and reconciliation alone would not catch it if both sides share a convention.
 Picks up `U5`, `U6`, `U7`, and the invariant-1 hook-safety work the slice skipped.
 This is where schema-drift and live-capture risk actually land.
 
-### M2′ · Gold set and the real classifier
+### M2′ · Gold set and the real classifier `in progress` · [#24](https://github.com/francisbrero/Model-Use-Index/issues/24)
 The named calendar day (R1), then `qwen3:4b` via Ollama replacing the crude
 heuristic. Schema restated in the prompt text, concurrency 1 (invariant 7b).
 
@@ -600,6 +602,29 @@ provisional labels come off the UI. **This is the gate before any number is
 acted on.** Seed the labelling from W1's hand-read of the twelve most expensive
 score-0 units — orchestration/CI shepherding is the boundary most easily got
 wrong.
+
+**Promoted to the critical path 2026-09-14.** M1 merged, and *three separate
+findings now resolve here rather than anywhere else.* They are the same question
+— *which reading of this data is right?* — and only hand-labelling answers it:
+
+1. **The score-0 gap (R6, [#22](https://github.com/francisbrero/Model-Use-Index/issues/22)).**
+   Coded signals give 21.7% where W1's hand-read gave 43.4%. The qualitative
+   character matches exactly; the magnitude does not.
+2. **The subagent tier question ([#18](https://github.com/francisbrero/Model-Use-Index/issues/18)),**
+   which W2 was closed moot in favour of. **96.1% of subagent value runs
+   frontier** — so the gold set must cover frontier subagent runs as a
+   population, not just main-thread work.
+3. **The 25% language-share threshold**, new in M1 with no W1 provenance and no
+   measured breakpoint. It moves the headline and should be calibrated here.
+
+**A fourth input arrived free:** M1 ships `v_work_unit_summary`, so a labeller
+sees a unit's shape — span, tool mix, verbs, files, subagents — without opening
+a transcript. The labelling day is cheaper than when R1 was written.
+
+**M1′ (live capture) is no longer urgent.** Backfill already reads the whole
+corpus on demand; hooks and a tailer buy freshness, which nothing currently
+needs. Do not let it jump the queue ahead of M2′ on the grounds of being more
+fun to build.
 
 ### M3 · First classified report — *loose*
 **Done when:** the Model Use Index renders over validated classifications and
@@ -666,6 +691,32 @@ Mitigated structurally rather than procedurally: the collector performs no
 interpretation (TD §2.1), so a drift breaks parsing — which is re-runnable over
 `raw_event` — rather than capture.
 
+
+### R6 · The score-0 gap gets closed by moving a threshold `active` · **new 2026-09-14 (M1)** · [#22](https://github.com/francisbrero/Model-Use-Index/issues/22)
+
+W1's headline is a share: how much Opus value shows no complexity signal. Any
+coded reimplementation of those six signals will disagree with a hand-read.
+M1's does — **21.7% against 43.4%**.
+
+**The risk is that somebody closes that gap by moving a threshold.** It is a
+one-line edit, it produces a number matching the document, and it looks like
+the pipeline was fixed. It would fabricate the headline the project rests on.
+
+This is a different failure from R1. R1 is an omission you can notice; this one
+*looks like progress*, which is worse. It is also distinct from R2 — R2 is about
+an estimate over-promising, this is about the estimate being manufactured.
+
+**Mitigations shipped with M1:** thresholds are code constants under
+`RULES_VERSION`, not config (a `[rules]` block that nothing read was deliberately
+deleted); `test_thresholds_are_w1s_and_pinned` fails if they move; `mui verify`
+prints the score-0 share as a **reported** row that never gates the exit code,
+beside its W1 reference; `v_caveats.score_zero_gap` carries the same statement
+as a row that survives a `SELECT *`.
+
+**Discharged by:** M2′. Only hand-labelling can say which reading is closer to
+the truth — and W1 already showed two defensible heuristics disagreeing by three
+orders of magnitude, so disagreement is the expected outcome, not a bug report.
+
 ---
 
 ## 5. Answer log
@@ -693,6 +744,14 @@ Append-only. Date · question · answer · what it changed.
 | 2026-09-09 | **U10** | **W1's own baseline was wrong at scale.** *Anchor → session end* double-counts **$13,118 of Opus notional list value**, because **110 of 137 anchored sessions carry more than one anchor** (median 2, max 9). Re-scored, it gives `/release-prod` $314, not $1,511. | W1's figure was right only because the release sessions were read by hand. **Overlap is the metric that separates these rules**, and it must be asserted as zero in the normaliser's tests. |
 | 2026-09-09 | **U10** | **Idle-gap and `cwd`/`gitBranch` thresholds both fail.** Single `/release-prod` arcs legitimately contain gaps of 529, 699, 1,730 and **8,605 minutes** (waiting on CI, ArgoCD, review) and move across up to 47 turns of other branches. Idle-30 recovers 29% of target; context-change 69%. | **Do not add either as a boundary.** They cut the arc exactly where the routine is waiting or switching worktrees — both normal events *inside* an arc. Recorded so it isn't re-proposed. |
 | 2026-09-09 | **U10** | Known error mode: the rule is **generous at the tail** — the last anchor absorbs to session end. Capping that arc at +150 turns moves `/release-prod` 1.2%; at +50 turns, 21%. | Accepted as-is; **don't cap tightly.** The generosity is bounded and the alternative loses more than it fixes. |
+| 2026-09-14 | **M1 / #14** | **The slice is built and merged.** `mui run` goes transcripts → verdicts → Datasette over the live corpus. **Five of six acceptance figures reproduce**: `/release-prod` $1,418 (target $1,447 ±5%), arc overlap 0, orphaned calls 0, Phoenix prompt units 1,651, duplicate ratio 48.1%. | **Phase 1 has a working spine.** Every later milestone is now an improvement to a running system rather than a build. |
+| 2026-09-14 | **M1 / #14** | **The sixth figure does not reproduce.** W1's score-0 share of 43.4% lands at **21.7%** in code. The thresholds were **not** moved to close it. | **New standing risk `R6`** ([#22](https://github.com/francisbrero/Model-Use-Index/issues/22)). The *qualitative* finding survives intact — the top score-0 units are still `create-pr`/`release-prod`, near-total `Bash` — so the headline stands and only its magnitude is in dispute. **M2′ adjudicates.** |
+| 2026-09-14 | **M1 / #14** | Two of W1's six signals were **structurally dead** in the first implementation: fed normalised tool targets rather than prose, they fired 6 and 1 times in 2,430 units. Fixing them required reducing prose to two booleans in `normalize/` (invariant 6), and making the signal **proportional** — the existential form fires on 72% of units and merely measures length. | The proportional threshold (25%) is **new, with no W1 provenance**, and is the weakest part of the scoring. It belongs near the top of M2′'s calibration list. |
+| 2026-09-14 | **U4** | Re-verified at scale: **87,354 / 87,354** assistant records carry `message.usage`. | Closed ([#9](https://github.com/francisbrero/Model-Use-Index/issues/9)). Now *continuously* verified via `v_data_quality`, not measured once. |
+| 2026-09-14 | **U1** | **Codex rollout logs carry token counts** — `~/.codex/sessions/**/*.jsonl`, `payload.type == "token_count"`, with `input`/`cached_input`/`cache_write_input`/`output` plus `reasoning_output_tokens`. 148 of 200 sampled files. | Four-field pricing maps onto the existing registry — new rows, not a new shape. |
+| 2026-09-14 | **U1 accounting** | **The Codex dedup rule is `codex-final-total-v1`: take the FINAL `total_token_usage` per session.** Measured over 119 sessions: summing `total_token_usage` overstates **26x** (it is cumulative); summing `last_token_usage` *also* overstates, by **20%**, because Codex emits duplicate `token_count` events — `total` unchanged while `last` still reports the turn. Correct 136,500,627 input tokens against a naive 3,570,607,085. | **A second accounting trap, unrelated to invariant 10's.** `last_token_usage` equals `delta(total)` exactly on every non-duplicate row, which is what makes the duplicates invisible. Fixture + 9 tests at `tests/fixtures/codex_session/`. Recorded in the `/token-accounting` skill. |
+| 2026-09-14 | **U3** | **Split answer.** Codex logs carry `rate_limits.used_percent` for both windows (300 min and 10080 min) with epoch resets — **the OpenAI pool's allowance is directly readable and needs no modelling.** Nothing equivalent exists for Anthropic. | **The pools are asymmetric.** One can report true share-of-ceiling, the other only share-of-period. Rendering them identically would be the most misleading thing this dashboard could do. Unblocks the OpenAI half of **A6**. |
+| 2026-09-14 | **U2 / #18** | At corpus scale, **96.1% of subagent notional value runs on frontier** ($2,532 of $2,635), while 31% of subagent *calls* run small/mid and carry 3.9% of value. | The two-run pilot's finding is the **default shape of delegation**, not a quirk. A `Justified` frontier arc silently absorbs frontier subagent work that was never separately judged. **Goes to M2′** as a population it must cover. |
 | 2026-09-09 | **U10** | **Unattributable remainder: 7.4% of Opus notional list value ($1,730)** — 6.0% ($1,415, 47 sessions) with no anchor, 1.3% ($315) pre-first-anchor. Sidechain turns are $1,966 (8.4%), $1,737 of it inside an arc. | Must be a **labelled dashboard row**, not dropped. Per-routine figures include subagent cost by construction — never also count it alongside (U8). |
 | 2026-09-09 | **U10** | **Cross-session arcs unresolved.** 66 sessions end with the anchor tag still on the final turn. | Left open deliberately — Tier 2 for `work_unit`; the 7.4% remainder bounds how much it can matter. |
 | 2026-09-09 | **Sequencing** | Decided: **get to a working E2E solution, then improve it**, rather than resolving every unknown first. Only `U10` blocked a backfill-only slice; `U1`/`U3`/`U3a`/`U5`/`U6`/`U7` are live-capture or second-provider questions, and `U7` is moot with no OTel in the loop. | **§3 restructured.** Old M1 (reconcile 2%) → **M1′**; old M2 (Datasette) folded into **M1** as the slice's UI; **M2′** added for the gold set. M3–M5 deliberately left loose. Slice scoped as #14. |
@@ -747,8 +806,20 @@ Append-only. Date · question · answer · what it changed.
    named second headline, new §7.0 sets the reporting top level to `ai_activity`
    with `work_type` unchanged as the tier axis. **Steps 5–6 of #14 are
    unblocked.**
-5. **M1, the first E2E slice** ([#14](https://github.com/francisbrero/Model-Use-Index/issues/14))
-   — see §3.
+5. ~~**M1, the first E2E slice**~~
+   ([#14](https://github.com/francisbrero/Model-Use-Index/issues/14),
+   [PR #21](https://github.com/francisbrero/Model-Use-Index/pull/21))
+   — **Merged 2026-09-14.** `mui run` goes transcripts → verdicts → Datasette
+   over the real corpus. Five of six acceptance figures reproduce; the sixth
+   (step 5's 43.4% score-0 share) lands at **21.7%** and is **reported, not
+   tuned** — see the new standing risk `R6` in §4.
+6. **Next: M2′ (gold set)** ([#24](https://github.com/francisbrero/Model-Use-Index/issues/24))
+   — **and it is now the critical path.** Three separate
+   findings point at it: #14's score-0 gap, W2's moot verdict, and the
+   subagent-tier question (#18) the corpus has now confirmed at scale. All
+   three are "which reading of this data is right", and hand-labelling is the
+   only thing that answers that. M1′ (live capture) is no longer urgent —
+   backfill already reads the whole corpus.
 
 **`U10` is resolved out of band** ([#13](https://github.com/francisbrero/Model-Use-Index/issues/13),
 answered 2026-09-09) — it was the only *unknown* blocking the first E2E slice, and
@@ -796,12 +867,14 @@ become the register.
 | `W2` | [#4](https://github.com/francisbrero/Model-Use-Index/issues/4) | Week one — gate | open |
 | `U3a` | [#5](https://github.com/francisbrero/Model-Use-Index/issues/5) | Tier 1 | **answered 2026-09-09** |
 | `U10` | [#13](https://github.com/francisbrero/Model-Use-Index/issues/13) | Tier 1 — **slice blocker** | **answered 2026-09-09** |
-| `U1` | [#6](https://github.com/francisbrero/Model-Use-Index/issues/6) | Tier 1 | open |
-| `U2` | [#7](https://github.com/francisbrero/Model-Use-Index/issues/7) | Tier 1 | open |
-| `U3` | [#8](https://github.com/francisbrero/Model-Use-Index/issues/8) | Tier 1 | open |
-| `U4` | [#9](https://github.com/francisbrero/Model-Use-Index/issues/9) | Tier 1 | **answered incidentally by W1** (U4REF) — close #9 against §5 |
-| `M1` | [#14](https://github.com/francisbrero/Model-Use-Index/issues/14) | Milestone — the E2E slice | open, gated (see §6) |
-| `M0` | [#10](https://github.com/francisbrero/Model-Use-Index/issues/10) | Milestone | open |
+| `U1` | [#6](https://github.com/francisbrero/Model-Use-Index/issues/6) | Tier 1 | **answered 2026-09-14** — Codex logs carry four-field token counts |
+| `U2` | [#7](https://github.com/francisbrero/Model-Use-Index/issues/7) | Tier 1 | **substantially answered 2026-09-14**; tier question moves to [#18](https://github.com/francisbrero/Model-Use-Index/issues/18) |
+| `U3` | [#8](https://github.com/francisbrero/Model-Use-Index/issues/8) | Tier 1 | **half answered 2026-09-14** — OpenAI pool readable, Anthropic still modelled |
+| `U4` | [#9](https://github.com/francisbrero/Model-Use-Index/issues/9) | Tier 1 | **answered, closed 2026-09-14** — 87,354/87,354 |
+| `M1` | [#14](https://github.com/francisbrero/Model-Use-Index/issues/14) | Milestone — the E2E slice | **merged, closed 2026-09-14** |
+| `M0` | [#10](https://github.com/francisbrero/Model-Use-Index/issues/10) | Milestone | **closed 2026-09-14** |
+| `R6` | [#22](https://github.com/francisbrero/Model-Use-Index/issues/22) | Standing risk — new | open by design (never resolves) |
+| `M2′` | [#24](https://github.com/francisbrero/Model-Use-Index/issues/24) | Milestone — **the critical path** | open |
 
 Tier 2 (`U5`–`U7`) is tracked on the M0 checklist rather than as separate issues;
 Tier 3 (`U8`, `U9`) gets an issue when its phase opens. **W1 rehearsed `U8`** —
