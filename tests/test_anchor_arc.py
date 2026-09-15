@@ -6,14 +6,14 @@ anchor to the next anchor of *any* skill, else to session end. See milestones
 (idle-gap, `cwd`/`gitBranch` change) lose on evidence.
 
 The rejected candidates are implemented here too, deliberately. The register's
-load-bearing claim is comparative — the W1 baseline double-counts $13,118 of
+load-bearing claim is comparative — the W1 baseline double-counts roughly $13k of
 Opus notional list value while this rule double-counts nothing — and a claim
 that only one rule is in the module is a claim no test can check.
 
 The accepted rule now lives in `mui.normalize.work_unit` and is imported here
 (issue #14, M1). The REJECTED candidates stay local to this module on purpose:
 the register's load-bearing claim is comparative — the W1 baseline double-counts
-$13,118 of Opus notional list value while this rule double-counts nothing — and
+roughly $13k of Opus notional list value while this rule double-counts nothing — and
 a claim that only one rule is in the module is a claim no test can check.
 
 Every dollar figure in this module and its fixture is NOTIONAL LIST VALUE
@@ -81,7 +81,7 @@ def arc_value(turns, arc, rates):
 
 def arcs_w1_baseline(turns):
     """W1's rejected baseline: every anchor runs to session end. Kept so the
-    register's $13,118 double-count claim is executable rather than asserted."""
+    register's roughly $13k double-count claim is executable rather than asserted."""
     return [
         {"skill": skill, "start": start, "end": len(turns) - 1}
         for start, _tag_end, skill in anchor_runs(turns)
@@ -164,7 +164,7 @@ def test_arc_boundaries_match_golden(sessions, expected, session_id):
 
 @pytest.mark.parametrize("session_id", SESSION_IDS)
 def test_arc_notional_list_value_matches_golden(sessions, expected, rates, session_id):
-    """Makes the $1,447 +/- 5% regression target's arithmetic executable at
+    """Makes the /release-prod +/- 5% regression target's arithmetic executable at
     fixture scale: four-field pricing over the rule's own arc boundaries."""
     turns = sessions[session_id]
     want = expected["sessions"][session_id]
@@ -225,7 +225,7 @@ def test_no_turn_is_dropped(sessions, session_id):
 def test_w1_baseline_double_counts_where_this_rule_does_not(sessions, rates):
     """The register's load-bearing comparison, made executable.
 
-    At full scale, `anchor -> session end` double-counts $13,118 of Opus
+    At full scale, `anchor -> session end` double-counts roughly $13k of Opus
     notional list value because 110 of 137 anchored sessions carry more than
     one anchor. Here: on the multi-anchor sessions the baseline overcounts and
     the U10 rule conserves.
@@ -272,7 +272,7 @@ def test_a_session_with_no_anchor_is_entirely_unattributable(sessions):
     """The largest component of the remainder, and the easiest to lose.
 
     At full scale, sessions with no anchor at all are 6.0% of Opus notional list
-    value ($1,416 across 48 sessions) against 1.3% for pre-first-anchor work. A
+    value (across 48 sessions) against 1.3% for pre-first-anchor work. A
     rule that returned an empty remainder here would understate the labelled
     7.4% figure by four fifths while every arc assertion still passed.
     """

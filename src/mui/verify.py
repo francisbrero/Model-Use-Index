@@ -16,6 +16,15 @@ TWO CLASSES OF TARGET, and conflating them is how this check becomes useless:
 - **Reported** — as-of-a-moment. The corpus grows while being measured
   (analysing transcripts inside Claude Code appends to the history being read),
   so an asserted corpus total would fail daily for a reason that is not a bug.
+- **Skipped** — an asserted check that COULD NOT RUN, because the figure it
+  needs is not configured. A skip is a failure, not a pass: it prints as SKIP
+  and still drives a non-zero exit. See below.
+
+The reference figures themselves are W1 measurements over one operator's
+private history, so they live in the gitignored `config.toml` and this
+repository ships no default for any of them (`mui.reference`). That is why the
+skip path exists and why it must never degrade into a quiet pass — a gate with
+nothing to check against, reporting green, is worse than no gate.
 """
 
 from __future__ import annotations
@@ -24,13 +33,16 @@ import json
 import sqlite3
 from dataclasses import dataclass
 
-RELEASE_ROUTINE = "release-prod"
-RELEASE_RUNS = 10
-RELEASE_TARGET = 1447.0
-RELEASE_TOLERANCE = 0.05
+from mui.reference import Reference
 
-DUPLICATE_RATIO_BAND = (0.45, 0.52)
-PROMPT_UNIT_BAND = (1500, 2400)
+RELEASE_ROUTINE = "release-prod"
+
+UNSET = "(unset)"
+
+#: Printed when an asserted check cannot run. Distinct from `reported` on
+#: purpose: an operator must be able to tell a row that is deliberately not
+#: asserted from a row that failed to find its reference.
+SKIPPED = "SKIP"
 
 
 @dataclass
@@ -40,23 +52,43 @@ class Check:
     actual: str
     ok: bool | None  # None = reported, not asserted
     note: str = ""
+    skipped: bool = False  # asserted, but could not run — counts as a failure
 
 
-def run_checks(conn: sqlite3.Connection, repo_filter: str, echo) -> int:
+def run_checks(
+    conn: sqlite3.Connection,
+    repo_filter: str | None,
+    echo,
+    reference: Reference | None = None,
+) -> int:
+    """Run every check and return the number that did not pass.
+
+    The return value counts FAILURES **and SKIPS together**, because both mean
+    the same thing to a caller: this run did not demonstrate the pipeline is
+    right. Counting a skip as a pass is the specific way this gate would become
+    decorative.
+
+    `repo_filter` may be `None` (no `--repo` given). The repo-scoped checks then
+    skip rather than matching `%None%`, which would read zero rows and print a
+    confident, meaningless answer.
+    """
     checks: list[Check] = []
-    checks.append(_release_prod(conn))
+    checks.append(_release_prod(conn, reference))
     checks.append(_arc_overlap(conn))
     checks.append(_conservation(conn))
-    checks.append(_prompt_unit_count(conn, repo_filter))
-    checks.append(_duplicate_ratio(conn))
-    checks.append(_score_zero_share(conn, repo_filter))
-    checks.extend(_reported(conn, repo_filter))
+    checks.append(_prompt_unit_count(conn, repo_filter, reference))
+    checks.append(_duplicate_ratio(conn, reference))
+    checks.append(_score_zero_share(conn, repo_filter, reference))
+    checks.extend(_reported(conn, repo_filter, reference))
 
     echo(f"{'target':<40} {'expected':>16} {'actual':>16}  status")
     echo("-" * 86)
     failures = 0
     for check in checks:
-        if check.ok is None:
+        if check.skipped:
+            status = SKIPPED
+            failures += 1
+        elif check.ok is None:
             status = "reported"
         elif check.ok:
             status = "PASS"
@@ -67,41 +99,56 @@ def run_checks(conn: sqlite3.Connection, repo_filter: str, echo) -> int:
         if check.note:
             echo(f"    {check.note}")
 
+    if reference is None:
+        echo(
+            "\nNo [reference] section in config.toml — the W1 comparison figures "
+            "are\nlocal measurements and ship with no default. Asserted checks "
+            "above read SKIP\nand this run FAILS. See config.toml.example."
+        )
     echo("\nAll dollar figures are NOTIONAL LIST VALUE — not money billed.")
     echo("All classifications are PROVISIONAL (M2', R1). Do not act on them.")
     echo("This slice emits NO headroom figure (U3/U3a deferred).")
     return failures
 
 
-def _release_prod(conn) -> Check:
+def _release_prod(conn, reference: Reference | None) -> Check:
     """The one assertion that survives corpus growth.
 
     Ordered by start time and truncated to the first 10 runs: an 11th run
     landing after U10 was measured would otherwise push the total out of band
     for a reason that is not a regression.
     """
+    if reference is None:
+        return Check(
+            f"/{RELEASE_ROUTINE}, first N runs",
+            UNSET,
+            "not run",
+            False,
+            "no [reference] configured — cannot assert. This is a FAILURE, not a pass.",
+            skipped=True,
+        )
     rows = conn.execute(
         "SELECT notional_list_value_usd FROM work_unit "
         "WHERE kind = 'arc' AND anchor_skill = ? "
         "ORDER BY started_at LIMIT ?",
-        (RELEASE_ROUTINE, RELEASE_RUNS),
+        (RELEASE_ROUTINE, reference.release_runs),
     ).fetchall()
     total = sum(r[0] for r in rows)
-    low = RELEASE_TARGET * (1 - RELEASE_TOLERANCE)
-    high = RELEASE_TARGET * (1 + RELEASE_TOLERANCE)
-    ok = len(rows) == RELEASE_RUNS and low <= total <= high
+    low = reference.release_target * (1 - reference.release_tolerance)
+    high = reference.release_target * (1 + reference.release_tolerance)
+    ok = len(rows) == reference.release_runs and low <= total <= high
     return Check(
-        f"/{RELEASE_ROUTINE}, first {RELEASE_RUNS} runs",
-        f"${RELEASE_TARGET:,.0f} ±5%",
+        f"/{RELEASE_ROUTINE}, first {reference.release_runs} runs",
+        f"${reference.release_target:,.0f} ±{reference.release_tolerance:.0%}",
         f"${total:,.0f} ({len(rows)} runs)",
         ok,
-        "notional list value; the rule's own output, not W1's $1,511 hand-read",
+        "notional list value; the rule's own output, not W1's hand-read",
     )
 
 
 def _arc_overlap(conn) -> Check:
     """Zero, asserted. This is what catches a regression into W1's rejected
-    baseline, which double-counts $13,118 of Opus notional list value."""
+    baseline, which double-counts roughly $13k of Opus notional list value."""
     overlaps = conn.execute(
         "SELECT COUNT(*) FROM (SELECT work_unit_id, turn_index FROM api_call "
         "WHERE work_unit_id IS NOT NULL GROUP BY session_id, turn_index "
@@ -129,13 +176,28 @@ def _conservation(conn) -> Check:
     )
 
 
-def _prompt_unit_count(conn, repo_filter) -> Check:
+def _prompt_unit_count(conn, repo_filter, reference: Reference | None) -> Check:
     """The check that would actually have caught the 24x boundary bug.
 
     Cutting at every `user` record yields ~44k units against W1's 1,823,
     because 92% of `user` records are tool results. A band, not a point: the
     corpus grows.
+
+    This one is ASSERTED, so an absent band or an absent `--repo` makes it a
+    SKIP rather than a reported row — a reported row would not gate the exit
+    code, which is the same vacuous pass by a different door.
     """
+    if repo_filter is None or reference is None:
+        missing = "no --repo given" if repo_filter is None else "no [reference]"
+        return Check(
+            "prompt units (repo subset)",
+            UNSET,
+            "not run",
+            False,
+            f"{missing} — cannot assert. A repo-scoped check will NOT fall back "
+            "to matching every repo.",
+            skipped=True,
+        )
     # Matched on `project_family`, not `repo`: Phoenix's worktrees carry leaf
     # names like `phoenix1` and `website`, so a `repo` match finds a fraction
     # of the family and undercounts it.
@@ -143,17 +205,17 @@ def _prompt_unit_count(conn, repo_filter) -> Check:
         "SELECT COUNT(*) FROM prompt_unit WHERE project_family LIKE ?",
         (f"%{repo_filter}%",),
     ).fetchone()[0]
-    low, high = PROMPT_UNIT_BAND
+    low, high = reference.prompt_unit_band
     return Check(
         f"prompt units ({repo_filter})",
         f"{low:,}-{high:,}",
         f"{count:,}",
         low <= count <= high,
-        "W1 measured 1,823; cutting at every `user` record would give ~44,000",
+        "cutting at every `user` record would give roughly 24x this",
     )
 
 
-def _duplicate_ratio(conn) -> Check:
+def _duplicate_ratio(conn, reference: Reference | None) -> Check:
     """Invariant 10's canary. A sudden move means the transcript writer
     changed, which is invariant 7's schema-drift signal in another guise."""
     # Counted by parsing, not by string-matching the payload: JSON spacing is
@@ -163,7 +225,16 @@ def _duplicate_ratio(conn) -> Check:
     raw = _assistant_record_count(conn)
     unique = conn.execute("SELECT COUNT(*) FROM api_call").fetchone()[0]
     ratio = (raw - unique) / raw if raw else 0.0
-    low, high = DUPLICATE_RATIO_BAND
+    if reference is None:
+        return Check(
+            "duplicate ratio",
+            UNSET,
+            f"{ratio:.1%}",
+            False,
+            "no [reference] configured — cannot assert the band",
+            skipped=True,
+        )
+    low, high = reference.duplicate_ratio_band
     return Check(
         "duplicate ratio",
         f"{low:.0%}-{high:.0%}",
@@ -187,7 +258,7 @@ def _assistant_record_count(conn) -> int:
     return total
 
 
-def _score_zero_share(conn, repo_filter) -> Check:
+def _score_zero_share(conn, repo_filter, reference: Reference | None) -> Check:
     """W1's 43.4% — share of Phoenix Opus notional list value in score-0
     prompt units. REPORTED, not asserted, and deliberately so.
 
@@ -211,6 +282,14 @@ def _score_zero_share(conn, repo_filter) -> Check:
       - W1's hand-read had the prose in front of it; this reads a scrubbed
         reduction (invariant 6 forbids storing the text).
     """
+    if repo_filter is None:
+        return Check(
+            "score-0 share of value",
+            UNSET,
+            "not run",
+            None,
+            "no --repo given; this figure is only meaningful scoped to a project",
+        )
     row = conn.execute(
         "SELECT COALESCE(SUM(CASE WHEN c.complexity_score = 0 "
         "       THEN v.notional_list_value_usd ELSE 0 END), 0) AS zero, "
@@ -223,9 +302,14 @@ def _score_zero_share(conn, repo_filter) -> Check:
         (f"%{repo_filter}%",),
     ).fetchone()
     share = 100 * row["zero"] / row["total"] if row["total"] else 0.0
+    expected = (
+        f"{reference.score_zero_share:.1f}% (W1)"
+        if reference is not None and reference.score_zero_share is not None
+        else UNSET
+    )
     return Check(
         "score-0 share of value",
-        "43.4% (W1)",
+        expected,
         f"{share:.1f}%",
         None,
         "REPORTED, never asserted — the gap is a finding for the gold set "
@@ -233,8 +317,10 @@ def _score_zero_share(conn, repo_filter) -> Check:
     )
 
 
-def _reported(conn, repo_filter) -> list[Check]:
-    """As-of-a-moment figures. Printed with their W1 reference, never asserted."""
+def _reported(conn, repo_filter, reference: Reference | None) -> list[Check]:
+    """As-of-a-moment figures. Printed beside their W1 reference where one is
+    configured, and against `(unset)` where none is — never asserted either
+    way, because the corpus grows while it is being measured."""
     unique = conn.execute(
         "SELECT COUNT(*) FROM api_call WHERE model_tier = 'frontier'"
     ).fetchone()[0]
@@ -242,11 +328,15 @@ def _reported(conn, repo_filter) -> list[Check]:
         "SELECT COALESCE(SUM(notional_list_value_usd), 0) FROM api_call "
         "WHERE model_tier = 'frontier'"
     ).fetchone()[0]
-    subset = conn.execute(
-        "SELECT COALESCE(SUM(notional_list_value_usd), 0) FROM work_unit "
-        "WHERE project_family LIKE ?",
-        (f"%{repo_filter}%",),
-    ).fetchone()[0]
+    subset = (
+        conn.execute(
+            "SELECT COALESCE(SUM(notional_list_value_usd), 0) FROM work_unit "
+            "WHERE project_family LIKE ?",
+            (f"%{repo_filter}%",),
+        ).fetchone()[0]
+        if repo_filter is not None
+        else None
+    )
     remainder = conn.execute(
         "SELECT COALESCE(SUM(notional_list_value_usd), 0) FROM work_unit "
         "WHERE kind = 'unattributable'"
@@ -261,30 +351,51 @@ def _reported(conn, repo_filter) -> list[Check]:
     ).fetchone()[0]
     verdicts = conn.execute("SELECT COUNT(*) FROM verdict").fetchone()[0]
 
+    def w1(value: float | None, fmt: str, prefix: str = "", suffix: str = "") -> str:
+        """A W1 comparand, or `(unset)`.
+
+        The ` (W1)` suffix is attached only where a figure exists — `(unset)
+        (W1)` would read as a real reference.
+
+        `prefix`/`suffix` carry the UNIT, and they are not decoration. This
+        column mixes counts, dollars and percentages, so a bare `23,059` beside
+        an actual of `$0` is a dollar figure that does not announce itself as
+        one — which invariant 5 does not allow, and which also invites reading
+        a percentage reference as an absolute.
+        """
+        if value is None:
+            return UNSET
+        return f"{prefix}{format(value, fmt)}{suffix} (W1)"
+
+    r = reference
+    subset_share = (
+        UNSET if subset is None else f"{(100 * subset / grand if grand else 0):.1f}%"
+    )
     return [
         Check(
             "unique frontier responses",
-            "37,781 (W1)",
+            w1(None if r is None else r.frontier_unique, ","),
             f"{unique:,}",
             None,
-            "corpus grows while measured — W1's figure is as of 2026-09-09",
+            "corpus grows while measured — the W1 figure is as of 2026-09-09",
         ),
         Check(
             "frontier notional list value",
-            "$23,059 (W1)",
+            w1(None if r is None else r.frontier_value, ",.0f", prefix="$"),
             f"${total:,.0f}",
             None,
             "as-of-a-moment; not asserted",
         ),
         Check(
-            f"{repo_filter} share",
-            "73.4% (W1)",
-            f"{(100 * subset / grand if grand else 0):.1f}%",
+            "repo subset share",
+            w1(None if r is None else r.subset_share, ".1f", suffix="%"),
+            subset_share,
             None,
+            "no --repo given" if repo_filter is None else f"scoped to {repo_filter}",
         ),
         Check(
             "unattributable remainder",
-            "7.4% (W1)",
+            w1(None if r is None else r.remainder_share, ".1f", suffix="%"),
             f"{(100 * remainder / grand if grand else 0):.1f}%",
             None,
             "a labelled row, never dropped",

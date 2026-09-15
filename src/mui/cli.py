@@ -204,7 +204,9 @@ def open_ui(store: str = typer.Option(str(db.DEFAULT_DB_PATH))) -> None:
 @app.command()
 def verify(
     store: str = typer.Option(str(db.DEFAULT_DB_PATH)),
-    repo: str = typer.Option("Phoenix", help="repo substring for the W1 subset"),
+    repo: str | None = typer.Option(
+        None, help="repo substring to scope the W1 subset checks to (e.g. --repo Foo)"
+    ),
 ) -> None:
     """Check the slice against W1's hand-computed figures.
 
@@ -220,14 +222,27 @@ def verify(
       analysing transcripts inside Claude Code appends to the very history
       being read — so asserting a frozen total would fail daily for a reason
       that is not a bug.
+    - SKIPPED rows are asserted checks that could not run, because the figure
+      they compare against is not configured. A skip FAILS the command. The W1
+      reference figures are local measurements of one operator's history and
+      this repository ships no default for them, so a fresh checkout verifies
+      nothing until `[reference]` is filled in — and says so loudly rather than
+      reporting a green tick it has not earned.
+
+    `--repo` has no default. An internal project name is not a sensible shipped
+    default for a public tool, and silently matching every repo instead would
+    make the subset checks answer a different question than the one asked.
     """
+    from mui.reference import Reference
     from mui.verify import run_checks
 
     conn = db.connect(store)
     db.migrate(conn)
-    failures = run_checks(conn, repo_filter=repo, echo=typer.echo)
+    failures = run_checks(
+        conn, repo_filter=repo, echo=typer.echo, reference=Reference.load()
+    )
     if failures:
-        typer.echo(f"\n{failures} asserted check(s) FAILED", err=True)
+        typer.echo(f"\n{failures} asserted check(s) FAILED or could not run", err=True)
         raise typer.Exit(1)
     typer.echo("\nall asserted checks passed")
 

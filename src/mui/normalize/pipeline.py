@@ -77,8 +77,8 @@ _WORKTREE_MARKERS = ("worktrees", "worktree", ".worktrees")
 def _project_family(cwd: str | None) -> str | None:
     """The project a worktree belongs to, not the worktree itself.
 
-    `.../MadKudu/Phoenix-worktrees/phoenix1` and
-    `.../MadKudu/Phoenix/webapp/worktrees/bug2` both belong to `Phoenix`.
+    `.../Phoenix-worktrees/phoenix1` and
+    `.../Phoenix/webapp/worktrees/bug2` both belong to `Phoenix`.
     Grouping by the leaf directory instead scatters one project across a dozen
     names — which is exactly how W1's "Phoenix and its worktrees are 73.4%"
     would come out as a handful of unrelated small rows.

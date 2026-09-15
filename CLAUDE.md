@@ -285,8 +285,10 @@ advertised size — tags are not uniformly Q4.
 ### 10. Deduplicate `usage` before any arithmetic
 
 **Summing `message.usage` per JSONL record overstates cost by ~91%.** Measured
-on this operator's history: $43,972 naive against $23,059 correct, with 34,314
-of 72,083 Opus assistant records being duplicates (W1, 2026-09-09).
+on this operator's history, where **34,314 of 72,083** Opus assistant records
+are duplicates — a naive sum reads **~1.9x** the deduplicated total (W1,
+2026-09-09). The ratio is the load-bearing part; the absolute notional figures
+are edited for anonymisation and are not reproduced here.
 
 Claude Code writes **one assistant record per content block** — a turn with text
 plus two `tool_use` blocks becomes three records — and each repeats *the same*

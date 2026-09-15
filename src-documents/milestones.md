@@ -11,6 +11,26 @@
 
 ---
 
+## About the numbers
+
+Dollar figures throughout this register are **notional list value** — what the
+tokens would have cost at published list rates. We are on seat subscriptions,
+so none of it was invoiced (invariant 5). Absolute figures have additionally
+been **edited for anonymisation** before publication and are indicative of
+scale, not exact.
+
+**The ratios are the load-bearing claim** and are unedited: `~91%` naive-vs-
+deduped overstatement, `43.4%` of Phoenix Opus value carrying no complexity
+signal, `73.4%` Phoenix-plus-worktrees share of all Opus value, `8.9%` of
+Phoenix Opus value in the single `/release-prod` routine.
+
+Distinguish a **share** from a **saving**: the `7.1%` in §1 is the upper-bound
+saving from downgrading that routine, not its share of spend. Every reclaimable
+figure in this register is an upper bound by construction — it assumes the
+cheaper model finishes in the same tokens, and it will not (R2).
+
+---
+
 ## How to use this
 
 Three registers and a log:

@@ -155,8 +155,8 @@ CREATE INDEX IF NOT EXISTS api_call_error     ON api_call(error_kind);
 -- An anchor runs to the next anchor of any skill, else to session end. This
 -- diverges from PRD §6.1's prompt grain deliberately: U10 measured the
 -- alternatives and only this rule reproduces /release-prod without
--- double-counting. W1's anchor->session-end baseline double-counts $13,118 of
--- Opus notional list value.
+-- double-counting. W1's anchor->session-end baseline double-counts roughly
+-- $13k of Opus notional list value.
 --
 -- `kind` carries the remainder rather than dropping it: work before a
 -- session's first anchor, and sessions with no anchor at all, are 7.4% of Opus
