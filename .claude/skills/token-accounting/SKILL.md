@@ -21,7 +21,8 @@ and 10; PRD §2.1, §5.3).
 
 This guardrail exists because the naive reading of a transcript is wrong by
 roughly **2×**, and wrong in a way that looks perfectly healthy. W1 (2026-09-09)
-published a $43,683 figure before catching it. The real number was $23,059.
+published a headline figure before catching it; the correct number was roughly
+**half** of what it had published.
 
 ## 1. Deduplicate before any arithmetic
 
@@ -37,8 +38,7 @@ Measured on this operator's history:
 | Opus assistant records | 72,083 |
 | Unique API responses | 37,769 |
 | Duplicates | **34,314 (48%)** |
-| Naive sum | $43,972 |
-| Correct | **$23,059** |
+| Naive sum vs. correct | **~1.9x** |
 | Overstatement | **91%** |
 
 ```python
@@ -109,7 +109,7 @@ the cost. Observed tag ranges: turns 642–652, 384–442, 631–695, in session
 822, 563 and 980 turns.
 
 Grouping spend by the field undercounts by an order of magnitude
-(`/release-prod`: a fraction of its real $1,511). Use the tag as an **anchor**
+(`/release-prod`: a small fraction of its real cost). Use the tag as an **anchor**
 and attribute forward to the end of its arc. **How to bound that arc is an open
 Phase 0 question** — if you need it now, state the bound you chose and why.
 

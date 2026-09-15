@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | **Owner** | Francis Brero |
-| **Status** | Draft v0.1 — decisions proposed, nothing built |
+| **Status** | v0.1. The decisions below stand; the first end-to-end slice (M1) has shipped against them. |
 | **Date** | 9 September 2026 |
 | **Companion** | *Model Use Index* (PRD). That document says **what** and **why**; this one says **how**. |
 | **Scope** | Single operator, macOS, Apple Silicon, 8 GB unified memory |

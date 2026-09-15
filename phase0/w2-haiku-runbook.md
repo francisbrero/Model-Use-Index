@@ -48,7 +48,7 @@ to taste — the same failure the worklist's fixed verdict rule exists to preven
 Separate session, so the transcript is clean and attributable:
 
 ```sh
-cd ~/Documents/MadKudu/Phoenix          # or the worktree the task belongs in
+cd ~/path/to/Phoenix                    # or the worktree the task belongs in
 claude --model claude-haiku-4-5-20251001
 ```
 

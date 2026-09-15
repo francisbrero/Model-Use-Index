@@ -5,9 +5,9 @@
 | | |
 |---|---|
 | **Owner** | Francis Brero |
-| **Status** | Draft v0.2 for review — not yet built |
+| **Status** | v0.2. The first end-to-end slice (M1) has shipped; Phases 1–3 are not built. See `milestones.md` for what is live. |
 | **Date** | 9 September 2026 (v0.2) |
-| **Scope** | Internal tooling, HG Insights. Single-operator deployment first. |
+| **Scope** | Internal tooling, HG Insights, published as-is. Single-operator deployment; multi-user is a separate decision, not a rollout. |
 | **Changed in v0.2** | Currency is allowance headroom, not dollars (§2.1). Delegated Codex agents added as a required capture source (§5.1 E). Anthropic-side gateway dropped (§5.2). |
 | **Target artifact** | The *Model Use Index* report (see §2) |
 

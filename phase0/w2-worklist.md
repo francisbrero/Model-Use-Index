@@ -101,7 +101,8 @@ main-agent user prompts, deduplicated by `(message.id, requestId)` with max-per-
 field (invariant 10), priced at Opus list rates as **notional list value**
 (invariant 5).
 
-- 750 work units → **227 in the Agentic/Medium band, $3,887.59 notional list value.**
+- 750 work units → **227 in the Agentic/Medium band, roughly $3.9k notional
+  list value.**
 - Band filter: ≥4 tool calls; ≥2 mutating operations (`Edit`/`Write` or a
   mutating `Bash` verb — `git`, `gh`, `pnpm`, `kubectl`, `argocd`, `sed`, …,
   since bypass-mode agents edit through `Bash`, W1's false-positive trap);
@@ -176,7 +177,7 @@ worked without a judgement call.
 | 8 | publish a patch release + prod newTag PR + file 3 issues | $39.06 | Release published, bump PR open, all three issues filed |
 | 12 | add a second service's canary to the PR | $34.41 | Canary added matching the existing structural pattern |
 
-**Total: $281.64** notional list value at Opus — a useful secondary datapoint,
+**Total: roughly $280** notional list value at Opus — a useful secondary datapoint,
 since it is the cost of six units in the band the matrix claims should be `small`.
 
 ### Running them

@@ -47,10 +47,10 @@ def test_an_unknown_verb_never_passes_through():
 
 
 def test_file_paths_lose_everything_above_the_parent_directory():
-    """`/Users/francis/...` identifies the operator; the signals only need to
-    know how many distinct files were touched and roughly where."""
-    target = normalise_target("Edit", {"file_path": "/Users/francis/app/auth.py"})
-    assert "francis" not in target and "/Users" not in target
+    """`/Users/<operator>/...` identifies the operator; the signals only need
+    to know how many distinct files were touched and roughly where."""
+    target = normalise_target("Edit", {"file_path": "/Users/operator/app/auth.py"})
+    assert "operator" not in target and "/Users" not in target
     assert target.startswith("app/"), "a structural directory survives"
     assert target.endswith(".py"), "the extension is a type, not a name"
 

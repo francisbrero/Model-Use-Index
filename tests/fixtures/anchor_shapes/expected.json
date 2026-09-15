@@ -163,7 +163,7 @@
       "unattributable_notional_list_value_usd": 0.2295,
       "sidechain_inside_arc_notional_list_value_usd": 0,
       "session_total_notional_list_value_usd": 0.2295,
-      "notes": "No anchor anywhere. The whole session is unattributable. At full scale this is 6.0% of Opus notional list value ($1,416 across 48 sessions) -- the largest single component of the 7.4% remainder, so a rule that quietly dropped it would understate the labelled remainder most."
+      "notes": "No anchor anywhere. The whole session is unattributable. At full scale this is 6.0% of Opus notional list value (across 48 sessions) -- the largest single component of the 7.4% remainder, so a rule that quietly dropped it would understate the labelled remainder most."
     },
     "SYNTH-adjacent-anchors": {
       "arcs": [

@@ -60,3 +60,41 @@ store = "~/.model-use-index/store.db"
 emit_headroom = false
 # Every classification is provisional until the gold set clears (M2', R1).
 classification_status = "provisional"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# [reference] — the figures `mui verify` checks the pipeline against.
+#
+# DELIBERATELY COMMENTED OUT, and this repository ships no default for any of
+# them. They are W1's measurements over one operator's real transcript history
+# — private usage data, not project constants — which is why they live in the
+# gitignored `config.toml` rather than in code.
+#
+# The consequence is that a fresh checkout verifies NOTHING until you fill this
+# in. `mui verify` says so: every asserted row reads SKIP and the command exits
+# non-zero. That is on purpose. A gate with nothing to compare against, quietly
+# reporting green, is worse than no gate — see `src/mui/reference.py`.
+#
+# To populate it, run the pipeline over your own history and record what you
+# measure. These are YOUR figures, not ours; copying someone else's makes the
+# check meaningless in the other direction.
+#
+# Not to be confused with the signal thresholds above, which stay in code for
+# exactly the opposite reason: those change what the pipeline computes, and a
+# config knob would make retuning the headline a one-line edit with no diff.
+# These change nothing the pipeline computes — they are only what it is scored
+# against.
+#
+# [reference]
+# # ASSERTED — these gate the exit code.
+# release_target = 0.0        # notional list value, /release-prod, first N runs
+# release_runs = 10
+# release_tolerance = 0.05
+# prompt_unit_band = [0, 0]   # a band, not a point: the corpus grows
+# duplicate_ratio_band = [0.45, 0.52]
+#
+# # REPORTED — printed beside the live figure, never asserted.
+# frontier_unique = 0
+# frontier_value = 0.0        # notional list value
+# subset_share = 0.0          # % of all value in the --repo subset
+# remainder_share = 0.0       # % unattributable
+# score_zero_share = 0.0      # % of value in score-0 units

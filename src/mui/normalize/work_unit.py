@@ -3,7 +3,7 @@
 This module is the reference implementation from `tests/test_anchor_arc.py`
 (issue #13), moved here as that module's docstring instructed. The rejected
 candidates stay in the test, so the register's comparative claim — W1's
-baseline double-counts $13,118 of Opus notional list value while this rule
+baseline double-counts roughly $13k of Opus notional list value while this
 double-counts nothing — remains executable rather than merely asserted.
 
 Two grains, and only one of them carries cost:
@@ -175,7 +175,7 @@ def arcs(turns: list[dict[str, Any]]) -> list[dict[str, Any]]:
     `end` is inclusive. U10 scored the alternatives: attributing only the tagged
     turns reaches 9% of Opus value (invariant 11 — the tag covers a median 15
     turns of an arc that runs a median 69 turns past it); anchor-to-session-end
-    reaches 92.6% but double-counts $13,118 because 110 of 137 anchored sessions
+    reaches 92.6% but double-counts roughly $13k because 110 of 137 anchored
     carry more than one anchor. This rule reaches the same 92.6% with zero
     overlap.
 
